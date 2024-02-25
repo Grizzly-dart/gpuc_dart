@@ -3,6 +3,5 @@
 /// More dartdocs go here.
 library;
 
-export 'src/gpuc_dart_base.dart';
-
-// TODO: Export any libraries intended for clients of this package.
+export 'src/cpu.dart';
+export 'src/cuda.dart';
