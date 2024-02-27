@@ -1,3 +1,5 @@
++ Implement destruction
++ Test destruction
 + Test with complex match equation to optimize intermediate results
 
 + Multi dimensional Tensors
