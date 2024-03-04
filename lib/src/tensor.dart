@@ -181,11 +181,6 @@ class MaxPool2D implements Layer2D {
 
   Size2D outSize2D(Size inSize) {
     // TODO is this the right calculation?
-    /*
-    uint32_t outM = (getTensorM(in) + 2 * padding.y - dilation.y * (kernS.y - 1) - 1) / stride.y + 1;
-    uint32_t outN = (getTensorN(in) + 2 * padding.x - dilation.x * (kernS.x - 1) - 1) / stride.x + 1;
-     */
-
     return inSize.twoD -
         (dilation * (kernelSize - 1)) +
         (padding * 2) ~/ stride +

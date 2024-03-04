@@ -3,5 +3,5 @@
 /// More dartdocs go here.
 library;
 
-export 'src/cpu.dart';
-export 'src/cuda.dart';
+export 'src/clist.dart';
+export 'src/tensor.dart';

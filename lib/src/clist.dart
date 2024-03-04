@@ -1,8 +1,35 @@
+import 'dart:io';
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
 import 'dart:typed_data';
+import 'package:path/path.dart' as path;
 
 import 'package:gpuc_dart/src/tensor.dart';
+
+void initializeTensorc() {
+  String libraryPath = path.join(Directory.current.path, 'lib', 'asset');
+  if (Platform.isLinux) {
+    libraryPath = path.join(libraryPath, 'libtensorc.so');
+  } else if (Platform.isMacOS) {
+    libraryPath = path.join(libraryPath, 'libtensorc.dylib');
+  } else if (Platform.isWindows) {
+    libraryPath = path.join(libraryPath, 'libtensorc.dll');
+  } else {
+    throw Exception('Unsupported platform');
+  }
+
+  final dylib = ffi.DynamicLibrary.open(libraryPath);
+  CListFFIFunctions.initialize(dylib);
+  CudaFFIFunctions.initialize(dylib);
+
+  /*
+  elementwiseAdd2 = dylib.lookupFunction<
+      ffi.Void Function(ffi.Pointer<ffi.Double>, ffi.Pointer<ffi.Double>,
+          ffi.Pointer<ffi.Double>, ffi.Uint64),
+      void Function(ffi.Pointer<ffi.Double>, ffi.Pointer<ffi.Double>,
+          ffi.Pointer<ffi.Double>, int)>('elementwiseAdd2');
+   */
+}
 
 abstract class NList {
   DeviceType get deviceType;
@@ -211,7 +238,7 @@ class CList extends NList {
   ffi.Pointer<ffi.Double> get ptr => _mem;
 
   void resize(int length) {
-    final newPtr = CListFFIFunctions.realloc(_mem, length * 8);
+    final newPtr = CListFFIFunctions.realloc(_mem.cast(), length * 8);
     if (newPtr == ffi.nullptr) {
       throw Exception('Failed to allocate memory');
     }
@@ -264,9 +291,20 @@ class CList extends NList {
 
 abstract class CListFFIFunctions {
   static late final ffi.Pointer<ffi.Void> Function(
-      ffi.Pointer<void> oldPtr, int size) realloc;
+      ffi.Pointer<ffi.Void> oldPtr, int size) realloc;
   static late final void Function(
       ffi.Pointer<ffi.Void> dst, ffi.Pointer<ffi.Void> src, int size) memcpy;
+
+  static void initialize(ffi.DynamicLibrary dylib) {
+    realloc = dylib.lookupFunction<
+        ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void>, ffi.Uint64),
+        ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void>, int)>('realloc');
+    memcpy = dylib.lookupFunction<
+        ffi.Void Function(
+            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, ffi.Uint64),
+        void Function(
+            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, int)>('memcpy');
+  }
 }
 
 class CudaList extends NList {
@@ -379,6 +417,19 @@ class CudaList extends NList {
 }
 
 abstract class CudaFFIFunctions {
+  static void initialize(ffi.DynamicLibrary dylib) {
+    allocate = dylib.lookupFunction<
+        ffi.Pointer<ffi.Void> Function(ffi.Uint64, ffi.Int32),
+        ffi.Pointer<ffi.Void> Function(int, int)>('allocate');
+    release = dylib.lookupFunction<ffi.Void Function(ffi.Pointer<ffi.Void>),
+        void Function(ffi.Pointer<ffi.Void>)>('release');
+    memcpy = dylib.lookupFunction<
+        ffi.Void Function(
+            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, ffi.Uint64),
+        void Function(
+            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, int)>('memcpy');
+  }
+
   static late final ffi.Pointer<ffi.Void> Function(int size, int device)
       allocate;
   static late final void Function(ffi.Pointer<ffi.Void> ptr) release;
@@ -405,7 +456,7 @@ abstract class CudaFFIFunctions {
       PadMode padMode = PadMode.constant,
       Size2D dilation = const Size2D(rows: 1, cols: 1)}) {
     // TODO transfer to device if necessary instead?
-    if(out.deviceType != DeviceType.cuda) {
+    if (out.deviceType != DeviceType.cuda) {
       throw ArgumentError('Output tensor must be on CUDA device');
     }
     if (out.deviceType != inp.deviceType) {
