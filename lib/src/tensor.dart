@@ -41,6 +41,8 @@ class Size {
   }
 
   Size2D get twoD => Size2D(rows: rows, cols: cols);
+
+  List<int> toList() => List.from(_sizes);
 }
 
 class Size2D {
@@ -48,6 +50,44 @@ class Size2D {
   final int cols;
 
   const Size2D({required this.rows, required this.cols});
+
+  Size2D operator +(/* Size2D | int */ other) {
+    if (other is int) {
+      return Size2D(rows: rows + other, cols: cols + other);
+    } else if (other is Size2D) {
+      return Size2D(rows: rows + other.rows, cols: cols + other.cols);
+    }
+    throw ArgumentError('Invalid type');
+  }
+
+  Size2D operator -(/* Size2D | int */ other) {
+    if (other is int) {
+      return Size2D(rows: rows - other, cols: cols - other);
+    } else if (other is Size2D) {
+      return Size2D(rows: rows - other.rows, cols: cols - other.cols);
+    }
+    throw ArgumentError('Invalid type');
+  }
+
+  Size2D operator *(/* int | Size2D */ other) {
+    if (other is int) {
+      return Size2D(rows: rows * other, cols: cols * other);
+    } else if (other is Size2D) {
+      return Size2D(rows: rows * other.rows, cols: cols * other.cols);
+    }
+    throw ArgumentError('Invalid type');
+  }
+
+  Size2D operator ~/(/* Size2D | int */ scalar) {
+    if (scalar is int) {
+      return Size2D(rows: rows ~/ scalar, cols: cols ~/ scalar);
+    } else if (scalar is Size2D) {
+      return Size2D(rows: rows ~/ scalar.rows, cols: cols ~/ scalar.cols);
+    }
+    throw ArgumentError('Invalid type');
+  }
+
+  List<int> toList() => [rows, cols];
 }
 
 class Tensor {
@@ -139,12 +179,21 @@ class MaxPool2D implements Layer2D {
     throw UnimplementedError();
   }
 
-  Size outSize(Size inSize) {
+  Size2D outSize2D(Size inSize) {
     // TODO is this the right calculation?
-    return Size([
-      (inSize.rows - kernelSize.rows + 2 * padding.rows) ~/ stride.rows + 1,
-      (inSize.cols - kernelSize.cols + 2 * padding.cols) ~/ stride.cols + 1
-    ]);
+    /*
+    uint32_t outM = (getTensorM(in) + 2 * padding.y - dilation.y * (kernS.y - 1) - 1) / stride.y + 1;
+    uint32_t outN = (getTensorN(in) + 2 * padding.x - dilation.x * (kernS.x - 1) - 1) / stride.x + 1;
+     */
+
+    return inSize.twoD -
+        (dilation * (kernelSize - 1)) +
+        (padding * 2) ~/ stride +
+        Size2D(rows: 1, cols: 1);
+  }
+
+  Size outSize(Size inSize) {
+    return Size([inSize.batch, inSize.channels] + outSize2D(inSize).toList());
   }
 }
 
