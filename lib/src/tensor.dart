@@ -39,6 +39,8 @@ class Size {
     }
     return _sizes[dims - 4];
   }
+
+  Size2D get twoD => Size2D(rows: rows, cols: cols);
 }
 
 class Size2D {
@@ -59,10 +61,22 @@ class Tensor {
     }
   }
 
+  factory Tensor.empty(Size size,
+      {DeviceType deviceType = DeviceType.c, int deviceId = 0}) {
+    return Tensor(
+        NList.allocate(size.nel, deviceType: deviceType, deviceId: deviceId),
+        size);
+  }
+
+  ffi.Pointer<ffi.Double> get ptr => _data.ptr;
+
   Size get size => _size;
 
-  DeviceType get device => _data.device;
+  DeviceType get deviceType => _data.deviceType;
+
   int get deviceId => _data.deviceId;
+
+  Device get device => _data.device;
 
   void reshape(Size newSize) {
     if (newSize.nel != _size.nel) {
@@ -72,7 +86,7 @@ class Tensor {
   }
 
   Tensor to(DeviceType device, {int deviceId = 0}) {
-    if (_data.device == device && _data.deviceId == deviceId) {
+    if (_data.deviceType == device && _data.deviceId == deviceId) {
       return this;
     }
     return Tensor(NList.copy(_data, device: device, deviceId: deviceId), _size);
@@ -92,6 +106,8 @@ class MaxPool2D implements Layer2D {
 
   final double padValue;
 
+  final PadMode padMode;
+
   final Size2D dilation;
 
   // TODO return indices
@@ -100,18 +116,35 @@ class MaxPool2D implements Layer2D {
       {this.stride = const Size2D(rows: 1, cols: 1),
       this.padding = const Size2D(rows: 0, cols: 0),
       this.padValue = 0,
+      this.padMode = PadMode.constant,
       this.dilation = const Size2D(rows: 1, cols: 1)}) {
     // TODO validate
   }
 
   @override
-  Tensor forward(Tensor input) {
+  Tensor forward(Tensor inp) {
     // TODO validate
     // TODO if multiple devices are available try to parallelize across devices
-    if(input.device == DeviceType.cuda) {
-      return CudaFFIFunctions.maxpool2D(input._data, input.size, kernelSize, stride, padding, padValue, dilation);
+    if (inp.deviceType == DeviceType.cuda) {
+      final out = Tensor.empty(outSize(inp.size),
+          deviceType: inp.deviceType, deviceId: inp.deviceId);
+      CudaFFIFunctions.maxpool2D(out, inp, kernelSize,
+          stride: stride,
+          dilation: dilation,
+          padding: padding,
+          padMode: padMode,
+          padValue: padValue);
+      return out;
     }
     throw UnimplementedError();
+  }
+
+  Size outSize(Size inSize) {
+    // TODO is this the right calculation?
+    return Size([
+      (inSize.rows - kernelSize.rows + 2 * padding.rows) ~/ stride.rows + 1,
+      (inSize.cols - kernelSize.cols + 2 * padding.cols) ~/ stride.cols + 1
+    ]);
   }
 }
 

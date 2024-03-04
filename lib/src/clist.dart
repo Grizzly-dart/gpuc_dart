@@ -2,10 +2,15 @@ import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
 import 'dart:typed_data';
 
+import 'package:gpuc_dart/src/tensor.dart';
+
 abstract class NList {
-  DeviceType get device;
+  DeviceType get deviceType;
 
   int get deviceId;
+
+  // TODO this can be late final
+  Device get device => Device(deviceType, deviceId);
 
   int get length;
 
@@ -15,7 +20,11 @@ abstract class NList {
 
   void operator []=(int index, double value);
 
+  ffi.Pointer<ffi.Double> get ptr;
+
   void release();
+
+  // TODO subview
 
   // TODO implement partial write
   void copyFrom(NList src);
@@ -26,8 +35,8 @@ abstract class NList {
   CList read();
 
   static NList allocate(int length,
-      {DeviceType device = DeviceType.c, int deviceId = 0}) {
-    switch (device) {
+      {DeviceType deviceType = DeviceType.c, int deviceId = 0}) {
+    switch (deviceType) {
       case DeviceType.c:
         return CList.allocate(length);
       case DeviceType.dart:
@@ -58,7 +67,7 @@ abstract class NList {
   }
 }
 
-class DartList implements NList {
+class DartList extends NList {
   final List<double> _list;
 
   DartList.fromList(this._list);
@@ -81,7 +90,7 @@ class DartList implements NList {
   }
 
   @override
-  DeviceType get device => DeviceType.dart;
+  DeviceType get deviceType => DeviceType.dart;
 
   @override
   int get deviceId => 0;
@@ -99,6 +108,9 @@ class DartList implements NList {
   void operator []=(int index, double value) {
     _list[index] = value;
   }
+
+  @override
+  ffi.Pointer<ffi.Double> get ptr => ffi.nullptr;
 
   @override
   void release() {}
@@ -151,7 +163,7 @@ class DartList implements NList {
   }
 }
 
-class CList implements NList {
+class CList extends NList {
   ffi.Pointer<ffi.Double> _mem;
 
   int _length;
@@ -176,7 +188,7 @@ class CList implements NList {
   }
 
   @override
-  DeviceType get device => DeviceType.c;
+  DeviceType get deviceType => DeviceType.c;
 
   @override
   int get deviceId => 0;
@@ -194,6 +206,9 @@ class CList implements NList {
   void operator []=(int index, double value) {
     _mem[index] = value;
   }
+
+  @override
+  ffi.Pointer<ffi.Double> get ptr => _mem;
 
   void resize(int length) {
     final newPtr = CListFFIFunctions.realloc(_mem, length * 8);
@@ -254,7 +269,7 @@ abstract class CListFFIFunctions {
       ffi.Pointer<ffi.Void> dst, ffi.Pointer<ffi.Void> src, int size) memcpy;
 }
 
-class CudaList implements NList {
+class CudaList extends NList {
   final ffi.Pointer<ffi.Double> _mem;
   @override
   final int length;
@@ -275,7 +290,7 @@ class CudaList implements NList {
   }
 
   @override
-  DeviceType get device => DeviceType.cuda;
+  DeviceType get deviceType => DeviceType.cuda;
 
   @override
   int get deviceId => _deviceId;
@@ -310,6 +325,9 @@ class CudaList implements NList {
       ffi.calloc.free(d);
     }
   }
+
+  @override
+  ffi.Pointer<ffi.Double> get ptr => _mem;
 
   static CudaList allocate(int length, {int deviceId = 0}) {
     final mem = CudaFFIFunctions.allocate(length, deviceId);
@@ -371,32 +389,91 @@ abstract class CudaFFIFunctions {
   static late final void Function(
       ffi.Pointer<ffi.Double> out,
       ffi.Pointer<ffi.Double> inp,
-      int kernSX,
-      int kernSY,
-      int outSX,
-      int outSY,
-      int inpSX,
-      int inpSY,
-      int padSX,
-      int padSY,
+      CSize2D kernS,
+      CSize2D outS,
+      CSize2D inS,
+      CSize2D stride,
+      CSize2D dialation,
+      CSize2D padding,
       double padValue,
-      int padMode,
-      int dilationSX,
-      int dilationSY) _maxpool2D;
+      int padMode) _maxpool2D;
 
-  static void maxpool2D(CudaList output, CudaList input, CSize2D kernelSize) {
-    final ffi.Pointer<CSize2D> kernelSizePtr = ffi.malloc.allocate();
-    kernelSizePtr.ref;
-    _maxpool2D(output._mem, input._mem, kernelSize.rows, kernelSize.cols, inputSize.rows, inputSize.cols, inputSize.rows, inputSize.cols, 0, 0, 0, 0, 1, 1);
+  static void maxpool2D(Tensor out, Tensor inp, Size2D kernS,
+      {Size2D stride = const Size2D(rows: 1, cols: 1),
+      Size2D padding = const Size2D(rows: 0, cols: 0),
+      double padValue = 0,
+      PadMode padMode = PadMode.constant,
+      Size2D dilation = const Size2D(rows: 1, cols: 1)}) {
+    // TODO transfer to device if necessary instead?
+    if(out.deviceType != DeviceType.cuda) {
+      throw ArgumentError('Output tensor must be on CUDA device');
+    }
+    if (out.deviceType != inp.deviceType) {
+      inp = inp.to(out.deviceType, deviceId: out.deviceId);
+      // TODO release this after usage
+    }
+
+    final arena = ffi.Arena();
+    try {
+      final kernSPtr = CSize2D.fromSize2D(kernS, allocator: arena);
+      final outSPtr = CSize2D.fromSize2D(out.size.twoD, allocator: arena);
+      final inSPtr = CSize2D.fromSize2D(inp.size.twoD, allocator: arena);
+      final strideSPtr = CSize2D.fromSize2D(stride, allocator: arena);
+      final dilationSPtr = CSize2D.fromSize2D(dilation, allocator: arena);
+      final paddingSPtr = CSize2D.fromSize2D(padding, allocator: arena);
+
+      _maxpool2D(
+          out.ptr,
+          inp.ptr,
+          kernSPtr.ref,
+          outSPtr.ref,
+          inSPtr.ref,
+          strideSPtr.ref,
+          dilationSPtr.ref,
+          paddingSPtr.ref,
+          padValue,
+          padMode.index);
+    } finally {
+      arena.releaseAll();
+    }
   }
 }
 
 enum DeviceType { c, dart, cuda, rocm, sycl }
 
+class Device {
+  final DeviceType type;
+  final int id;
+
+  Device(this.type, this.id);
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! Device) return false;
+    if (identical(this, other)) return true;
+    if (type != other.type) return false;
+    if (type == DeviceType.c || type == DeviceType.dart) return true;
+    return type == other.type && id == other.id;
+  }
+
+  @override
+  int get hashCode => Object.hashAll([type.index, id]);
+}
+
 final class CSize2D extends ffi.Struct {
   @ffi.Int32()
-  external int rows;
+  external int r;
 
   @ffi.Int32()
-  external int cols;
+  external int c;
+
+  static ffi.Pointer<CSize2D> fromSize2D(Size2D size,
+      {ffi.Allocator allocator = ffi.malloc}) {
+    final cSize = allocator.allocate<CSize2D>(ffi.sizeOf<CSize2D>());
+    cSize.ref.r = size.rows;
+    cSize.ref.c = size.cols;
+    return cSize;
+  }
 }
+
+enum PadMode { constant, reflect, replicate, circular }
