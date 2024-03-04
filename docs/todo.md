@@ -4,8 +4,14 @@
 
 + Multi dimensional Tensors
 + Group normalization
-+ Multi GPU
 + Conv2D
 + ResNet
 
-+ Test exceptions
+# Multi device
++ Test seamless switching between devices
+
++ Test native exceptions
+
+# Low prio
++ ROCm implementation
++ SYCL implementation
