@@ -420,14 +420,14 @@ abstract class CudaFFIFunctions {
   static void initialize(ffi.DynamicLibrary dylib) {
     allocate = dylib.lookupFunction<
         ffi.Pointer<ffi.Void> Function(ffi.Uint64, ffi.Int32),
-        ffi.Pointer<ffi.Void> Function(int, int)>('allocate');
+        ffi.Pointer<ffi.Void> Function(int, int)>('tensorcCudaAlloc');
     release = dylib.lookupFunction<ffi.Void Function(ffi.Pointer<ffi.Void>),
-        void Function(ffi.Pointer<ffi.Void>)>('release');
+        void Function(ffi.Pointer<ffi.Void>)>('tensorcCudaFree');
     memcpy = dylib.lookupFunction<
         ffi.Void Function(
             ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, ffi.Uint64),
         void Function(
-            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, int)>('memcpy');
+            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, int)>('tensorcCudaMemcpy');
   }
 
   static late final ffi.Pointer<ffi.Void> Function(int size, int device)
