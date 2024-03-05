@@ -305,7 +305,7 @@ abstract class CListFFIFunctions {
         ffi.Void Function(
             ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, ffi.Uint64),
         void Function(
-            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, int)>('lbtcMemcpy');
+            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, int)>('libtcMemcpy');
   }
 }
 
