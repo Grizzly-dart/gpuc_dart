@@ -1,8 +1,9 @@
-+ Implement destruction
-+ Test destruction
-+ Test with complex match equation to optimize intermediate results
++ Implement destruction using Finalizers
++ Use Unified memory
++ Test with complex math equation to optimize intermediate results
 
-+ Multi dimensional Tensors
+# Layers
++ MaxPool2D
 + Group normalization
 + Conv2D
 + ResNet

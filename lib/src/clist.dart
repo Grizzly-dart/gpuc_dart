@@ -298,12 +298,13 @@ abstract class CListFFIFunctions {
   static void initialize(ffi.DynamicLibrary dylib) {
     realloc = dylib.lookupFunction<
         ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void>, ffi.Uint64),
-        ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void>, int)>('realloc');
+        ffi.Pointer<ffi.Void> Function(
+            ffi.Pointer<ffi.Void>, int)>('libtcRealloc');
     memcpy = dylib.lookupFunction<
         ffi.Void Function(
             ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, ffi.Uint64),
         void Function(
-            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, int)>('memcpy');
+            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, int)>('lbtcMemcpy');
   }
 }
 
@@ -420,14 +421,14 @@ abstract class CudaFFIFunctions {
   static void initialize(ffi.DynamicLibrary dylib) {
     allocate = dylib.lookupFunction<
         ffi.Pointer<ffi.Void> Function(ffi.Uint64, ffi.Int32),
-        ffi.Pointer<ffi.Void> Function(int, int)>('tensorcCudaAlloc');
+        ffi.Pointer<ffi.Void> Function(int, int)>('libtcCudaAlloc');
     release = dylib.lookupFunction<ffi.Void Function(ffi.Pointer<ffi.Void>),
-        void Function(ffi.Pointer<ffi.Void>)>('tensorcCudaFree');
+        void Function(ffi.Pointer<ffi.Void>)>('libtcCudaFree');
     memcpy = dylib.lookupFunction<
         ffi.Void Function(
             ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, ffi.Uint64),
-        void Function(
-            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, int)>('tensorcCudaMemcpy');
+        void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>,
+            int)>('libtcCudaMemcpy');
   }
 
   static late final ffi.Pointer<ffi.Void> Function(int size, int device)
