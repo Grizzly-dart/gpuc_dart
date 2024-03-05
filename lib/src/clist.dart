@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
+import 'package:gpuc_dart/src/cuda.dart';
 import 'dart:typed_data';
 import 'package:path/path.dart' as path;
 
@@ -415,80 +416,6 @@ class CudaList extends NList {
   }
 
   static const byteSize = 8;
-}
-
-abstract class CudaFFIFunctions {
-  static void initialize(ffi.DynamicLibrary dylib) {
-    allocate = dylib.lookupFunction<
-        ffi.Pointer<ffi.Void> Function(ffi.Uint64, ffi.Int32),
-        ffi.Pointer<ffi.Void> Function(int, int)>('libtcCudaAlloc');
-    release = dylib.lookupFunction<ffi.Void Function(ffi.Pointer<ffi.Void>),
-        void Function(ffi.Pointer<ffi.Void>)>('libtcCudaFree');
-    memcpy = dylib.lookupFunction<
-        ffi.Void Function(
-            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, ffi.Uint64),
-        void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>,
-            int)>('libtcCudaMemcpy');
-  }
-
-  static late final ffi.Pointer<ffi.Void> Function(int size, int device)
-      allocate;
-  static late final void Function(ffi.Pointer<ffi.Void> ptr) release;
-
-  static late final void Function(
-      ffi.Pointer<ffi.Void> dst, ffi.Pointer<ffi.Void> src, int size) memcpy;
-
-  static late final void Function(
-      ffi.Pointer<ffi.Double> out,
-      ffi.Pointer<ffi.Double> inp,
-      CSize2D kernS,
-      CSize2D outS,
-      CSize2D inS,
-      CSize2D stride,
-      CSize2D dialation,
-      CSize2D padding,
-      double padValue,
-      int padMode) _maxpool2D;
-
-  static void maxpool2D(Tensor out, Tensor inp, Size2D kernS,
-      {Size2D stride = const Size2D(rows: 1, cols: 1),
-      Size2D padding = const Size2D(rows: 0, cols: 0),
-      double padValue = 0,
-      PadMode padMode = PadMode.constant,
-      Size2D dilation = const Size2D(rows: 1, cols: 1)}) {
-    // TODO transfer to device if necessary instead?
-    if (out.deviceType != DeviceType.cuda) {
-      throw ArgumentError('Output tensor must be on CUDA device');
-    }
-    if (out.deviceType != inp.deviceType) {
-      inp = inp.to(out.deviceType, deviceId: out.deviceId);
-      // TODO release this after usage
-    }
-
-    final arena = ffi.Arena();
-    try {
-      final kernSPtr = CSize2D.fromSize2D(kernS, allocator: arena);
-      final outSPtr = CSize2D.fromSize2D(out.size.twoD, allocator: arena);
-      final inSPtr = CSize2D.fromSize2D(inp.size.twoD, allocator: arena);
-      final strideSPtr = CSize2D.fromSize2D(stride, allocator: arena);
-      final dilationSPtr = CSize2D.fromSize2D(dilation, allocator: arena);
-      final paddingSPtr = CSize2D.fromSize2D(padding, allocator: arena);
-
-      _maxpool2D(
-          out.ptr,
-          inp.ptr,
-          kernSPtr.ref,
-          outSPtr.ref,
-          inSPtr.ref,
-          strideSPtr.ref,
-          dilationSPtr.ref,
-          paddingSPtr.ref,
-          padValue,
-          padMode.index);
-    } finally {
-      arena.releaseAll();
-    }
-  }
 }
 
 enum DeviceType { c, dart, cuda, rocm, sycl }

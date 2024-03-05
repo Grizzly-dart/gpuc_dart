@@ -1,5 +1,6 @@
 import 'dart:ffi' as ffi;
 import 'package:gpuc_dart/src/clist.dart';
+import 'package:gpuc_dart/src/cuda.dart';
 
 class Size {
   final List<int> _sizes;
@@ -112,6 +113,8 @@ class Tensor {
 
   Size get size => _size;
 
+  int get nel => _size.nel;
+
   DeviceType get deviceType => _data.deviceType;
 
   int get deviceId => _data.deviceId;
@@ -123,6 +126,20 @@ class Tensor {
       throw ArgumentError('Size mismatch');
     }
     _size = newSize;
+  }
+
+  Tensor operator +(Tensor other) {
+    if (other.deviceType != deviceType) {
+      // TODO handle memory transfer
+      throw UnimplementedError('Device mismatch');
+    }
+    if (other.nel != nel) {
+      throw ArgumentError('Size mismatch');
+    }
+    final out = Tensor.empty(size, deviceType: deviceType, deviceId: deviceId);
+    CudaFFIFunctions.addition(
+        out.ptr.cast(), ptr.cast(), other.ptr.cast(), nel);
+    return out;
   }
 
   Tensor to(DeviceType device, {int deviceId = 0}) {
