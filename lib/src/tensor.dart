@@ -1,18 +1,47 @@
 import 'dart:ffi' as ffi;
+import 'dart:math';
 import 'package:gpuc_dart/src/clist.dart';
 import 'package:gpuc_dart/src/cuda.dart';
 
-class Size {
+abstract class Size {
+  factory Size(Iterable<int> sizes) => _SizeImpl(List.from(sizes));
+
+  factory Size.twoD(int rows, [int? cols]) => _SizeImpl([rows, cols ?? rows]);
+
+  int operator [](int index);
+
+  int get dims;
+
+  Size2D get twoD;
+
+  int get nel;
+
+  int get rows;
+
+  int get cols;
+
+  int get channels;
+
+  int get batch;
+
+  List<int> toList();
+}
+
+class _SizeImpl implements Size {
   final List<int> _sizes;
 
-  Size(this._sizes);
+  _SizeImpl(this._sizes);
 
+  @override
   int get dims => _sizes.length;
 
+  @override
   int operator [](int index) => _sizes[index];
 
+  @override
   int get nel => _sizes.reduce((a, b) => a * b);
 
+  @override
   int get rows {
     if (dims < 2) {
       return 1;
@@ -20,6 +49,7 @@ class Size {
     return _sizes[dims - 2];
   }
 
+  @override
   int get cols {
     if (dims < 1) {
       throw StateError('Not enough dimensions');
@@ -27,6 +57,7 @@ class Size {
     return _sizes[dims - 1];
   }
 
+  @override
   int get channels {
     if (dims < 3) {
       return 1;
@@ -34,6 +65,7 @@ class Size {
     return _sizes[dims - 3];
   }
 
+  @override
   int get batch {
     if (dims < 4) {
       return 1;
@@ -41,13 +73,17 @@ class Size {
     return _sizes[dims - 4];
   }
 
+  @override
   Size2D get twoD => Size2D(rows: rows, cols: cols);
 
+  @override
   List<int> toList() => List.from(_sizes);
 }
 
-class Size2D {
+class Size2D implements Size {
+  @override
   final int rows;
+  @override
   final int cols;
 
   const Size2D({required this.rows, required this.cols});
@@ -88,25 +124,66 @@ class Size2D {
     throw ArgumentError('Invalid type');
   }
 
+  @override
   List<int> toList() => [rows, cols];
+
+  @override
+  int operator [](int index) {
+    if (index == 0) {
+      return rows;
+    } else if (index == 1) {
+      return cols;
+    }
+    throw RangeError('Index out of range');
+  }
+
+  @override
+  int get dims => 2;
+
+  @override
+  int get nel => rows * cols;
+
+  @override
+  int get channels => 1;
+
+  @override
+  int get batch => 1;
+
+  @override
+  Size2D get twoD => this;
 }
 
 class Tensor {
+  String name;
+
   NList _data;
 
   Size _size;
 
-  Tensor(this._data, this._size) {
+  Tensor(this._data, this._size, {this.name = ''}) {
+    _finalizer.attach(this, _data);
     if (_data.length != _size.nel) {
       throw ArgumentError('Size mismatch');
     }
   }
 
   factory Tensor.empty(Size size,
-      {DeviceType deviceType = DeviceType.c, int deviceId = 0}) {
+      {DeviceType deviceType = DeviceType.c,
+      int deviceId = 0,
+      String name = ''}) {
     return Tensor(
         NList.allocate(size.nel, deviceType: deviceType, deviceId: deviceId),
-        size);
+        size,
+        name: name);
+  }
+
+  factory Tensor.random(Size size, {Random? random, String name = ''}) {
+    random ??= Random();
+    final data = CList.allocate(size.nel);
+    for (var i = 0; i < size.nel; i++) {
+      data[i] = random.nextDouble();
+    }
+    return Tensor(data, size, name: name);
   }
 
   ffi.Pointer<ffi.Double> get ptr => _data.ptr;
@@ -129,16 +206,21 @@ class Tensor {
   }
 
   Tensor operator +(Tensor other) {
+    if (other.nel != nel) {
+      throw ArgumentError('Size mismatch');
+    }
     if (other.deviceType != deviceType) {
       // TODO handle memory transfer
       throw UnimplementedError('Device mismatch');
     }
-    if (other.nel != nel) {
-      throw ArgumentError('Size mismatch');
-    }
-    final out = Tensor.empty(size, deviceType: deviceType, deviceId: deviceId);
+    final out = Tensor.empty(size,
+        deviceType: DeviceType.cuda,
+        deviceId: deviceId,
+        name: '$name + ${other.name}');
+    final inp1 = to(DeviceType.cuda);
+    final inp2 = other.to(DeviceType.cuda);
     CudaFFIFunctions.addition(
-        out.ptr.cast(), ptr.cast(), other.ptr.cast(), nel);
+        out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
     return out;
   }
 
@@ -148,82 +230,17 @@ class Tensor {
     }
     return Tensor(NList.copy(_data, device: device, deviceId: deviceId), _size);
   }
-}
 
-abstract class Layer2D {
-  Tensor forward(Tensor input);
-}
-
-class MaxPool2D implements Layer2D {
-  final Size2D kernelSize;
-
-  final Size2D stride;
-
-  final Size2D padding;
-
-  final double padValue;
-
-  final PadMode padMode;
-
-  final Size2D dilation;
-
-  // TODO return indices
-
-  MaxPool2D(this.kernelSize,
-      {this.stride = const Size2D(rows: 1, cols: 1),
-      this.padding = const Size2D(rows: 0, cols: 0),
-      this.padValue = 0,
-      this.padMode = PadMode.constant,
-      this.dilation = const Size2D(rows: 1, cols: 1)}) {
-    // TODO validate
-  }
-
-  @override
-  Tensor forward(Tensor inp) {
-    // TODO validate
-    // TODO if multiple devices are available try to parallelize across devices
-    if (inp.deviceType == DeviceType.cuda) {
-      final out = Tensor.empty(outSize(inp.size),
-          deviceType: inp.deviceType, deviceId: inp.deviceId);
-      CudaFFIFunctions.maxpool2D(out, inp, kernelSize,
-          stride: stride,
-          dilation: dilation,
-          padding: padding,
-          padMode: padMode,
-          padValue: padValue);
-      return out;
+  List toList() {
+    final list = <double>[];
+    for (var i = 0; i < nel; i++) {
+      list.add(_data[i]);
     }
-    throw UnimplementedError();
+    return list;
   }
 
-  Size2D outSize2D(Size inSize) {
-    // TODO is this the right calculation?
-    return inSize.twoD -
-        (dilation * (kernelSize - 1)) +
-        (padding * 2) ~/ stride +
-        Size2D(rows: 1, cols: 1);
-  }
-
-  Size outSize(Size inSize) {
-    return Size([inSize.batch, inSize.channels] + outSize2D(inSize).toList());
-  }
-}
-
-class Conv2D {
-  final Tensor _weight;
-
-  final Tensor _bias;
-
-  Conv2D._(this._weight, this._bias);
-
-  factory Conv2D(int inChannels, int outChannels, int kernelSize) {
-    final weight =
-        CList.allocate(inChannels * outChannels * kernelSize * kernelSize);
-    final bias = CList.allocate(outChannels);
-    return Conv2D._(
-        Tensor(weight, Size([outChannels, inChannels, kernelSize, kernelSize])),
-        Tensor(bias, Size([outChannels])));
-  }
-
-// TODO add
+  static final _finalizer = Finalizer<NList>((l) {
+    print('releasing tensor');
+    l.release();
+  });
 }

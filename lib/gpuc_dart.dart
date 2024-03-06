@@ -5,3 +5,4 @@ library;
 
 export 'src/clist.dart';
 export 'src/tensor.dart';
+export 'src/random.dart';

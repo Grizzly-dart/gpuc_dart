@@ -40,7 +40,7 @@ final class CudaDeviceProps extends ffi.Struct {
   external int get sharedMemPerMultiProcessor;
 
   @ffi.Uint32()
-  external int get wrapSize;
+  external int get warpSize;
 
   @ffi.Uint32()
   external int get multiProcessorCount;
@@ -60,17 +60,39 @@ final class CudaDeviceProps extends ffi.Struct {
   @ffi.Uint64()
   external int get memPitch;
 
-  @ffi.Uint64()
+  @ffi.Uint32()
   external int get memoryBusWidth;
 
-  @ffi.Uint64()
+  @ffi.Uint32()
   external int get pciBusID;
 
-  @ffi.Uint64()
+  @ffi.Uint32()
   external int get pciDeviceID;
 
-  @ffi.Uint64()
+  @ffi.Uint32()
   external int get pciDomainID;
+
+  Map<String, dynamic> toJson() => {
+        'totalGlobalMem': totalGlobalMem,
+        'totalConstMem': totalConstMem,
+        'sharedMemPerBlock': sharedMemPerBlock,
+        'reservedSharedMemPerBlock': reservedSharedMemPerBlock,
+        'sharedMemPerMultiProcessor': sharedMemPerMultiProcessor,
+        'warpSize': warpSize,
+        'multiProcessorCount': multiProcessorCount,
+        'maxThreadsPerMultiProcessor': maxThreadsPerMultiProcessor,
+        'maxThreadsPerBlock': maxThreadsPerBlock,
+        'maxBlocksPerMultiProcessor': maxBlocksPerMultiProcessor,
+        'l2CacheSize': l2CacheSize,
+        'memPitch': memPitch,
+        'memoryBusWidth': memoryBusWidth,
+        'pciBusID': pciBusID,
+        'pciDeviceID': pciDeviceID,
+        'pciDomainID': pciDomainID,
+      };
+
+  @override
+  String toString() => toJson().toString();
 }
 
 typedef Op1D2Inp = void Function(ffi.Pointer<ffi.Void> out,
@@ -91,24 +113,24 @@ abstract class CudaFFIFunctions {
     release = dylib.lookupFunction<ffi.Void Function(ffi.Pointer<ffi.Void>),
         void Function(ffi.Pointer<ffi.Void>)>('libtcCudaFree');
     memcpy = dylib.lookupFunction<
-        ffi.Void Function(
-            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, ffi.Uint64),
-        void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>,
+        ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>,
+            ffi.Uint64, ffi.Uint8, ffi.Int32),
+        void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, int, int,
             int)>('libtcCudaMemcpy');
     getDeviceProps = dylib.lookupFunction<CudaDeviceProps Function(ffi.Int32),
         CudaDeviceProps Function(int)>('libtcCudaGetDeviceProps');
 
     addition =
         dylib.lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaAddCkern');
-    sum2D = dylib.lookupFunction<Op2DNative, Op2D>('libtcCudaSum2D');
+    sum2D = dylib.lookupFunction<Op2DNative, Op2D>('libtcCudaSum2DCkern');
   }
 
   static late final ffi.Pointer<ffi.Void> Function(int size, int device)
       allocate;
   static late final void Function(ffi.Pointer<ffi.Void> ptr) release;
 
-  static late final void Function(
-      ffi.Pointer<ffi.Void> dst, ffi.Pointer<ffi.Void> src, int size) memcpy;
+  static late final void Function(ffi.Pointer<ffi.Void> dst,
+      ffi.Pointer<ffi.Void> src, int size, int dir, int deviceId) memcpy;
 
   static late final CudaDeviceProps Function(int device) getDeviceProps;
 

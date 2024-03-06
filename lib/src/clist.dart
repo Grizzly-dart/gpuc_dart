@@ -22,14 +22,6 @@ void initializeTensorc() {
   final dylib = ffi.DynamicLibrary.open(libraryPath);
   CListFFIFunctions.initialize(dylib);
   CudaFFIFunctions.initialize(dylib);
-
-  /*
-  elementwiseAdd2 = dylib.lookupFunction<
-      ffi.Void Function(ffi.Pointer<ffi.Double>, ffi.Pointer<ffi.Double>,
-          ffi.Pointer<ffi.Double>, ffi.Uint64),
-      void Function(ffi.Pointer<ffi.Double>, ffi.Pointer<ffi.Double>,
-          ffi.Pointer<ffi.Double>, int)>('elementwiseAdd2');
-   */
 }
 
 abstract class NList {
@@ -61,6 +53,14 @@ abstract class NList {
   void copyTo(NList dst);
 
   CList read();
+
+  // TODO sum
+
+  List<double> toList() {
+    final list = List<double>.filled(length, 0);
+    copyTo(DartList.fromList(list));
+    return list;
+  }
 
   static NList allocate(int length,
       {DeviceType deviceType = DeviceType.c, int deviceId = 0}) {
@@ -345,7 +345,8 @@ class CudaList extends NList {
     }
     ffi.Pointer<ffi.Double> d = ffi.calloc.allocate(byteSize);
     try {
-      CudaFFIFunctions.memcpy(d.cast(), (_mem + index).cast(), byteSize);
+      CudaFFIFunctions.memcpy(d.cast(), (_mem + index).cast(), byteSize,
+          CudaDir.d2h.index, deviceId);
       return d.value;
     } finally {
       ffi.calloc.free(d);
@@ -360,7 +361,8 @@ class CudaList extends NList {
     ffi.Pointer<ffi.Double> d = ffi.calloc.allocate(byteSize);
     try {
       d.value = value;
-      CudaFFIFunctions.memcpy((_mem + index * 8).cast(), d.cast(), byteSize);
+      CudaFFIFunctions.memcpy((_mem + index * 8).cast(), d.cast(), byteSize,
+          CudaDir.h2d.index, deviceId);
     } finally {
       ffi.calloc.free(d);
     }
@@ -370,7 +372,7 @@ class CudaList extends NList {
   ffi.Pointer<ffi.Double> get ptr => _mem;
 
   static CudaList allocate(int length, {int deviceId = 0}) {
-    final mem = CudaFFIFunctions.allocate(length, deviceId);
+    final mem = CudaFFIFunctions.allocate(length * byteSize, deviceId);
     return CudaList._(mem.cast(), length, deviceId);
   }
 
@@ -383,12 +385,14 @@ class CudaList extends NList {
       throw ArgumentError('Length mismatch');
     }
     if (src is CList) {
-      CudaFFIFunctions.memcpy(_mem.cast(), src._mem.cast(), lengthBytes);
+      CudaFFIFunctions.memcpy(_mem.cast(), src._mem.cast(), lengthBytes,
+          CudaDir.h2d.index, deviceId);
       return;
     }
     final cSrc = src.read();
     try {
-      CudaFFIFunctions.memcpy(_mem.cast(), cSrc._mem.cast(), cSrc.length);
+      CudaFFIFunctions.memcpy(_mem.cast(), cSrc._mem.cast(), cSrc.length,
+          CudaDir.h2d.index, deviceId);
     } finally {
       cSrc.release();
     }
@@ -397,12 +401,13 @@ class CudaList extends NList {
   @override
   void copyTo(NList dst) {
     if (dst is CList) {
-      CudaFFIFunctions.memcpy(dst._mem.cast(), dst._mem.cast(), dst.length);
+      CudaFFIFunctions.memcpy(dst._mem.cast(), _mem.cast(), dst.length,
+          CudaDir.d2h.index, deviceId);
       return;
     }
     final cSrc = read();
     try {
-      dst.copyFrom(dst);
+      dst.copyFrom(cSrc);
     } finally {
       cSrc.release();
     }
@@ -411,7 +416,8 @@ class CudaList extends NList {
   @override
   CList read() {
     final clist = CList.allocate(length);
-    CudaFFIFunctions.memcpy(clist._mem.cast(), _mem.cast(), clist.lengthBytes);
+    CudaFFIFunctions.memcpy(clist._mem.cast(), _mem.cast(), clist.lengthBytes,
+        CudaDir.d2h.index, deviceId);
     return clist;
   }
 
@@ -456,3 +462,5 @@ final class CSize2D extends ffi.Struct {
 }
 
 enum PadMode { constant, reflect, replicate, circular }
+
+enum CudaDir { h2h, h2d, d2h, d2d }
