@@ -360,9 +360,6 @@ late final ffi.Pointer<ffi.Utf8> Function(ffi.Pointer<CCudaStream> stream)
 class CudaStream extends Resource {
   ffi.Pointer<CCudaStream> _stream;
 
-  @override
-  final Set<Context> contexts = {};
-
   CudaStream._(this._stream, {Context? context}) {
     context?.add(this);
   }
@@ -386,12 +383,6 @@ class CudaStream extends Resource {
     ffi.malloc.free(_stream);
     _stream = ffi.nullptr;
   }
-
-  @override
-  void addContext(Context context) => contexts.add(context);
-
-  @override
-  void removeContext(Context context) => contexts.remove(context);
 }
 
 class CudaException implements Exception {

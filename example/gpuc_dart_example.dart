@@ -1,5 +1,4 @@
 import 'package:gpuc_dart/gpuc_dart.dart';
-import 'package:gpuc_dart/src/native/cuda.dart';
 
 void printMemInfo(int device) {
   final memInfo = CudaFFIFunctions.getMemInfo(device);

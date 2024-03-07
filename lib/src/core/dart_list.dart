@@ -8,9 +8,6 @@ import 'package:gpuc_dart/src/core/releaseable.dart';
 class DartList extends NList {
   final List<double> list;
 
-  @override
-  final Set<Context> contexts = {};
-
   DartList.fromList(this.list);
 
   static DartList copy(NList other) {
@@ -29,12 +26,6 @@ class DartList extends NList {
       cSrc.release();
     }
   }
-
-  @override
-  void addContext(Context context) => contexts.add(context);
-
-  @override
-  void removeContext(Context context) => contexts.remove(context);
 
   @override
   DeviceType get deviceType => DeviceType.dart;

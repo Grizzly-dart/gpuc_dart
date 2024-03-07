@@ -1,10 +1,4 @@
 abstract class Resource {
-  Iterable<Context> get contexts;
-
-  void addContext(Context context);
-
-  void removeContext(Context context);
-
   void release();
 }
 
@@ -14,7 +8,6 @@ class Context {
 
   void add(Resource resource) {
     _resources.add(resource);
-    resource.addContext(this);
   }
 
   void releaseOnErr(Resource resource) {
@@ -30,15 +23,12 @@ class Context {
     }
 
     for (final resources in _resources) {
-      resources.removeContext(this);
-      if (resources.contexts.isEmpty) {
-        resources.release();
-      }
+      resources.release();
     }
     _resources.clear();
   }
 
-  Context? _child;
+/*Context? _child;
 
   Context child() {
     _child?.release();
@@ -48,19 +38,9 @@ class Context {
   void releaseChild() {
     _child?.release();
     _child = null;
-  }
+  }*/
 
 // TODO also provide information about which devices to use
 
 // TODO should this also contain stream?
-}
-
-class PContext {
-  final Context _parent;
-
-  PContext(this._parent);
-
-  void add(Resource resource) {
-    _parent.add(resource);
-  }
 }

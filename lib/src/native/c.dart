@@ -1,7 +1,6 @@
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
-import 'package:gpuc_dart/src/tensor.dart';
 
 final class CSize2D extends ffi.Struct {
   @ffi.Int32()
@@ -21,9 +20,6 @@ final class CSize2D extends ffi.Struct {
 
 class CF64Ptr implements Resource {
   ffi.Pointer<ffi.Double> _mem;
-
-  @override
-  final Set<Context> contexts = {};
 
   CF64Ptr(this._mem, {Context? context}) {
     context?.add(this);
@@ -48,10 +44,4 @@ class CF64Ptr implements Resource {
     ffi.malloc.free(_mem);
     _mem = ffi.nullptr;
   }
-
-  @override
-  void addContext(Context context) => contexts.add(context);
-
-  @override
-  void removeContext(Context context) => contexts.remove(context);
 }

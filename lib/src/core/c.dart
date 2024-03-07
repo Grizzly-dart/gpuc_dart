@@ -9,9 +9,6 @@ class CList extends NList {
 
   int _length;
 
-  @override
-  final Set<Context> contexts = {};
-
   CList._(this._mem, this._length, {Context? context}) {
     assert(_mem != ffi.nullptr);
     context?.add(this);
@@ -33,12 +30,6 @@ class CList extends NList {
     final mem = ffi.calloc<ffi.Double>(length * 8);
     return CList._(mem, length, context: context);
   }
-
-  @override
-  void addContext(Context context) => contexts.add(context);
-
-  @override
-  void removeContext(Context context) => contexts.remove(context);
 
   @override
   DeviceType get deviceType => DeviceType.c;

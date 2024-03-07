@@ -159,9 +159,6 @@ class Tensor implements Resource {
 
   Size _size;
 
-  @override
-  Iterable<Context> get contexts => _data.contexts;
-
   Tensor(this._data, this._size, {this.name = '', Context? context}) {
     context?.add(_data);
     _finalizer.attach(this, _data);
@@ -197,16 +194,6 @@ class Tensor implements Resource {
 
   Device get device => _data.device;
 
-  @override
-  void addContext(Context context) {
-    _data.addContext(context);
-  }
-
-  @override
-  void removeContext(Context context) {
-    _data.removeContext(context);
-  }
-
   void reshape(Size newSize) {
     if (newSize.nel != _size.nel) {
       throw ArgumentError('Size mismatch');
@@ -226,7 +213,7 @@ class Tensor implements Resource {
       final inp1 = CudaList.allocate(stream, nel, context: ctx);
       final inp2 = CudaList.allocate(stream, nel, context: ctx);
       final outTensor = Tensor.sized(size,
-          context: ctx, name: '${name} + ${other.name}');
+          context: ctx, name: '$name + ${other.name}');
       final out = CudaList.allocate(stream, nel, context: ctx);
       ctx.releaseOnErr(outTensor);
       CudaFFIFunctions.addition(
@@ -234,7 +221,7 @@ class Tensor implements Resource {
       out.copyTo(outTensor._data, stream: stream);
       return outTensor;
     } catch (e) {
-      ctx.release();
+      ctx.release(isError: true);
       rethrow;
     } finally {
       ctx.release();

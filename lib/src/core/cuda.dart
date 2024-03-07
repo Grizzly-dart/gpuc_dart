@@ -108,9 +108,6 @@ class CudaList extends NList {
   final int length;
   final int _deviceId;
 
-  @override
-  final Set<Context> contexts = {};
-
   CudaList._(this._mem, this.length, this._deviceId, {Context? context}) {
     context?.add(this);
   }
@@ -150,12 +147,6 @@ class CudaList extends NList {
       lContext.release();
     }
   }
-
-  @override
-  void addContext(Context context) => contexts.add(context);
-
-  @override
-  void removeContext(Context context) => contexts.remove(context);
 
   @override
   DeviceType get deviceType => DeviceType.cuda;

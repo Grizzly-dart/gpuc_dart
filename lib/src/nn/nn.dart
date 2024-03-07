@@ -1,6 +1,4 @@
 import 'package:gpuc_dart/gpuc_dart.dart';
-import 'package:gpuc_dart/src/core/cuda.dart';
-import 'package:gpuc_dart/src/native/cuda.dart';
 
 abstract class Layer2D {
   Tensor forward(Tensor input);
