@@ -1,10 +1,6 @@
 import 'dart:ffi' as ffi;
 import 'dart:math';
 import 'package:gpuc_dart/gpuc_dart.dart';
-import 'package:gpuc_dart/src/core/c.dart';
-import 'package:gpuc_dart/src/core/cuda.dart';
-import 'package:gpuc_dart/src/core/releaseable.dart';
-import 'package:gpuc_dart/src/native/cuda.dart';
 
 abstract class Size {
   factory Size(Iterable<int> sizes) => _SizeImpl(List.from(sizes));
@@ -159,7 +155,7 @@ class Size2D implements Size {
 class Tensor implements Resource {
   String name;
 
-  final NList _data;
+  final CList _data;
 
   Size _size;
 
@@ -226,28 +222,23 @@ class Tensor implements Resource {
     final ctx = Context();
     try {
       final stream = CudaStream(0, context: ctx);
-      final inp1 = toCuda(context: ctx, stream: stream);
-      final inp2 = other.toCuda(context: ctx, stream: stream);
-      final out = Tensor(CudaList.allocate(stream, nel, context: ctx), size,
-          name: '$name + ${other.name}');
-      ctx.releaseOnErr(out);
+      // TODO implement split processing if not all data fits into memory or to maximize parallelism
+      final inp1 = CudaList.allocate(stream, nel, context: ctx);
+      final inp2 = CudaList.allocate(stream, nel, context: ctx);
+      final outTensor = Tensor.sized(size,
+          context: ctx, name: '${name} + ${other.name}');
+      final out = CudaList.allocate(stream, nel, context: ctx);
+      ctx.releaseOnErr(outTensor);
       CudaFFIFunctions.addition(
           stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
-      return out;
+      out.copyTo(outTensor._data, stream: stream);
+      return outTensor;
     } catch (e) {
       ctx.release();
       rethrow;
     } finally {
       ctx.release();
     }
-  }
-
-  Tensor toCuda({int deviceId = 0, Context? context, CudaStream? stream}) {
-    if (_data.deviceType == DeviceType.cuda && _data.deviceId == deviceId) {
-      return this;
-    }
-    return Tensor(CudaList.copy(_data, stream: stream, context: context), _size,
-        context: context);
   }
 
   List toList() {

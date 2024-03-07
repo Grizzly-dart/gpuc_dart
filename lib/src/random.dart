@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'package:mt19937/mt19937.dart';
 
+/// Makes testing across C, Python and Dart easier when all of them generate the
+/// same random numbers
 class MTRandom implements Random {
   final MersenneTwister mt;
 
