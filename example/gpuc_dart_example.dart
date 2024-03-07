@@ -1,19 +1,31 @@
 import 'package:gpuc_dart/gpuc_dart.dart';
-import 'package:gpuc_dart/src/cuda.dart';
+import 'package:gpuc_dart/src/native/cuda.dart';
+
+void printMemInfo(int device) {
+  final memInfo = CudaFFIFunctions.getMemInfo(device);
+  print('MemInfo:${memInfo.toHumanString()}');
+}
 
 void test() {
   final watch = Stopwatch()..start();
   print(CudaFFIFunctions.getDeviceProps(0));
+  printMemInfo(0);
   final t1 = Tensor.random(Size.twoD(512, 512));
   final t2 = Tensor.random(Size.twoD(512, 512));
   final t3 = t1 + t2;
-  t3.to(DeviceType.c);
+  printMemInfo(0);
+  // TODO t3.read();
+  t3.release();
+  printMemInfo(0);
   print(watch.elapsed);
-  // print(t3.toList());
 }
 
 void main() async {
   initializeTensorc();
-  test();
-  await Future.delayed(Duration(seconds: 100));
+  for(int i = 0; i < 10; i++) {
+    test();
+    printMemInfo(0);
+    await Future.delayed(Duration(seconds: 2));
+  }
+  print('Finished');
 }

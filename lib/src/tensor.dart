@@ -1,7 +1,10 @@
 import 'dart:ffi' as ffi;
 import 'dart:math';
-import 'package:gpuc_dart/src/clist.dart';
-import 'package:gpuc_dart/src/cuda.dart';
+import 'package:gpuc_dart/gpuc_dart.dart';
+import 'package:gpuc_dart/src/core/c.dart';
+import 'package:gpuc_dart/src/core/cuda.dart';
+import 'package:gpuc_dart/src/core/releaseable.dart';
+import 'package:gpuc_dart/src/native/cuda.dart';
 
 abstract class Size {
   factory Size(Iterable<int> sizes) => _SizeImpl(List.from(sizes));
@@ -153,37 +156,37 @@ class Size2D implements Size {
   Size2D get twoD => this;
 }
 
-class Tensor {
+class Tensor implements Resource {
   String name;
 
-  NList _data;
+  final NList _data;
 
   Size _size;
 
-  Tensor(this._data, this._size, {this.name = ''}) {
+  @override
+  Iterable<Context> get contexts => _data.contexts;
+
+  Tensor(this._data, this._size, {this.name = '', Context? context}) {
+    context?.add(_data);
     _finalizer.attach(this, _data);
     if (_data.length != _size.nel) {
       throw ArgumentError('Size mismatch');
     }
   }
 
-  factory Tensor.empty(Size size,
-      {DeviceType deviceType = DeviceType.c,
-      int deviceId = 0,
-      String name = ''}) {
-    return Tensor(
-        NList.allocate(size.nel, deviceType: deviceType, deviceId: deviceId),
-        size,
-        name: name);
+  factory Tensor.sized(Size size, {String name = '', Context? context}) {
+    return Tensor(CList.allocate(size.nel, context: context), size,
+        name: name, context: context);
   }
 
-  factory Tensor.random(Size size, {Random? random, String name = ''}) {
+  factory Tensor.random(Size size,
+      {Random? random, String name = '', Context? context}) {
     random ??= Random();
-    final data = CList.allocate(size.nel);
+    final data = CList.allocate(size.nel, context: context);
     for (var i = 0; i < size.nel; i++) {
       data[i] = random.nextDouble();
     }
-    return Tensor(data, size, name: name);
+    return Tensor(data, size, name: name, context: context);
   }
 
   ffi.Pointer<ffi.Double> get ptr => _data.ptr;
@@ -198,6 +201,16 @@ class Tensor {
 
   Device get device => _data.device;
 
+  @override
+  void addContext(Context context) {
+    _data.addContext(context);
+  }
+
+  @override
+  void removeContext(Context context) {
+    _data.removeContext(context);
+  }
+
   void reshape(Size newSize) {
     if (newSize.nel != _size.nel) {
       throw ArgumentError('Size mismatch');
@@ -205,30 +218,36 @@ class Tensor {
     _size = newSize;
   }
 
+  // TODO auto release inp1 and inp2
   Tensor operator +(Tensor other) {
     if (other.nel != nel) {
       throw ArgumentError('Size mismatch');
     }
-    if (other.deviceType != deviceType) {
-      // TODO handle memory transfer
-      throw UnimplementedError('Device mismatch');
+    final ctx = Context();
+    try {
+      final stream = CudaStream(0, context: ctx);
+      final inp1 = toCuda(context: ctx, stream: stream);
+      final inp2 = other.toCuda(context: ctx, stream: stream);
+      final out = Tensor(CudaList.allocate(stream, nel, context: ctx), size,
+          name: '$name + ${other.name}');
+      ctx.releaseOnErr(out);
+      CudaFFIFunctions.addition(
+          stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
+      return out;
+    } catch (e) {
+      ctx.release();
+      rethrow;
+    } finally {
+      ctx.release();
     }
-    final out = Tensor.empty(size,
-        deviceType: DeviceType.cuda,
-        deviceId: deviceId,
-        name: '$name + ${other.name}');
-    final inp1 = to(DeviceType.cuda);
-    final inp2 = other.to(DeviceType.cuda);
-    CudaFFIFunctions.addition(
-        out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
-    return out;
   }
 
-  Tensor to(DeviceType device, {int deviceId = 0}) {
-    if (_data.deviceType == device && _data.deviceId == deviceId) {
+  Tensor toCuda({int deviceId = 0, Context? context, CudaStream? stream}) {
+    if (_data.deviceType == DeviceType.cuda && _data.deviceId == deviceId) {
       return this;
     }
-    return Tensor(NList.copy(_data, device: device, deviceId: deviceId), _size);
+    return Tensor(CudaList.copy(_data, stream: stream, context: context), _size,
+        context: context);
   }
 
   List toList() {
@@ -237,6 +256,11 @@ class Tensor {
       list.add(_data[i]);
     }
     return list;
+  }
+
+  @override
+  void release() {
+    _data.release();
   }
 
   static final _finalizer = Finalizer<NList>((l) {

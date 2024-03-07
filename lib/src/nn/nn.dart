@@ -1,5 +1,6 @@
 import 'package:gpuc_dart/gpuc_dart.dart';
-import 'package:gpuc_dart/src/cuda.dart';
+import 'package:gpuc_dart/src/core/cuda.dart';
+import 'package:gpuc_dart/src/native/cuda.dart';
 
 abstract class Layer2D {
   Tensor forward(Tensor input);
@@ -33,6 +34,7 @@ class MaxPool2D implements Layer2D {
   Tensor forward(Tensor inp) {
     // TODO validate
     // TODO if multiple devices are available try to parallelize across devices
+    /*
     if (inp.deviceType == DeviceType.cuda) {
       final out = Tensor.empty(outSize(inp.size),
           deviceType: inp.deviceType, deviceId: inp.deviceId);
@@ -44,6 +46,7 @@ class MaxPool2D implements Layer2D {
           padValue: padValue);
       return out;
     }
+     */
     throw UnimplementedError();
   }
 
@@ -61,6 +64,7 @@ class MaxPool2D implements Layer2D {
 }
 
 // TODO free memory
+/*
 class Conv2D implements Layer2D {
   final Tensor _weight;
 
@@ -83,3 +87,4 @@ class Conv2D implements Layer2D {
 
 // TODO add
 }
+ */

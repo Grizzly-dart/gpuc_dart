@@ -3,6 +3,8 @@
 /// More dartdocs go here.
 library;
 
-export 'src/clist.dart';
 export 'src/tensor.dart';
 export 'src/random.dart';
+
+export 'src/native/native.dart';
+export 'src/core/core.dart';
