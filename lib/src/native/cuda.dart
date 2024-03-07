@@ -58,7 +58,33 @@ abstract class CudaFFIFunctions {
 
     _addition =
         dylib.lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaAddCkern');
-    sum2D = dylib.lookupFunction<Op2DNative, Op2D>('libtcCudaSum2DCkern');
+    _sum2D = dylib.lookupFunction<Op2DNative, Op2D>('libtcCudaSum2DCkern');
+
+    _maxpool2D = dylib.lookupFunction<
+        ffi.Pointer<ffi.Utf8> Function(
+            ffi.Pointer<CCudaStream>,
+            ffi.Pointer<ffi.Double>,
+            ffi.Pointer<ffi.Double>,
+            CSize2D,
+            CSize2D,
+            CSize2D,
+            CSize2D,
+            CSize2D,
+            CSize2D,
+            ffi.Double,
+            ffi.Int32),
+        ffi.Pointer<ffi.Utf8> Function(
+            ffi.Pointer<CCudaStream>,
+            ffi.Pointer<ffi.Double>,
+            ffi.Pointer<ffi.Double>,
+            CSize2D,
+            CSize2D,
+            CSize2D,
+            CSize2D,
+            CSize2D,
+            CSize2D,
+            double,
+            int)>('libtcCudaMaxPool2DCkern');
   }
 
   static late final ffi.Pointer<ffi.Utf8> Function(
@@ -77,9 +103,10 @@ abstract class CudaFFIFunctions {
       int size) _memcpy;
 
   static late final Op1D2Inp _addition;
-  static late final Op2D sum2D;
+  static late final Op2D _sum2D;
 
-  static late final void Function(
+  static late final ffi.Pointer<ffi.Utf8> Function(
+      ffi.Pointer<CCudaStream> stream,
       ffi.Pointer<ffi.Double> out,
       ffi.Pointer<ffi.Double> inp,
       CSize2D kernS,
@@ -158,34 +185,40 @@ abstract class CudaFFIFunctions {
     }
   }
 
-/*
-  static void maxpool2D(Tensor out, Tensor inp, Size2D kernS,
+  static void sum2D(CudaStream stream, ffi.Pointer<ffi.Void> out,
+      ffi.Pointer<ffi.Void> inp1, Size2D inpS) {
+    final ctx = Context();
+    try {
+      final sizePtr = CSize2D.fromSize2D(inpS, context: ctx);
+      final err = _sum2D(stream.ptr, out, inp1, sizePtr.ref);
+      if (err != ffi.nullptr) {
+        throw CudaException(err.toDartString());
+      }
+    } finally {
+      ctx.release();
+    }
+  }
+
+  static void maxpool2D(CudaStream stream, ffi.Pointer<ffi.Double> out,
+      ffi.Pointer<ffi.Double> inp, Size2D kernS, Size2D outS, Size2D inpS,
       {Size2D stride = const Size2D(rows: 1, cols: 1),
       Size2D padding = const Size2D(rows: 0, cols: 0),
       double padValue = 0,
       PadMode padMode = PadMode.constant,
       Size2D dilation = const Size2D(rows: 1, cols: 1)}) {
-    // TODO transfer to device if necessary instead?
-    if (out.deviceType != DeviceType.cuda) {
-      throw ArgumentError('Output tensor must be on CUDA device');
-    }
-    if (out.deviceType != inp.deviceType) {
-      inp = inp.to(out.deviceType, deviceId: out.deviceId);
-      // TODO release this after usage
-    }
-
-    final arena = ffi.Arena();
+    final ctx = Context();
     try {
-      final kernSPtr = CSize2D.fromSize2D(kernS, allocator: arena);
-      final outSPtr = CSize2D.fromSize2D(out.size.twoD, allocator: arena);
-      final inSPtr = CSize2D.fromSize2D(inp.size.twoD, allocator: arena);
-      final strideSPtr = CSize2D.fromSize2D(stride, allocator: arena);
-      final dilationSPtr = CSize2D.fromSize2D(dilation, allocator: arena);
-      final paddingSPtr = CSize2D.fromSize2D(padding, allocator: arena);
+      final kernSPtr = CSize2D.fromSize2D(kernS, context: ctx);
+      final outSPtr = CSize2D.fromSize2D(outS, context: ctx);
+      final inSPtr = CSize2D.fromSize2D(inpS, context: ctx);
+      final strideSPtr = CSize2D.fromSize2D(stride, context: ctx);
+      final dilationSPtr = CSize2D.fromSize2D(dilation, context: ctx);
+      final paddingSPtr = CSize2D.fromSize2D(padding, context: ctx);
 
       _maxpool2D(
-          out.ptr,
-          inp.ptr,
+          stream.ptr,
+          out.cast(),
+          inp.cast(),
           kernSPtr.ref,
           outSPtr.ref,
           inSPtr.ref,
@@ -195,10 +228,9 @@ abstract class CudaFFIFunctions {
           padValue,
           padMode.index);
     } finally {
-      arena.releaseAll();
+      ctx.release();
     }
   }
-   */
 }
 
 final class _CudaDeviceProps extends ffi.Struct {

@@ -8,3 +8,4 @@ export 'src/random.dart';
 
 export 'src/native/native.dart';
 export 'src/core/core.dart';
+export 'src/nn/nn.dart';

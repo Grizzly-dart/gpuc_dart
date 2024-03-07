@@ -3,18 +3,37 @@ import 'package:ffi/ffi.dart' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 final class CSize2D extends ffi.Struct {
-  @ffi.Int32()
+  @ffi.Uint32()
   external int r;
 
-  @ffi.Int32()
+  @ffi.Uint32()
   external int c;
 
-  static ffi.Pointer<CSize2D> fromSize2D(Size2D size,
-      {ffi.Allocator allocator = ffi.malloc}) {
-    final cSize = allocator.allocate<CSize2D>(ffi.sizeOf<CSize2D>());
+  static ffi.Pointer<CSize2D> fromSize2D(Size2D size, {Context? context}) {
+    final cSize = ffi.malloc.allocate<CSize2D>(ffi.sizeOf<CSize2D>());
+    CPtr(cSize.cast(), context: context);
     cSize.ref.r = size.rows;
     cSize.ref.c = size.cols;
     return cSize;
+  }
+}
+
+class CPtr implements Resource {
+  ffi.Pointer<ffi.Void> _mem;
+
+  CPtr(this._mem, {Context? context}) {
+    context?.add(this);
+  }
+
+  ffi.Pointer<ffi.Void> get ptr => _mem;
+
+  @override
+  void release() {
+    if (_mem == ffi.nullptr) {
+      return;
+    }
+    ffi.malloc.free(_mem);
+    _mem = ffi.nullptr;
   }
 }
 

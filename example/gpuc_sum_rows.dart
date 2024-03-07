@@ -10,11 +10,9 @@ void test() {
   print(CudaFFIFunctions.getDeviceProps(0));
   printMemInfo(0);
   final t1 = Tensor.random(Size.twoD(512, 512));
-  final t2 = Tensor.random(Size.twoD(512, 512));
-  final t3 = t1 + t2;
+  final t3 = t1.sumRows();
   printMemInfo(0);
-  // TODO t3.read();
-  t3.release();
+  print(t3.toList());
   printMemInfo(0);
   print(watch.elapsed);
 }

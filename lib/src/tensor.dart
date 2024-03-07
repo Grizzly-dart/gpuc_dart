@@ -155,14 +155,14 @@ class Size2D implements Size {
 class Tensor implements Resource {
   String name;
 
-  final CList _data;
+  final CList data;
 
   Size _size;
 
-  Tensor(this._data, this._size, {this.name = '', Context? context}) {
-    context?.add(_data);
-    _finalizer.attach(this, _data);
-    if (_data.length != _size.nel) {
+  Tensor(this.data, this._size, {this.name = '', Context? context}) {
+    context?.add(data);
+    _finalizer.attach(this, data);
+    if (data.length != _size.nel) {
       throw ArgumentError('Size mismatch');
     }
   }
@@ -182,17 +182,17 @@ class Tensor implements Resource {
     return Tensor(data, size, name: name, context: context);
   }
 
-  ffi.Pointer<ffi.Double> get ptr => _data.ptr;
+  ffi.Pointer<ffi.Double> get ptr => data.ptr;
 
   Size get size => _size;
 
   int get nel => _size.nel;
 
-  DeviceType get deviceType => _data.deviceType;
+  DeviceType get deviceType => data.deviceType;
 
-  int get deviceId => _data.deviceId;
+  int get deviceId => data.deviceId;
 
-  Device get device => _data.device;
+  Device get device => data.device;
 
   void reshape(Size newSize) {
     if (newSize.nel != _size.nel) {
@@ -208,17 +208,17 @@ class Tensor implements Resource {
     }
     final ctx = Context();
     try {
-      final stream = CudaStream(0, context: ctx);
+      int deviceId = 0; // TODO implement device selection
+      final stream = CudaStream(deviceId, context: ctx);
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1 = CudaList.allocate(stream, nel, context: ctx);
-      final inp2 = CudaList.allocate(stream, nel, context: ctx);
-      final outTensor = Tensor.sized(size,
-          context: ctx, name: '$name + ${other.name}');
+      final inp1 = CudaList.copy(data, stream: stream, context: ctx);
+      final inp2 = CudaList.copy(other.data, stream: stream, context: ctx);
       final out = CudaList.allocate(stream, nel, context: ctx);
-      ctx.releaseOnErr(outTensor);
       CudaFFIFunctions.addition(
           stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
-      out.copyTo(outTensor._data, stream: stream);
+      final outTensor = Tensor.sized(size, name: '$name + ${other.name}');
+      ctx.releaseOnErr(outTensor);
+      out.copyTo(outTensor.data, stream: stream);
       return outTensor;
     } catch (e) {
       ctx.release(isError: true);
@@ -228,21 +228,45 @@ class Tensor implements Resource {
     }
   }
 
-  List toList() {
+  Tensor sumRows() {
+    if (size.dims < 2) {
+      throw StateError('Must be at least a 2D tensor');
+    }
+    Size outSize = Size(size.toList().take(size.dims - 1));
+    final ctx = Context();
+    try {
+      int deviceId = 0; // TODO implement device selection
+      final stream = CudaStream(deviceId, context: ctx);
+      final inp = CudaList.copy(data, stream: stream, context: ctx);
+      final out = CudaList.allocate(stream, outSize.nel, context: ctx);
+      CudaFFIFunctions.sum2D(stream, out.ptr.cast(), inp.ptr.cast(),
+          Size2D(rows: outSize.nel, cols: size.cols));
+      final outTensor = Tensor.sized(outSize, name: 'sum2D($name)');
+      ctx.releaseOnErr(outTensor);
+      out.copyTo(outTensor.data, stream: stream);
+      return outTensor;
+    } catch (e) {
+      ctx.release(isError: true);
+      rethrow;
+    } finally {
+      ctx.release();
+    }
+  }
+
+  List<double> toList() {
     final list = <double>[];
     for (var i = 0; i < nel; i++) {
-      list.add(_data[i]);
+      list.add(data[i]);
     }
     return list;
   }
 
   @override
   void release() {
-    _data.release();
+    data.release();
   }
 
   static final _finalizer = Finalizer<NList>((l) {
-    print('releasing tensor');
     l.release();
   });
 }
