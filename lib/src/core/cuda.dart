@@ -21,7 +21,7 @@ void initializeTensorc() {
 
   final dylib = ffi.DynamicLibrary.open(libraryPath);
   CListFFIFunctions.initialize(dylib);
-  CudaFFIFunctions.initialize(dylib);
+  CudaFFI.initialize(dylib);
 }
 
 abstract class NList implements Resource {
@@ -117,7 +117,7 @@ class CudaList extends NList {
     final ptr = ffi.calloc
         .allocate<ffi.Pointer<ffi.Void>>(ffi.sizeOf<ffi.Pointer<ffi.Void>>());
     try {
-      final err = CudaFFIFunctions.allocate(stream.ptr, ptr, length * byteSize);
+      final err = CudaFFI.allocate(stream.ptr, ptr, length * byteSize);
       if (err != ffi.nullptr) {
         throw CudaException(err.toDartString());
       }
@@ -162,7 +162,7 @@ class CudaList extends NList {
     if (index < 0 || index >= length) {
       throw RangeError('Index out of range');
     }
-    return CudaFFIFunctions.getDouble(_mem, index, deviceId);
+    return CudaFFI.getDouble(_mem, index, deviceId);
   }
 
   @override
@@ -170,7 +170,7 @@ class CudaList extends NList {
     if (index < 0 || index >= length) {
       throw RangeError('Index out of range');
     }
-    CudaFFIFunctions.setDouble(_mem, index, value, deviceId);
+    CudaFFI.setDouble(_mem, index, value, deviceId);
   }
 
   @override
@@ -181,7 +181,7 @@ class CudaList extends NList {
     if (_mem == ffi.nullptr) return;
     final stream = CudaStream(deviceId);
     try {
-      CudaFFIFunctions.release(stream.ptr, _mem.cast());
+      CudaFFI.release(stream.ptr, _mem.cast());
       _mem = ffi.nullptr;
     } finally {
       stream.release();
@@ -197,7 +197,7 @@ class CudaList extends NList {
     try {
       stream = stream ?? CudaStream(deviceId, context: context);
       src = src is CList ? src : src.read(context: context);
-      CudaFFIFunctions.memcpy(stream, _mem.cast(), src.ptr.cast(), lengthBytes);
+      CudaFFI.memcpy(stream, _mem.cast(), src.ptr.cast(), lengthBytes);
     } finally {
       context.release();
     }
@@ -212,7 +212,7 @@ class CudaList extends NList {
     stream = stream ?? CudaStream(deviceId, context: context);
     try {
       if (dst is CList) {
-        CudaFFIFunctions.memcpy(
+        CudaFFI.memcpy(
             stream, dst.ptr.cast(), _mem.cast(), dst.lengthBytes);
         return;
       }
@@ -229,7 +229,7 @@ class CudaList extends NList {
     final lContext = Context();
     try {
       stream = stream ?? CudaStream(deviceId, context: lContext);
-      CudaFFIFunctions.memcpy(
+      CudaFFI.memcpy(
           stream, clist.ptr.cast(), _mem.cast(), clist.lengthBytes);
       return clist;
     } finally {

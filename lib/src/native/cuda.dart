@@ -23,7 +23,7 @@ typedef Op2DNative = ffi.Pointer<ffi.Utf8> Function(
     ffi.Pointer<ffi.Void> inp1,
     CSize2D);
 
-abstract class CudaFFIFunctions {
+abstract class CudaFFI {
   static void initialize(ffi.DynamicLibrary dylib) {
     CCudaStream.initializeLib(dylib);
 
@@ -60,6 +60,7 @@ abstract class CudaFFIFunctions {
         dylib.lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaAddCkern');
     _sum2D = dylib.lookupFunction<Op2DNative, Op2D>('libtcCudaSum2DCkern');
 
+    /*
     _maxpool2D = dylib.lookupFunction<
         ffi.Pointer<ffi.Utf8> Function(
             ffi.Pointer<CCudaStream>,
@@ -84,7 +85,7 @@ abstract class CudaFFIFunctions {
             CSize2D,
             CSize2D,
             double,
-            int)>('libtcCudaMaxPool2DCkern');
+            int)>('libtcCudaMaxPool2DCkern');*/
   }
 
   static late final ffi.Pointer<ffi.Utf8> Function(
@@ -155,7 +156,7 @@ abstract class CudaFFIFunctions {
     try {
       final dst = CF64Ptr.allocate(context: context);
       stream = stream ?? CudaStream(deviceId, context: context);
-      CudaFFIFunctions.memcpy(stream, dst.ptr.cast(), (src + index).cast(), 8);
+      CudaFFI.memcpy(stream, dst.ptr.cast(), (src + index).cast(), 8);
       return dst.value;
     } finally {
       context.release();
@@ -170,7 +171,7 @@ abstract class CudaFFIFunctions {
       final src = CF64Ptr.allocate(context: context);
       src.value = value;
       stream = stream ?? CudaStream(deviceId, context: context);
-      CudaFFIFunctions.memcpy(stream, (dst + index).cast(), src.ptr.cast(), 8);
+      CudaFFI.memcpy(stream, (dst + index).cast(), src.ptr.cast(), 8);
       return dst.value;
     } finally {
       context.release();

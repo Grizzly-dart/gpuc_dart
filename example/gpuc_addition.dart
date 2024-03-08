@@ -1,13 +1,13 @@
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 void printMemInfo(int device) {
-  final memInfo = CudaFFIFunctions.getMemInfo(device);
+  final memInfo = CudaFFI.getMemInfo(device);
   print('MemInfo:${memInfo.toHumanString()}');
 }
 
 void test() {
   final watch = Stopwatch()..start();
-  print(CudaFFIFunctions.getDeviceProps(0));
+  print(CudaFFI.getDeviceProps(0));
   printMemInfo(0);
   final t1 = Tensor.random(Size.twoD(512, 512));
   final t2 = Tensor.random(Size.twoD(512, 512));

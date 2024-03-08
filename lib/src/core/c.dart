@@ -41,7 +41,7 @@ class CList extends NList {
   int get length => _length;
 
   @override
-  int get lengthBytes => length * 8;
+  int get lengthBytes => length * byteSize;
 
   @override
   double operator [](int index) {
@@ -60,7 +60,7 @@ class CList extends NList {
     if (_mem == ffi.nullptr) {
       throw Exception('Memory already freed');
     }
-    final newPtr = CListFFIFunctions.realloc(_mem.cast(), length * 8);
+    final newPtr = CListFFIFunctions.realloc(_mem.cast(), length * byteSize);
     if (newPtr == ffi.nullptr) {
       throw Exception('Failed to allocate memory');
     }
@@ -113,6 +113,20 @@ class CList extends NList {
     CListFFIFunctions.memcpy(clist._mem.cast(), _mem.cast(), lengthBytes);
     return clist;
   }
+
+  CList sublist(int start, int length, {Context? context}) {
+    if(start > _length) {
+      throw ArgumentError('Start index out of range');
+    } else if(start + length > _length) {
+      throw ArgumentError('Length out of range');
+    }
+    final ret = CList.allocate(length, context: context);
+    CListFFIFunctions.memcpy(
+        ret._mem.cast(), (_mem + start * byteSize).cast(), length * byteSize);
+    return ret;
+  }
+
+  static const int byteSize = 8;
 }
 
 abstract class CListFFIFunctions {

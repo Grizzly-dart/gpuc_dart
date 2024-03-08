@@ -29,7 +29,11 @@ abstract class Size {
 class _SizeImpl implements Size {
   final List<int> _sizes;
 
-  _SizeImpl(this._sizes);
+  _SizeImpl(this._sizes) {
+    if(_sizes.isEmpty) {
+      _sizes.add(1);
+    }
+  }
 
   @override
   int get dims => _sizes.length;
@@ -77,6 +81,9 @@ class _SizeImpl implements Size {
 
   @override
   List<int> toList() => List.from(_sizes);
+
+  @override
+  String toString() => 'Size($_sizes)';
 }
 
 class Size2D implements Size {
@@ -201,6 +208,16 @@ class Tensor implements Resource {
     _size = newSize;
   }
 
+  Tensor operator[](Size index) {
+    if(index.dims > _size.dims) {
+      throw ArgumentError('Index dimension must be less than tensor dimension');
+    }
+
+    final outSize = Size(_size.toList().sublist(index.dims));
+
+    return Tensor(data.sublist(index.nel * outSize.nel, outSize.nel), outSize);
+  }
+
   // TODO auto release inp1 and inp2
   Tensor operator +(Tensor other) {
     if (other.nel != nel) {
@@ -214,7 +231,7 @@ class Tensor implements Resource {
       final inp1 = CudaList.copy(data, stream: stream, context: ctx);
       final inp2 = CudaList.copy(other.data, stream: stream, context: ctx);
       final out = CudaList.allocate(stream, nel, context: ctx);
-      CudaFFIFunctions.addition(
+      CudaFFI.addition(
           stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
       final outTensor = Tensor.sized(size, name: '$name + ${other.name}');
       ctx.releaseOnErr(outTensor);
@@ -239,7 +256,7 @@ class Tensor implements Resource {
       final stream = CudaStream(deviceId, context: ctx);
       final inp = CudaList.copy(data, stream: stream, context: ctx);
       final out = CudaList.allocate(stream, outSize.nel, context: ctx);
-      CudaFFIFunctions.sum2D(stream, out.ptr.cast(), inp.ptr.cast(),
+      CudaFFI.sum2D(stream, out.ptr.cast(), inp.ptr.cast(),
           Size2D(rows: outSize.nel, cols: size.cols));
       final outTensor = Tensor.sized(outSize, name: 'sum2D($name)');
       ctx.releaseOnErr(outTensor);
@@ -265,6 +282,9 @@ class Tensor implements Resource {
   void release() {
     data.release();
   }
+
+  @override
+  String toString() => '$name: $size: ${toList()}';
 
   static final _finalizer = Finalizer<NList>((l) {
     l.release();

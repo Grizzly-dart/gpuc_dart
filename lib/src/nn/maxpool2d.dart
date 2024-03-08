@@ -27,6 +27,7 @@ class MaxPool2D implements Layer2D {
   @override
   Tensor forward(Tensor inp) {
     // TODO validate
+    /*
     final ctx = Context();
     // TODO if multiple devices are available try to parallelize across devices
     try {
@@ -51,6 +52,8 @@ class MaxPool2D implements Layer2D {
     } finally {
       ctx.release();
     }
+     */
+    throw UnimplementedError();
   }
 
   Size2D outSize2D(Size inSize) {
