@@ -1,10 +1,11 @@
+import 'dart:collection';
 import 'dart:ffi' as ffi;
 import 'dart:math';
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 export 'dim.dart';
 
-class Tensor implements Resource {
+class Tensor with ListMixin<Tensor> implements Resource {
   String name;
 
   final CList data;
@@ -19,13 +20,16 @@ class Tensor implements Resource {
     }
   }
 
-  factory Tensor.sized(Dim size, {String name = '', Context? context}) {
+  factory Tensor.sized(/* Dim | Iterable<int> | int */ size,
+      {String name = '', Context? context}) {
+    if (size is! Dim) size = Dim.from(size);
     return Tensor(CList.allocate(size.nel, context: context), size,
         name: name, context: context);
   }
 
-  factory Tensor.random(Dim size,
+  factory Tensor.random(/* Dim | Iterable<int> | int */ size,
       {Random? random, String name = '', Context? context}) {
+    if (size is! Dim) size = Dim.from(size);
     random ??= Random();
     final data = CList.allocate(size.nel, context: context);
     for (var i = 0; i < size.nel; i++) {
@@ -71,9 +75,16 @@ class Tensor implements Resource {
     return matrix;
   }
 
+  set set(Tensor other) {
+    if (other.nel != nel) {
+      throw ArgumentError('Size mismatch');
+    }
+    data.copyFrom(other.data);
+  }
+
   // TODO start and length
-  Tensor slice(/* Dim | int | Iterable<int> */ i, {Context? context}) {
-    final index = Dim.from(i);
+  Tensor slice(/* Dim | int | Iterable<int> */ index, {Context? context}) {
+    if (index is! Dim) index = Dim.from(index);
     if (index.dims > _size.dims) {
       throw ArgumentError('Index dimension must be less than tensor dimension');
     }
@@ -84,8 +95,9 @@ class Tensor implements Resource {
         context: context);
   }
 
-  Tensor operator [](/* Dim | int | Iterable<int> */ i) {
-    final index = Dim.from(i);
+  @override
+  Tensor operator [](dynamic /* Dim | int | Iterable<int> */ index) {
+    if (index is! Dim) index = Dim.from(index);
     if (index.dims > _size.dims) {
       throw ArgumentError('Index dimension must be less than tensor dimension');
     }
@@ -95,8 +107,27 @@ class Tensor implements Resource {
     return Tensor(data.view(index.nel * outSize.nel, outSize.nel), outSize);
   }
 
+  @override
+  void operator []=(
+      dynamic /* Dim | int | Iterable<int> */ index, Tensor value) {
+    if (index is! Dim) index = Dim.from(index);
+    if (index.dims > _size.dims) {
+      throw ArgumentError('Index dimension must be less than tensor dimension');
+    }
+
+    final outSize = Dim(_size.toList().sublist(index.dims));
+    if (value.size != outSize) {
+      throw ArgumentError('Size mismatch');
+    }
+
+    final view =
+        Tensor(data.view(index.nel * outSize.nel, outSize.nel), outSize);
+    view.set = value;
+  }
+
   // TODO auto release inp1 and inp2
-  Tensor operator +(Tensor other) {
+  @override
+  Tensor operator +(covariant Tensor other) {
     if (other.nel != nel) {
       throw ArgumentError('Size mismatch');
     }
@@ -147,14 +178,6 @@ class Tensor implements Resource {
     }
   }
 
-  List<double> toList() {
-    final list = <double>[];
-    for (var i = 0; i < nel; i++) {
-      list.add(data[i]);
-    }
-    return list;
-  }
-
   @override
   void release() {
     data.release();
@@ -179,4 +202,18 @@ class Tensor implements Resource {
   static final _finalizer = Finalizer<NList>((l) {
     l.release();
   });
+
+  @override
+  int get length => _size[0];
+
+  @override
+  set length(int newLength) {
+    if (newLength == 0) {
+      throw ArgumentError('Length must be at least 1');
+    }
+    final newSize = _size.toList();
+    newSize[0] = newLength;
+    _size = Dim(newSize);
+    data.length = nel;
+  }
 }
