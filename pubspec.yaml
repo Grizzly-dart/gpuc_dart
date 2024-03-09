@@ -11,6 +11,8 @@ dependencies:
   ffi: ^2.1.2
   mt19937: ^0.1.0
   path:
+  grizzly:
+    git: git@github.com:Grizzly-dart/grizzly.git
 
 dev_dependencies:
   lints: ^3.0.0

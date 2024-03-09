@@ -1,26 +1,26 @@
 import 'package:gpuc_dart/src/nn/nn.dart';
 
 class MaxPool2D implements Layer2D {
-  final Size2D kernelSize;
+  final Dim2 kernelSize;
 
-  final Size2D stride;
+  final Dim2 stride;
 
-  final Size2D padding;
+  final Dim2 padding;
 
   final double padValue;
 
   final PadMode padMode;
 
-  final Size2D dilation;
+  final Dim2 dilation;
 
   // TODO return indices
 
   MaxPool2D(this.kernelSize,
-      {this.stride = const Size2D(rows: 1, cols: 1),
-      this.padding = const Size2D(rows: 0, cols: 0),
+      {this.stride = const Dim2(rows: 1, cols: 1),
+      this.padding = const Dim2(rows: 0, cols: 0),
       this.padValue = 0,
       this.padMode = PadMode.constant,
-      this.dilation = const Size2D(rows: 1, cols: 1)}) {
+      this.dilation = const Dim2(rows: 1, cols: 1)}) {
     // TODO validate
   }
 
@@ -56,15 +56,15 @@ class MaxPool2D implements Layer2D {
     throw UnimplementedError();
   }
 
-  Size2D outSize2D(Size inSize) {
+  Dim2 outSize2D(Dim inSize) {
     // TODO is this the right calculation?
     return inSize.twoD -
         (dilation * (kernelSize - 1)) +
         (padding * 2) ~/ stride +
-        Size2D(rows: 1, cols: 1);
+        Dim2(rows: 1, cols: 1);
   }
 
-  Size outSize(Size inSize) {
-    return Size([inSize.batch, inSize.channels] + outSize2D(inSize).toList());
+  Dim outSize(Dim inSize) {
+    return Dim([inSize.batch, inSize.channels] + outSize2D(inSize).toList());
   }
 }

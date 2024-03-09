@@ -1,10 +1,7 @@
 import 'dart:io';
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
-import 'package:gpuc_dart/src/core/c.dart';
-import 'package:gpuc_dart/src/core/dart_list.dart';
-import 'package:gpuc_dart/src/core/releaseable.dart';
-import 'package:gpuc_dart/src/native/cuda.dart';
+import 'package:gpuc_dart/gpuc_dart.dart';
 import 'package:path/path.dart' as path;
 
 void initializeTensorc() {
@@ -20,7 +17,7 @@ void initializeTensorc() {
   }
 
   final dylib = ffi.DynamicLibrary.open(libraryPath);
-  CListFFIFunctions.initialize(dylib);
+  CListFFI.initialize(dylib);
   CudaFFI.initialize(dylib);
 }
 
@@ -100,6 +97,8 @@ abstract class NList implements Resource {
     }
   }
    */
+
+  static const int byteSize = 8;
 }
 
 class CudaList extends NList {

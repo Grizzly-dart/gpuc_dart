@@ -9,8 +9,8 @@ void test() {
   final watch = Stopwatch()..start();
   print(CudaFFI.getDeviceProps(0));
   printMemInfo(0);
-  final t1 = Tensor.random(Size.twoD(512, 512));
-  final t2 = Tensor.random(Size.twoD(512, 512));
+  final t1 = Tensor.random(Dim.twoD(512, 512));
+  final t2 = Tensor.random(Dim.twoD(512, 512));
   final t3 = t1 + t2;
   printMemInfo(0);
   print(watch.elapsed);

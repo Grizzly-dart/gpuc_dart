@@ -123,7 +123,7 @@ abstract class CudaFFI {
     final ptr =
         ffi.calloc.allocate<_CudaDeviceProps>(ffi.sizeOf<_CudaDeviceProps>());
     final ret = CudaDeviceProps(ptr);
-    CListFFIFunctions.finalizer.attach(ret, ptr.cast());
+    CListFFI.finalizer.attach(ret, ptr.cast());
     final err = _getDeviceProps(ptr, device);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
@@ -134,7 +134,7 @@ abstract class CudaFFI {
   static CudaMemInfo getMemInfo(int device) {
     final ptr = ffi.calloc.allocate<_CudaMemInfo>(ffi.sizeOf<_CudaMemInfo>());
     final ret = CudaMemInfo(ptr);
-    CListFFIFunctions.finalizer.attach(ret, ptr.cast());
+    CListFFI.finalizer.attach(ret, ptr.cast());
     final err = _getMemInfo(ptr, device);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
@@ -187,7 +187,7 @@ abstract class CudaFFI {
   }
 
   static void sum2D(CudaStream stream, ffi.Pointer<ffi.Void> out,
-      ffi.Pointer<ffi.Void> inp1, Size2D inpS) {
+      ffi.Pointer<ffi.Void> inp1, Dim2 inpS) {
     final ctx = Context();
     try {
       final sizePtr = CSize2D.fromSize2D(inpS, context: ctx);
@@ -201,12 +201,12 @@ abstract class CudaFFI {
   }
 
   static void maxpool2D(CudaStream stream, ffi.Pointer<ffi.Double> out,
-      ffi.Pointer<ffi.Double> inp, Size2D kernS, Size2D outS, Size2D inpS,
-      {Size2D stride = const Size2D(rows: 1, cols: 1),
-      Size2D padding = const Size2D(rows: 0, cols: 0),
+      ffi.Pointer<ffi.Double> inp, Dim2 kernS, Dim2 outS, Dim2 inpS,
+      {Dim2 stride = const Dim2(rows: 1, cols: 1),
+      Dim2 padding = const Dim2(rows: 0, cols: 0),
       double padValue = 0,
       PadMode padMode = PadMode.constant,
-      Size2D dilation = const Size2D(rows: 1, cols: 1)}) {
+      Dim2 dilation = const Dim2(rows: 1, cols: 1)}) {
     final ctx = Context();
     try {
       final kernSPtr = CSize2D.fromSize2D(kernS, context: ctx);

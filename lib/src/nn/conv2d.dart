@@ -9,8 +9,8 @@ class Conv2D implements Layer2D {
 
   factory Conv2D(int inChannels, int outChannels, int kernelSize) {
     final weight =
-        Tensor.sized(Size([outChannels, inChannels, kernelSize, kernelSize]));
-    final bias = Tensor.sized(Size([outChannels]));
+        Tensor.sized(Dim([outChannels, inChannels, kernelSize, kernelSize]));
+    final bias = Tensor.sized(Dim([outChannels]));
     return Conv2D._(weight, bias);
   }
 

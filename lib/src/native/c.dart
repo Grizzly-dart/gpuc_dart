@@ -9,7 +9,7 @@ final class CSize2D extends ffi.Struct {
   @ffi.Uint32()
   external int c;
 
-  static ffi.Pointer<CSize2D> fromSize2D(Size2D size, {Context? context}) {
+  static ffi.Pointer<CSize2D> fromSize2D(Dim2 size, {Context? context}) {
     final cSize = ffi.malloc.allocate<CSize2D>(ffi.sizeOf<CSize2D>());
     CPtr(cSize.cast(), context: context);
     cSize.ref.r = size.rows;

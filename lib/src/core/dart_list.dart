@@ -1,9 +1,7 @@
 import 'dart:ffi' as ffi;
 import 'dart:typed_data';
 
-import 'package:gpuc_dart/src/core/c.dart';
-import 'package:gpuc_dart/src/core/cuda.dart';
-import 'package:gpuc_dart/src/core/releaseable.dart';
+import 'package:gpuc_dart/gpuc_dart.dart';
 
 class DartList extends NList {
   final List<double> list;
