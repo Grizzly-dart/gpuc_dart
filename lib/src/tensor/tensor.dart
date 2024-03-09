@@ -20,6 +20,19 @@ class Tensor with ListMixin<Tensor> implements Resource {
     }
   }
 
+  factory Tensor.fromList(List<double> list,
+      {String name = '', Context? context, Dim? size}) {
+    if (size != null) {
+      if (list.length != size.nel) {
+        throw ArgumentError('Size mismatch');
+      }
+    } else {
+      size = Dim([list.length]);
+    }
+    final data = CList.fromList(list, context: context);
+    return Tensor(data, size, name: name, context: context);
+  }
+
   factory Tensor.sized(/* Dim | Iterable<int> | int */ size,
       {String name = '', Context? context}) {
     if (size is! Dim) size = Dim.from(size);
@@ -59,6 +72,10 @@ class Tensor with ListMixin<Tensor> implements Resource {
     _size = newSize;
   }
 
+  void squeeze(int dims) {
+    _size = _size.squeeze(dims);
+  }
+
   // TODO support squeezing
   List<List<double>> toMatrix() {
     if (_size.dims != 2) {
@@ -85,12 +102,11 @@ class Tensor with ListMixin<Tensor> implements Resource {
   // TODO start and length
   Tensor slice(/* Dim | int | Iterable<int> */ index, {Context? context}) {
     if (index is! Dim) index = Dim.from(index);
-    if (index.dims > _size.dims) {
-      throw ArgumentError('Index dimension must be less than tensor dimension');
+    if (_size.isIndex(index)) {
+      throw ArgumentError('Index out of range');
     }
 
-    final outSize = Dim(_size.toList().sublist(index.dims));
-
+    final outSize = Dim(_size.toList().skip(index.dims));
     return Tensor(data.slice(index.nel * outSize.nel, outSize.nel), outSize,
         context: context);
   }
@@ -98,12 +114,11 @@ class Tensor with ListMixin<Tensor> implements Resource {
   @override
   Tensor operator [](dynamic /* Dim | int | Iterable<int> */ index) {
     if (index is! Dim) index = Dim.from(index);
-    if (index.dims > _size.dims) {
-      throw ArgumentError('Index dimension must be less than tensor dimension');
+    if (!_size.isIndex(index)) {
+      throw ArgumentError('Index out of range');
     }
 
-    final outSize = Dim(_size.toList().sublist(index.dims));
-
+    final outSize = Dim(_size.asList.skip(index.dims));
     return Tensor(data.view(index.nel * outSize.nel, outSize.nel), outSize);
   }
 
@@ -111,12 +126,12 @@ class Tensor with ListMixin<Tensor> implements Resource {
   void operator []=(
       dynamic /* Dim | int | Iterable<int> */ index, Tensor value) {
     if (index is! Dim) index = Dim.from(index);
-    if (index.dims > _size.dims) {
-      throw ArgumentError('Index dimension must be less than tensor dimension');
+    if (!_size.isIndex(index)) {
+      throw ArgumentError('Index out of range');
     }
 
-    final outSize = Dim(_size.toList().sublist(index.dims));
-    if (value.size != outSize) {
+    final outSize = Dim(_size.asList.skip(index.dims));
+    if (value.size.nel != outSize.nel) {
       throw ArgumentError('Size mismatch');
     }
 
@@ -153,11 +168,11 @@ class Tensor with ListMixin<Tensor> implements Resource {
     }
   }
 
-  Tensor sumRows() {
+  Tensor sumRows({int colDims = 1}) {
     if (size.dims < 2) {
       throw StateError('Must be at least a 2D tensor');
     }
-    Dim outSize = Dim(size.toList().take(size.dims - 1));
+    Dim outSize = size.squeeze2D(colDims: colDims);
     final ctx = Context();
     try {
       int deviceId = 0; // TODO implement device selection
@@ -197,7 +212,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
   }
 
   @override
-  String toString() => '<$name, $size>${toList()}';
+  String toString() => '$data';
 
   static final _finalizer = Finalizer<NList>((l) {
     l.release();

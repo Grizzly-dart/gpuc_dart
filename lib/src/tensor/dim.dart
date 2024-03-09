@@ -1,3 +1,7 @@
+import 'dart:collection';
+
+import 'package:gpuc_dart/gpuc_dart.dart';
+
 abstract class Dim {
   factory Dim.from(value) {
     if (value is Dim) {
@@ -34,10 +38,81 @@ abstract class Dim {
 
   int get batch;
 
+  bool isIndex(Dim other);
+
+  Dim squeeze2D({int colDims = 1});
+
+  Dim squeezeFront(int dims);
+
+  Dim squeeze(int dims);
+
+  Dim rearrange(Iterable<int> order);
+
+  UnmodifiableListView<int> get asList;
+
   List<int> toList();
 }
 
-class _DimImpl implements Dim {
+mixin DimMixin implements Dim {
+  @override
+  bool isIndex(Dim other) {
+    if (other.dims > dims) {
+      return false;
+    }
+    for (var i = 0; i < other.dims; i++) {
+      if (other[i] >= this[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  @override
+  Dim squeeze2D({int colDims = 1}) {
+    if (colDims > dims) {
+      throw ArgumentError('Dimension out of range');
+    } else if (colDims == dims) {
+      return Dim([nel, 1]);
+    }
+    int n = dims - colDims;
+    return Dim2(rows: asList.take(n).prod, cols: asList.skip(n).prod);
+  }
+
+  @override
+  Dim squeezeFront(int dims) {
+    if (dims > this.dims) {
+      throw ArgumentError('Dimension out of range');
+    } else if (rows == this.dims) {
+      return Dim([nel]);
+    }
+    return Dim([asList.take(dims).prod, ...asList.skip(dims)]);
+  }
+
+  @override
+  Dim squeeze(int dims) {
+    if (dims > this.dims) {
+      throw ArgumentError('Dimension out of range');
+    } else if (rows == this.dims) {
+      return Dim([nel]);
+    }
+    int n = this.dims - dims;
+    return Dim(asList.take(n).followedBy([asList.skip(n).prod]));
+  }
+
+  @override
+  Dim rearrange(Iterable<int> order) {
+    if (order.length != dims) {
+      throw ArgumentError('Invalid order length');
+    }
+    final sizes = List<int>.filled(dims, 0);
+    for (var i = 0; i < dims; i++) {
+      sizes[i] = this[order.elementAt(i)];
+    }
+    return Dim(sizes);
+  }
+}
+
+class _DimImpl with DimMixin implements Dim {
   final List<int> _sizes;
 
   _DimImpl(this._sizes) {
@@ -91,13 +166,16 @@ class _DimImpl implements Dim {
   Dim2 get twoD => Dim2(rows: rows, cols: cols);
 
   @override
+  late final asList = UnmodifiableListView(_sizes);
+
+  @override
   List<int> toList() => List.from(_sizes);
 
   @override
-  String toString() => 'Size(${_sizes.join(', ')})';
+  String toString() => 'Dim(${_sizes.join(', ')})';
 }
 
-class Dim2 implements Dim {
+class Dim2 with DimMixin implements Dim {
   @override
   final int rows;
   @override
@@ -142,9 +220,6 @@ class Dim2 implements Dim {
   }
 
   @override
-  List<int> toList() => [rows, cols];
-
-  @override
   int operator [](int index) {
     if (index == 0) {
       return rows;
@@ -168,4 +243,10 @@ class Dim2 implements Dim {
 
   @override
   Dim2 get twoD => this;
+
+  @override
+  UnmodifiableListView<int> get asList => UnmodifiableListView([rows, cols]);
+
+  @override
+  List<int> toList() => [rows, cols];
 }
