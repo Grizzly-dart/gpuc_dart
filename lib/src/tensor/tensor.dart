@@ -8,7 +8,7 @@ export 'dim.dart';
 class Tensor with ListMixin<Tensor> implements Resource {
   String name;
 
-  final CList data;
+  final NList data;
 
   Dim _size;
 
@@ -36,7 +36,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
   factory Tensor.sized(/* Dim | Iterable<int> | int */ size,
       {String name = '', Context? context}) {
     if (size is! Dim) size = Dim.from(size);
-    return Tensor(CList.allocate(size.nel, context: context), size,
+    return Tensor(CList.sized(size.nel, context: context), size,
         name: name, context: context);
   }
 
@@ -44,7 +44,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
       {Random? random, String name = '', Context? context}) {
     if (size is! Dim) size = Dim.from(size);
     random ??= Random();
-    final data = CList.allocate(size.nel, context: context);
+    final data = CList.sized(size.nel, context: context);
     for (var i = 0; i < size.nel; i++) {
       data[i] = random.nextDouble();
     }
@@ -175,6 +175,8 @@ class Tensor with ListMixin<Tensor> implements Resource {
     Dim outSize = size.squeeze2D(colDims: colDims);
     final ctx = Context();
     try {
+      // TODO implement Dart summing for web
+      // TODO implement C summing for non-web
       int deviceId = 0; // TODO implement device selection
       final stream = CudaStream(deviceId, context: ctx);
       final inp = CudaList.copy(data, stream: stream, context: ctx);
@@ -230,5 +232,47 @@ class Tensor with ListMixin<Tensor> implements Resource {
     newSize[0] = newLength;
     _size = Dim(newSize);
     data.length = nel;
+  }
+
+  Tensor rearrange(List<int> order, {DeviceType? forceDeviceType}) {
+    if (order.length != _size.dims) {
+      throw ArgumentError('Invalid order length');
+    }
+    final outSize = _size.rearrange(order);
+    // TODO detect device
+    final deviceType = DeviceType.dart;
+    if (deviceType == DeviceType.dart) {
+      final outData = DartList.sized(outSize.nel);
+      for (int i = 0; i < _size.nel; i++) {
+        final index = _size.unravel(i);
+        final outIndex = index.rearrange(order).ravel;
+        outData[outIndex] = data[i];
+      }
+      final outTensor = Tensor(outData, outSize, name: 'rearrange($name)');
+      return outTensor;
+    } else if (deviceType == DeviceType.c) {
+      // TODO
+    } else if (deviceType == DeviceType.cuda) {
+      /* TODO
+      final outData = CList.sized(outSize.nel);
+      final ctx = Context();
+      try {
+        int deviceId = 0; // TODO implement device selection
+        final stream = CudaStream(deviceId, context: ctx);
+        final inp = CudaList.copy(data, stream: stream, context: ctx);
+        CudaFFI.rearrange(stream, outData.ptr.cast(), inp.ptr.cast(),
+            _size.toList(), outSize.toList());
+        final outTensor = Tensor(outData, outSize, name: 'rearrange($name)');
+        ctx.releaseOnErr(outTensor);
+        return outTensor;
+      } catch (e) {
+        ctx.release(isError: true);
+        rethrow;
+      } finally {
+        ctx.release();
+      }
+       */
+    }
+    throw UnimplementedError('Device not implemented');
   }
 }

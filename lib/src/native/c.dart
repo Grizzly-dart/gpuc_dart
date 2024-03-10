@@ -64,3 +64,33 @@ class CF64Ptr implements Resource {
     _mem = ffi.nullptr;
   }
 }
+
+abstract class CListFFI {
+  static late final ffi
+      .Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>
+  freeNative;
+  static late final void Function(ffi.Pointer<ffi.Void>) free;
+  static late final ffi.Pointer<ffi.Void> Function(
+      ffi.Pointer<ffi.Void> oldPtr, int size) realloc;
+  static late final void Function(
+      ffi.Pointer<ffi.Void> dst, ffi.Pointer<ffi.Void> src, int size) memcpy;
+
+  static void initialize(ffi.DynamicLibrary dylib) {
+    freeNative = dylib
+        .lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'libtcFree');
+    free = dylib.lookupFunction<ffi.Void Function(ffi.Pointer<ffi.Void>),
+        void Function(ffi.Pointer<ffi.Void>)>('libtcFree');
+    realloc = dylib.lookupFunction<
+        ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void>, ffi.Uint64),
+        ffi.Pointer<ffi.Void> Function(
+            ffi.Pointer<ffi.Void>, int)>('libtcRealloc');
+    memcpy = dylib.lookupFunction<
+        ffi.Void Function(
+            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, ffi.Uint64),
+        void Function(
+            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, int)>('libtcMemcpy');
+  }
+
+  static final finalizer = ffi.NativeFinalizer(CListFFI.freeNative);
+}

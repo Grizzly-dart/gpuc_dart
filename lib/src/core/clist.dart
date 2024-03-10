@@ -3,22 +3,21 @@ import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-export 'clist_mixin.dart';
-export 'clist_view.dart';
-
-abstract class CList implements NList, List<double> {
+abstract class CList implements NList {
   factory CList.copy(NList other, {Context? context}) =>
       _CListImpl.copy(other, context: context);
 
   factory CList.fromList(List<double> list, {Context? context}) =>
       _CListImpl.fromList(list, context: context);
 
-  factory CList.allocate(int length, {Context? context}) =>
-      _CListImpl.allocate(length, context: context);
+  factory CList.sized(int length, {Context? context}) =>
+      _CListImpl.sized(length, context: context);
 
-  CListView view(int start, int length);
-
+  @override
   CList slice(int start, int length, {Context? context});
+
+  @override
+  CListView view(int start, int length);
 }
 
 class _CListImpl extends NList
@@ -34,18 +33,18 @@ class _CListImpl extends NList
   }
 
   static _CListImpl copy(NList other, {Context? context}) {
-    final clist = _CListImpl.allocate(other.length, context: context);
+    final clist = _CListImpl.sized(other.length, context: context);
     clist.copyFrom(other);
     return clist;
   }
 
   static _CListImpl fromList(List<double> list, {Context? context}) {
-    final clist = _CListImpl.allocate(list.length, context: context);
+    final clist = _CListImpl.sized(list.length, context: context);
     clist._mem.asTypedList(list.length).setAll(0, list);
     return clist;
   }
 
-  static _CListImpl allocate(int length, {Context? context}) {
+  static _CListImpl sized(int length, {Context? context}) {
     final mem = ffi.calloc<ffi.Double>(length * 8);
     return _CListImpl._(mem, length, context: context);
   }
@@ -98,32 +97,109 @@ class _CListImpl extends NList
   }
 }
 
-abstract class CListFFI {
-  static late final ffi
-      .Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>
-      freeNative;
-  static late final void Function(ffi.Pointer<ffi.Void>) free;
-  static late final ffi.Pointer<ffi.Void> Function(
-      ffi.Pointer<ffi.Void> oldPtr, int size) realloc;
-  static late final void Function(
-      ffi.Pointer<ffi.Void> dst, ffi.Pointer<ffi.Void> src, int size) memcpy;
+mixin CListMixin implements CList {
+  @override
+  ffi.Pointer<ffi.Double> get ptr;
 
-  static void initialize(ffi.DynamicLibrary dylib) {
-    freeNative = dylib
-        .lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
-            'libtcFree');
-    free = dylib.lookupFunction<ffi.Void Function(ffi.Pointer<ffi.Void>),
-        void Function(ffi.Pointer<ffi.Void>)>('libtcFree');
-    realloc = dylib.lookupFunction<
-        ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void>, ffi.Uint64),
-        ffi.Pointer<ffi.Void> Function(
-            ffi.Pointer<ffi.Void>, int)>('libtcRealloc');
-    memcpy = dylib.lookupFunction<
-        ffi.Void Function(
-            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, ffi.Uint64),
-        void Function(
-            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, int)>('libtcMemcpy');
+  @override
+  void copyFrom(NList src) {
+    if (lengthBytes != src.lengthBytes) {
+      throw ArgumentError('Length mismatch');
+    }
+    if (src is CList) {
+      CListFFI.memcpy(ptr.cast(), src.ptr.cast(), lengthBytes);
+    } else if (src is DartList) {
+      for (var i = 0; i < length; i++) {
+        ptr.asTypedList(length).setAll(0, src);
+      }
+    }
+    src.copyTo(this);
   }
 
-  static final finalizer = ffi.NativeFinalizer(CListFFI.freeNative);
+  @override
+  void copyTo(NList dst) {
+    if (lengthBytes != dst.lengthBytes) {
+      throw ArgumentError('Length mismatch');
+    }
+    if (dst is CList) {
+      CListFFI.memcpy(dst.ptr.cast(), ptr.cast(), lengthBytes);
+      return;
+    } else if (dst is DartList) {
+      dst.setAll(0, ptr.asTypedList(length));
+      return;
+    }
+    dst.copyFrom(this);
+  }
+
+  @override
+  CList read({Context? context}) {
+    final ret = CList.sized(length, context: context);
+    CListFFI.memcpy(ret.ptr.cast(), ptr.cast(), lengthBytes);
+    return ret;
+  }
+
+  @override
+  CList slice(int start, int length, {Context? context}) {
+    if (start > this.length) {
+      throw ArgumentError('Start index out of range');
+    } else if (start + length > this.length) {
+      throw ArgumentError('Length out of range');
+    }
+    final ret = CList.sized(length, context: context);
+    CListFFI.memcpy(ret.ptr.cast(), (ptr + start * NList.byteSize).cast(),
+        length * NList.byteSize);
+    return ret;
+  }
+
+  @override
+  CListView view(int start, int length) {
+    if (start > this.length) {
+      throw ArgumentError('Start index out of range');
+    } else if (start + length > this.length) {
+      throw ArgumentError('Length out of range');
+    }
+    if(this is CListView) {
+      start += (this as CListView)._offset;
+    }
+    return CListView(this, start, length);
+  }
+}
+
+class CListView extends NList with CListMixin, ListMixin<double> implements CList {
+  final CList _list;
+
+  final int _offset;
+
+  final int _length;
+
+  CListView(this._list, this._offset, this._length);
+
+  @override
+  DeviceType get deviceType => _list.deviceType;
+
+  @override
+  int get deviceId => _list.deviceId;
+
+  @override
+  int get length => _length;
+
+  @override
+  int get lengthBytes => _length * NList.byteSize;
+
+  @override
+  double operator [](int index) => _list[_offset + index];
+
+  @override
+  void operator []=(int index, double value) => _list[_offset + index] = value;
+
+  @override
+  ffi.Pointer<ffi.Double> get ptr => _list.ptr + _offset;
+
+  @override
+  void release() {}
+
+  @override
+  set length(int newLength) {
+    throw UnsupportedError('Cannot change length of view');
+  }
 }

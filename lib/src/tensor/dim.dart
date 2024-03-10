@@ -40,13 +40,21 @@ abstract class Dim {
 
   bool isIndex(Dim other);
 
+  Dim get strides;
+
+  Dim unravel(int index);
+
+  int get ravel;
+
   Dim squeeze2D({int colDims = 1});
 
   Dim squeezeFront(int dims);
 
   Dim squeeze(int dims);
 
-  Dim rearrange(Iterable<int> order);
+  Dim rearrange(List<int> order);
+
+  // TODO swap
 
   UnmodifiableListView<int> get asList;
 
@@ -54,6 +62,32 @@ abstract class Dim {
 }
 
 mixin DimMixin implements Dim {
+  @override
+  Dim unravel(int index) {
+    if (index < 0 || index >= nel) {
+      throw ArgumentError('Index out of range');
+    }
+    final sizes = List<int>.filled(dims, 0);
+    for (var i = dims - 1; i >= 0; i--) {
+      sizes[i] = index % this[i];
+      index ~/= this[i];
+    }
+    return Dim(sizes);
+  }
+
+  @override
+  int get ravel {
+    if (dims == 1) {
+      return this[0];
+    }
+    int ret = 0;
+    final strides = this.strides;
+    for (int i = dims - 1; i >= 0; i--) {
+      ret += this[i] * strides[i];
+    }
+    return ret;
+  }
+
   @override
   bool isIndex(Dim other) {
     if (other.dims > dims) {
@@ -100,13 +134,16 @@ mixin DimMixin implements Dim {
   }
 
   @override
-  Dim rearrange(Iterable<int> order) {
-    if (order.length != dims) {
+  Dim rearrange(List<int> order) {
+    if (order.toSet().length != dims) {
       throw ArgumentError('Invalid order length');
+    }
+    if (order.any((e) => e < 0 || e >= dims)) {
+      throw ArgumentError('Invalid order index');
     }
     final sizes = List<int>.filled(dims, 0);
     for (var i = 0; i < dims; i++) {
-      sizes[i] = this[order.elementAt(i)];
+      sizes[i] = this[order[i]];
     }
     return Dim(sizes);
   }
@@ -161,6 +198,15 @@ class _DimImpl with DimMixin implements Dim {
     }
     return _sizes[dims - 4];
   }
+
+  @override
+  late final Dim strides = () {
+    final strides = List<int>.filled(dims, 1);
+    for (int i = dims - 2; i >= 0; i--) {
+      strides[i] = strides[i + 1] * this[i + 1];
+    }
+    return Dim(strides);
+  }();
 
   @override
   Dim2 get twoD => Dim2(rows: rows, cols: cols);
@@ -243,6 +289,9 @@ class Dim2 with DimMixin implements Dim {
 
   @override
   Dim2 get twoD => this;
+
+  @override
+  Dim get strides => Dim([cols, 1]);
 
   @override
   UnmodifiableListView<int> get asList => UnmodifiableListView([rows, cols]);

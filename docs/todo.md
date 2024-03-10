@@ -1,3 +1,4 @@
++ Tensor.rearrange (pytorch.permute)
 + Test with complex math equation to optimize intermediate results
 
 # Layers
