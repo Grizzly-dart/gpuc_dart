@@ -172,7 +172,8 @@ class Tensor with ListMixin<Tensor> implements Resource {
     if (size.dims < 2) {
       throw StateError('Must be at least a 2D tensor');
     }
-    Dim outSize = size.squeeze2D(colDims: colDims);
+    Dim inpSize = _size.squeeze2D(colDims: colDims);
+    Dim outSize = Dim2(rows: inpSize.rows, cols: 1);
     final ctx = Context();
     try {
       // TODO implement Dart summing for web
@@ -181,8 +182,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
       final stream = CudaStream(deviceId, context: ctx);
       final inp = CudaList.copy(data, stream: stream, context: ctx);
       final out = CudaList.allocate(stream, outSize.nel, context: ctx);
-      CudaFFI.sum2D(stream, out.ptr.cast(), inp.ptr.cast(),
-          Dim2(rows: outSize.nel, cols: size.cols));
+      CudaFFI.sum2D(stream, out.ptr.cast(), inp.ptr.cast(), inpSize.twoD);
       final outTensor = Tensor.sized(outSize, name: 'sum2D($name)');
       ctx.releaseOnErr(outTensor);
       out.copyTo(outTensor.data, stream: stream);
