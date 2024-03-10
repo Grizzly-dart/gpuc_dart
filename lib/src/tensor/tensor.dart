@@ -2,20 +2,21 @@ import 'dart:collection';
 import 'dart:ffi' as ffi;
 import 'dart:math';
 import 'package:gpuc_dart/gpuc_dart.dart';
+import 'package:gpuc_dart/src/tensor/matrix.dart';
 
 export 'dim.dart';
 
 class Tensor with ListMixin<Tensor> implements Resource {
   String name;
 
-  final NList data;
+  final NList as1d;
 
   Dim _size;
 
-  Tensor(this.data, this._size, {this.name = '', Context? context}) {
-    context?.add(data);
-    _finalizer.attach(this, data);
-    if (data.length != _size.nel) {
+  Tensor(this.as1d, this._size, {this.name = '', Context? context}) {
+    context?.add(as1d);
+    _finalizer.attach(this, as1d);
+    if (as1d.length != _size.nel) {
       throw ArgumentError('Size mismatch');
     }
   }
@@ -51,19 +52,19 @@ class Tensor with ListMixin<Tensor> implements Resource {
     return Tensor(data, size, name: name, context: context);
   }
 
-  ffi.Pointer<ffi.Double> get ptr => data.ptr;
+  ffi.Pointer<ffi.Double> get ptr => as1d.ptr;
 
   Dim get size => _size;
 
   int get nel => _size.nel;
 
-  DeviceType get deviceType => data.deviceType;
+  DeviceType get deviceType => as1d.deviceType;
 
-  int get deviceId => data.deviceId;
+  int get deviceId => as1d.deviceId;
 
-  Device get device => data.device;
+  Device get device => as1d.device;
 
-  double scalar() => data[0];
+  double scalar() => as1d[0];
 
   void reshape(Dim newSize) {
     if (newSize.nel != _size.nel) {
@@ -85,7 +86,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
     for (var i = 0; i < _size.rows; i++) {
       final row = <double>[];
       for (var j = 0; j < _size.cols; j++) {
-        row.add(data[i * _size.cols + j]);
+        row.add(as1d[i * _size.cols + j]);
       }
       matrix.add(row);
     }
@@ -96,7 +97,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
     if (other.nel != nel) {
       throw ArgumentError('Size mismatch');
     }
-    data.copyFrom(other.data);
+    as1d.copyFrom(other.as1d);
   }
 
   // TODO start and length
@@ -107,7 +108,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
     }
 
     final outSize = Dim(_size.toList().skip(index.dims));
-    return Tensor(data.slice(index.nel * outSize.nel, outSize.nel), outSize,
+    return Tensor(as1d.slice(index.nel * outSize.nel, outSize.nel), outSize,
         context: context);
   }
 
@@ -119,7 +120,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
     }
 
     final outSize = Dim(_size.asList.skip(index.dims));
-    return Tensor(data.view(index.nel * outSize.nel, outSize.nel), outSize);
+    return Tensor(as1d.view(index.nel * outSize.nel, outSize.nel), outSize);
   }
 
   @override
@@ -136,9 +137,22 @@ class Tensor with ListMixin<Tensor> implements Resource {
     }
 
     final view =
-        Tensor(data.view(index.nel * outSize.nel, outSize.nel), outSize);
+        Tensor(as1d.view(index.nel * outSize.nel, outSize.nel), outSize);
     view.set = value;
   }
+
+  NList row(int index, {int colDims = 1}) {
+    if (_size.dims < 2) {
+      throw StateError('Must be at least a 2D tensor');
+    }
+    final size2d = _size.squeeze2D(colDims: colDims);
+    if (index < 0 || index >= size2d.rows) {
+      throw ArgumentError('Index out of range');
+    }
+    return as1d.view(index * size2d.cols, size2d.cols);
+  }
+
+  Matrix as2d({int colDims = 1}) => Matrix(this, colDims: colDims);
 
   // TODO auto release inp1 and inp2
   @override
@@ -151,14 +165,14 @@ class Tensor with ListMixin<Tensor> implements Resource {
       int deviceId = 0; // TODO implement device selection
       final stream = CudaStream(deviceId, context: ctx);
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1 = CudaList.copy(data, stream: stream, context: ctx);
-      final inp2 = CudaList.copy(other.data, stream: stream, context: ctx);
+      final inp1 = CudaList.copy(as1d, stream: stream, context: ctx);
+      final inp2 = CudaList.copy(other.as1d, stream: stream, context: ctx);
       final out = CudaList.allocate(stream, nel, context: ctx);
       CudaFFI.addition(
           stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
       final outTensor = Tensor.sized(size, name: '$name + ${other.name}');
       ctx.releaseOnErr(outTensor);
-      out.copyTo(outTensor.data, stream: stream);
+      out.copyTo(outTensor.as1d, stream: stream);
       return outTensor;
     } catch (e) {
       ctx.release(isError: true);
@@ -180,12 +194,12 @@ class Tensor with ListMixin<Tensor> implements Resource {
       // TODO implement C summing for non-web
       int deviceId = 0; // TODO implement device selection
       final stream = CudaStream(deviceId, context: ctx);
-      final inp = CudaList.copy(data, stream: stream, context: ctx);
+      final inp = CudaList.copy(as1d, stream: stream, context: ctx);
       final out = CudaList.allocate(stream, outSize.nel, context: ctx);
       CudaFFI.sum2D(stream, out.ptr.cast(), inp.ptr.cast(), inpSize.twoD);
       final outTensor = Tensor.sized(outSize, name: 'sum2D($name)');
       ctx.releaseOnErr(outTensor);
-      out.copyTo(outTensor.data, stream: stream);
+      out.copyTo(outTensor.as1d, stream: stream);
       return outTensor;
     } catch (e) {
       ctx.release(isError: true);
@@ -197,7 +211,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
 
   @override
   void release() {
-    data.release();
+    as1d.release();
   }
 
   bool isEqual(Tensor other, {double epsilon = 1e-8}) {
@@ -206,7 +220,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
       nel = other.size.nel;
     }
     for (var i = 0; i < nel; i++) {
-      if ((data[i] - other.data[i]).abs() > epsilon) {
+      if ((as1d[i] - other.as1d[i]).abs() > epsilon) {
         return false;
       }
     }
@@ -214,7 +228,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
   }
 
   @override
-  String toString() => '$data';
+  String toString() => '$as1d';
 
   static final _finalizer = Finalizer<NList>((l) {
     l.release();
@@ -231,7 +245,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
     final newSize = _size.toList();
     newSize[0] = newLength;
     _size = Dim(newSize);
-    data.length = nel;
+    as1d.length = nel;
   }
 
   Tensor rearrange(List<int> order, {DeviceType? forceDeviceType}) {
@@ -246,7 +260,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
       for (int i = 0; i < _size.nel; i++) {
         final index = _size.unravel(i);
         final outIndex = index.rearrange(order).ravel;
-        outData[outIndex] = data[i];
+        outData[outIndex] = as1d[i];
       }
       final outTensor = Tensor(outData, outSize, name: 'rearrange($name)');
       return outTensor;

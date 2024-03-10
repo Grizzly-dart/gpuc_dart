@@ -1,10 +1,10 @@
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 void test() {
-  final t1 = Tensor.random(Dim.twoD(512, 512));
+  final rnd = MTRandom();
+  final t1 = Tensor.random(Dim.twoD(1, 512), random: rnd);
   final t3 = t1.sumRows();
-  print(t1[0][0][0].data.sum);
-  print(t3[0].scalar());
+  t1.as2d().sumRows.assertEqual(t3.as1d);
 }
 
 void main() async {

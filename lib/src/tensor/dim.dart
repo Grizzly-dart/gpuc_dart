@@ -2,6 +2,7 @@ import 'dart:collection';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
 
+// TODO move this to grizzly?
 abstract class Dim {
   factory Dim.from(value) {
     if (value is Dim) {
@@ -46,7 +47,7 @@ abstract class Dim {
 
   int get ravel;
 
-  Dim squeeze2D({int colDims = 1});
+  Dim2 squeeze2D({int colDims = 1});
 
   Dim squeezeFront(int dims);
 
@@ -102,11 +103,11 @@ mixin DimMixin implements Dim {
   }
 
   @override
-  Dim squeeze2D({int colDims = 1}) {
+  Dim2 squeeze2D({int colDims = 1}) {
     if (colDims > dims) {
       throw ArgumentError('Dimension out of range');
     } else if (colDims == dims) {
-      return Dim([nel, 1]);
+      return Dim2(rows: nel, cols: 1);
     }
     int n = dims - colDims;
     return Dim2(rows: asList.take(n).prod, cols: asList.skip(n).prod);
