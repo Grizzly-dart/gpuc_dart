@@ -57,7 +57,7 @@ abstract class CudaFFI {
             int)>('libtcCudaMemcpy');
 
     _addition =
-        dylib.lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaAddCkern');
+        dylib.lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaAdd2Ckern');
     _sum2D = dylib.lookupFunction<Op2DNative, Op2D>('libtcCudaSum2DCkern');
 
     /*

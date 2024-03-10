@@ -64,7 +64,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
 
   Device get device => as1d.device;
 
-  double scalar() => as1d[0];
+  double scalar([int index = 0]) => as1d[index];
 
   void reshape(Dim newSize) {
     if (newSize.nel != _size.nel) {
