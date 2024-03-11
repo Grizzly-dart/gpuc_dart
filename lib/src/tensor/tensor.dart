@@ -187,7 +187,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
       throw StateError('Must be at least a 2D tensor');
     }
     Dim inpSize = _size.squeeze2D(colDims: colDims);
-    Dim outSize = Dim2(rows: inpSize.rows, cols: 1);
+    Dim outSize = Dim2(inpSize.rows, 1);
     final ctx = Context();
     try {
       // TODO implement Dart summing for web
