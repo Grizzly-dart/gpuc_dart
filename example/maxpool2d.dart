@@ -1,5 +1,5 @@
 import 'package:gpuc_dart/gpuc_dart.dart';
-import 'package:gpuc_dart/src/nn/maxpool2d.dart';
+import 'package:gpuc_dart/src/nn2d/maxpool2d.dart';
 
 void main() {
   initializeTensorc();

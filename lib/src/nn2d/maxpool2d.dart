@@ -1,4 +1,4 @@
-import 'package:gpuc_dart/src/nn/nn.dart';
+import 'package:gpuc_dart/src/nn2d/nn2d.dart';
 
 class MaxPool2D implements Layer2D {
   final Dim2 kernelSize;
