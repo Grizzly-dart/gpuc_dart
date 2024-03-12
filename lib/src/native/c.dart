@@ -3,10 +3,10 @@ import 'package:ffi/ffi.dart' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 final class CSize2D extends ffi.Struct {
-  @ffi.Uint64()
+  @ffi.Uint32()
   external int r;
 
-  @ffi.Uint64()
+  @ffi.Uint32()
   external int c;
 
   static ffi.Pointer<CSize2D> fromSize2D(Dim2 size, {Context? context}) {

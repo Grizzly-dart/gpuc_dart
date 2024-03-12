@@ -214,7 +214,7 @@ abstract class CudaFFI {
       final dilationSPtr = CSize2D.fromSize2D(dilation, context: ctx);
       final paddingSPtr = CSize2D.fromSize2D(padding, context: ctx);
 
-      _maxPool2D(
+      final err = _maxPool2D(
           stream.ptr,
           out.cast(),
           inp.cast(),
@@ -227,6 +227,9 @@ abstract class CudaFFI {
           pad,
           strideSPtr.ref,
           dilationSPtr.ref);
+      if (err != ffi.nullptr) {
+        throw CudaException(err.toDartString());
+      }
     } finally {
       ctx.release();
     }

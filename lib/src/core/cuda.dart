@@ -4,7 +4,7 @@ import 'package:ffi/ffi.dart' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 abstract class CudaList extends NList {
-  factory CudaList.allocate(CudaStream stream, int length,
+  factory CudaList.sized(CudaStream stream, int length,
           {Context? context}) =>
       _CudaListImpl.allocate(stream, length, context: context);
 
@@ -183,7 +183,7 @@ mixin CudaListMixin implements CudaList {
     final lContext = Context();
     try {
       final stream = CudaStream(deviceId, context: lContext);
-      final ret = CudaList.allocate(stream, length, context: context);
+      final ret = CudaList.sized(stream, length, context: context);
       lContext.releaseOnErr(ret);
       CudaFFI.memcpy(stream, ret.ptr.cast(),
           (ptr + start * NList.byteSize).cast(), length * NList.byteSize);

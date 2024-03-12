@@ -299,4 +299,7 @@ class Dim2 with DimMixin implements Dim {
 
   @override
   List<int> toList() => [rows, cols];
+
+  @override
+  String toString() => 'Dim2($rows, $cols)';
 }
