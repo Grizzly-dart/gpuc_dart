@@ -107,10 +107,10 @@ mixin DimMixin implements Dim {
     if (colDims > dims) {
       throw ArgumentError('Dimension out of range');
     } else if (colDims == dims) {
-      return Dim2(rows: nel, cols: 1);
+      return Dim2(nel, 1);
     }
     int n = dims - colDims;
-    return Dim2(rows: asList.take(n).prod, cols: asList.skip(n).prod);
+    return Dim2(asList.take(n).prod, asList.skip(n).prod);
   }
 
   @override
@@ -210,7 +210,7 @@ class _DimImpl with DimMixin implements Dim {
   }();
 
   @override
-  Dim2 get twoD => Dim2(rows: rows, cols: cols);
+  Dim2 get twoD => Dim2(rows, cols);
 
   @override
   late final asList = UnmodifiableListView(_sizes);
@@ -228,40 +228,40 @@ class Dim2 with DimMixin implements Dim {
   @override
   final int cols;
 
-  const Dim2({required this.rows, required this.cols});
+  const Dim2(this.rows, this.cols);
 
   Dim2 operator +(/* Size2D | int */ other) {
     if (other is int) {
-      return Dim2(rows: rows + other, cols: cols + other);
+      return Dim2(rows + other, cols + other);
     } else if (other is Dim2) {
-      return Dim2(rows: rows + other.rows, cols: cols + other.cols);
+      return Dim2(rows + other.rows, cols + other.cols);
     }
     throw ArgumentError('Invalid type');
   }
 
   Dim2 operator -(/* Size2D | int */ other) {
     if (other is int) {
-      return Dim2(rows: rows - other, cols: cols - other);
+      return Dim2(rows - other, cols - other);
     } else if (other is Dim2) {
-      return Dim2(rows: rows - other.rows, cols: cols - other.cols);
+      return Dim2(rows - other.rows, cols - other.cols);
     }
     throw ArgumentError('Invalid type');
   }
 
   Dim2 operator *(/* int | Size2D */ other) {
     if (other is int) {
-      return Dim2(rows: rows * other, cols: cols * other);
+      return Dim2(rows * other, cols * other);
     } else if (other is Dim2) {
-      return Dim2(rows: rows * other.rows, cols: cols * other.cols);
+      return Dim2(rows * other.rows, cols * other.cols);
     }
     throw ArgumentError('Invalid type');
   }
 
   Dim2 operator ~/(/* Size2D | int */ scalar) {
     if (scalar is int) {
-      return Dim2(rows: rows ~/ scalar, cols: cols ~/ scalar);
+      return Dim2(rows ~/ scalar, cols ~/ scalar);
     } else if (scalar is Dim2) {
-      return Dim2(rows: rows ~/ scalar.rows, cols: cols ~/ scalar.cols);
+      return Dim2(rows ~/ scalar.rows, cols ~/ scalar.cols);
     }
     throw ArgumentError('Invalid type');
   }
@@ -299,4 +299,7 @@ class Dim2 with DimMixin implements Dim {
 
   @override
   List<int> toList() => [rows, cols];
+
+  @override
+  String toString() => 'Dim2($rows, $cols)';
 }

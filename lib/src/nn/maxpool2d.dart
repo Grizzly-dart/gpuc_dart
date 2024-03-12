@@ -7,7 +7,7 @@ class MaxPool2D implements Layer2D {
 
   final Dim2 padding;
 
-  final double padValue;
+  final double pad;
 
   final PadMode padMode;
 
@@ -16,35 +16,40 @@ class MaxPool2D implements Layer2D {
   // TODO return indices
 
   MaxPool2D(this.kernelSize,
-      {this.stride = const Dim2(rows: 1, cols: 1),
-      this.padding = const Dim2(rows: 0, cols: 0),
-      this.padValue = 0,
+      {Dim2? stride,
+      this.padding = const Dim2(0, 0),
+      this.pad = 0,
       this.padMode = PadMode.constant,
-      this.dilation = const Dim2(rows: 1, cols: 1)}) {
+      this.dilation = const Dim2(1, 1)})
+      : stride = stride ?? kernelSize {
     // TODO validate
   }
 
   @override
   Tensor forward(Tensor inp) {
     // TODO validate
-    /*
+
+    // TODO device selection
     final ctx = Context();
     // TODO if multiple devices are available try to parallelize across devices
     try {
       final stream = CudaStream(0, context: ctx);
-      final inpL = CudaList.copy(inp.data, stream: stream, context: ctx);
-      final out =
-          CudaList.allocate(stream, outSize(inp.size).nel, context: ctx);
-      CudaFFIFunctions.maxpool2D(
-          stream, out.ptr, inp.ptr, kernelSize, outS, inpS,
+      final outS = outSize2D(inp.size);
+      final inpL = CudaList.copy(inp.as1d, stream: stream, context: ctx);
+      final out = CudaList.sized(stream, outS.nel, context: ctx);
+      CudaFFI.maxPool2D(stream, out.ptr, inpL.ptr,
+          kernSize: kernelSize,
+          outSize: outS,
+          inpSize: Dim2(inp.size.rows, inp.size.cols),
           stride: stride,
           dilation: dilation,
           padding: padding,
           padMode: padMode,
-          padValue: padValue);
-      final outTensor = Tensor.sized(outSize(inp.size));
+          pad: pad,
+          matrices: inp.size.asList.skip(2).prod);
+      final outTensor = Tensor.sized(outS);
       ctx.releaseOnErr(outTensor);
-      out.copyTo(outTensor.data, stream: stream);
+      out.copyTo(outTensor.as1d, stream: stream);
       return outTensor;
     } catch (e) {
       ctx.release(isError: true);
@@ -52,17 +57,11 @@ class MaxPool2D implements Layer2D {
     } finally {
       ctx.release();
     }
-     */
-    throw UnimplementedError();
   }
 
-  Dim2 outSize2D(Dim inSize) {
-    // TODO is this the right calculation?
-    return inSize.twoD -
-        (dilation * (kernelSize - 1)) +
-        (padding * 2) ~/ stride +
-        Dim2(rows: 1, cols: 1);
-  }
+  Dim2 outSize2D(Dim inSize) =>
+      (inSize.twoD + (padding * 2) - (dilation * (kernelSize - 1))) ~/ stride +
+      Dim2(1, 1);
 
   Dim outSize(Dim inSize) {
     return Dim([inSize.batch, inSize.channels] + outSize2D(inSize).toList());

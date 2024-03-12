@@ -23,6 +23,35 @@ typedef Op2DNative = ffi.Pointer<ffi.Utf8> Function(
     ffi.Pointer<ffi.Void> inp1,
     CSize2D);
 
+typedef _MaxPool2D = ffi.Pointer<ffi.Utf8> Function(
+  ffi.Pointer<CCudaStream>,
+  ffi.Pointer<ffi.Double>,
+  ffi.Pointer<ffi.Double>,
+  CSize2D, // kernS
+  CSize2D, // outS
+  CSize2D, // inpS
+  int, // matrices
+  CSize2D, // padding
+  int, // padMode
+  double, // padValue
+  CSize2D, // stride
+  CSize2D, // dilation
+);
+typedef _MaxPool2DNative = ffi.Pointer<ffi.Utf8> Function(
+  ffi.Pointer<CCudaStream>,
+  ffi.Pointer<ffi.Double>,
+  ffi.Pointer<ffi.Double>,
+  CSize2D, // kernS
+  CSize2D, // outS
+  CSize2D, // inpS
+  ffi.Uint32, // matrices
+  CSize2D, // padding
+  ffi.Uint8, // padMode
+  ffi.Double, // padValue
+  CSize2D, // stride
+  CSize2D, // dilation
+);
+
 abstract class CudaFFI {
   static void initialize(ffi.DynamicLibrary dylib) {
     CCudaStream.initializeLib(dylib);
@@ -60,32 +89,8 @@ abstract class CudaFFI {
         dylib.lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaAdd2Ckern');
     _sum2D = dylib.lookupFunction<Op2DNative, Op2D>('libtcCudaSum2DCkern');
 
-    /*
-    _maxpool2D = dylib.lookupFunction<
-        ffi.Pointer<ffi.Utf8> Function(
-            ffi.Pointer<CCudaStream>,
-            ffi.Pointer<ffi.Double>,
-            ffi.Pointer<ffi.Double>,
-            CSize2D,
-            CSize2D,
-            CSize2D,
-            CSize2D,
-            CSize2D,
-            CSize2D,
-            ffi.Double,
-            ffi.Int32),
-        ffi.Pointer<ffi.Utf8> Function(
-            ffi.Pointer<CCudaStream>,
-            ffi.Pointer<ffi.Double>,
-            ffi.Pointer<ffi.Double>,
-            CSize2D,
-            CSize2D,
-            CSize2D,
-            CSize2D,
-            CSize2D,
-            CSize2D,
-            double,
-            int)>('libtcCudaMaxPool2DCkern');*/
+    _maxPool2D = dylib
+        .lookupFunction<_MaxPool2DNative, _MaxPool2D>('libtcCudaMaxPool2DF64');
   }
 
   static late final ffi.Pointer<ffi.Utf8> Function(
@@ -106,18 +111,7 @@ abstract class CudaFFI {
   static late final Op1D2Inp _addition;
   static late final Op2D _sum2D;
 
-  static late final ffi.Pointer<ffi.Utf8> Function(
-      ffi.Pointer<CCudaStream> stream,
-      ffi.Pointer<ffi.Double> out,
-      ffi.Pointer<ffi.Double> inp,
-      CSize2D kernS,
-      CSize2D outS,
-      CSize2D inS,
-      CSize2D stride,
-      CSize2D dialation,
-      CSize2D padding,
-      double padValue,
-      int padMode) _maxpool2D;
+  static late final _MaxPool2D _maxPool2D;
 
   static CudaDeviceProps getDeviceProps(int device) {
     final ptr =
@@ -200,34 +194,42 @@ abstract class CudaFFI {
     }
   }
 
-  static void maxpool2D(CudaStream stream, ffi.Pointer<ffi.Double> out,
-      ffi.Pointer<ffi.Double> inp, Dim2 kernS, Dim2 outS, Dim2 inpS,
-      {Dim2 stride = const Dim2(rows: 1, cols: 1),
-      Dim2 padding = const Dim2(rows: 0, cols: 0),
-      double padValue = 0,
+  static void maxPool2D(CudaStream stream, ffi.Pointer<ffi.Double> out,
+      ffi.Pointer<ffi.Double> inp,
+      {required Dim2 kernSize,
+      required Dim2 outSize,
+      required Dim2 inpSize,
+      required int matrices,
+      Dim2 stride = const Dim2(1, 1),
+      Dim2 padding = const Dim2(0, 0),
+      double pad = 0,
       PadMode padMode = PadMode.constant,
-      Dim2 dilation = const Dim2(rows: 1, cols: 1)}) {
+      Dim2 dilation = const Dim2(1, 1)}) {
     final ctx = Context();
     try {
-      final kernSPtr = CSize2D.fromSize2D(kernS, context: ctx);
-      final outSPtr = CSize2D.fromSize2D(outS, context: ctx);
-      final inSPtr = CSize2D.fromSize2D(inpS, context: ctx);
+      final kernSPtr = CSize2D.fromSize2D(kernSize, context: ctx);
+      final outSPtr = CSize2D.fromSize2D(outSize, context: ctx);
+      final inSPtr = CSize2D.fromSize2D(inpSize, context: ctx);
       final strideSPtr = CSize2D.fromSize2D(stride, context: ctx);
       final dilationSPtr = CSize2D.fromSize2D(dilation, context: ctx);
       final paddingSPtr = CSize2D.fromSize2D(padding, context: ctx);
 
-      _maxpool2D(
+      final err = _maxPool2D(
           stream.ptr,
           out.cast(),
           inp.cast(),
           kernSPtr.ref,
           outSPtr.ref,
           inSPtr.ref,
-          strideSPtr.ref,
-          dilationSPtr.ref,
+          matrices,
           paddingSPtr.ref,
-          padValue,
-          padMode.index);
+          padMode.index,
+          pad,
+          strideSPtr.ref,
+          dilationSPtr.ref);
+      if (err != ffi.nullptr) {
+        throw CudaException(err.toDartString());
+      }
     } finally {
       ctx.release();
     }

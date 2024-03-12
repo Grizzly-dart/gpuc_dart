@@ -167,7 +167,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
       final inp1 = CudaList.copy(as1d, stream: stream, context: ctx);
       final inp2 = CudaList.copy(other.as1d, stream: stream, context: ctx);
-      final out = CudaList.allocate(stream, nel, context: ctx);
+      final out = CudaList.sized(stream, nel, context: ctx);
       CudaFFI.addition(
           stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
       final outTensor = Tensor.sized(size, name: '$name + ${other.name}');
@@ -187,7 +187,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
       throw StateError('Must be at least a 2D tensor');
     }
     Dim inpSize = _size.squeeze2D(colDims: colDims);
-    Dim outSize = Dim2(rows: inpSize.rows, cols: 1);
+    Dim outSize = Dim2(inpSize.rows, 1);
     final ctx = Context();
     try {
       // TODO implement Dart summing for web
@@ -195,7 +195,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
       int deviceId = 0; // TODO implement device selection
       final stream = CudaStream(deviceId, context: ctx);
       final inp = CudaList.copy(as1d, stream: stream, context: ctx);
-      final out = CudaList.allocate(stream, outSize.nel, context: ctx);
+      final out = CudaList.sized(stream, outSize.nel, context: ctx);
       CudaFFI.sum2D(stream, out.ptr.cast(), inp.ptr.cast(), inpSize.twoD);
       final outTensor = Tensor.sized(outSize, name: 'sum2D($name)');
       ctx.releaseOnErr(outTensor);
