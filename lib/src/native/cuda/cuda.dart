@@ -65,11 +65,14 @@ class Cuda {
     return ret;
   }
 
-  void allocate(CudaStream stream, ffi.Pointer<ffi.Void> ptr, int size) {
-    final err = cuda.allocate(stream.ptr, ptr, size);
+  ffi.Pointer<ffi.Void> allocate(CudaStream stream, int size) {
+    final ptr = CPtr<ffi.Pointer<ffi.Void>>.allocate(
+        ffi.sizeOf<ffi.Pointer<ffi.Void>>());
+    final err = cuda.allocate(stream.ptr, ptr.ptr.cast(), size);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
+    return ptr.ptr.value;
   }
 
   void memcpy(CudaStream stream, ffi.Pointer<ffi.Void> dst,
@@ -123,7 +126,7 @@ class Cuda {
     }
   }
 
-  sum2D(CudaStream stream, ffi.Pointer<ffi.Void> out,
+  void sum2D(CudaStream stream, ffi.Pointer<ffi.Void> out,
       ffi.Pointer<ffi.Void> inp1, Dim2 inpS) {
     final ctx = Context();
     try {
@@ -137,7 +140,7 @@ class Cuda {
     }
   }
 
-  maxPool2D(CudaStream stream, ffi.Pointer<ffi.Double> out,
+  void maxPool2D(CudaStream stream, ffi.Pointer<ffi.Double> out,
       ffi.Pointer<ffi.Double> inp,
       {required Dim2 kernSize,
       required Dim2 outSize,
@@ -173,7 +176,23 @@ class Cuda {
     }
   }
 
-// TODO conv2D
+  void conv2D(
+      CudaStream stream,
+      F64Ptr out,
+      F64Ptr inp,
+      F64Ptr kernel,
+      int batches,
+      Dim3 outS,
+      Dim3 inpS,
+      Dim2 kernS,
+      int groups,
+      Dim2 padding,
+      PadMode padMode,
+      double pad,
+      Dim2 stride,
+      Dim2 dilation) {
+    // TODO
+  }
 }
 
 class CudaStream extends Resource {
@@ -232,9 +251,9 @@ class CudaMemInfo implements ffi.Finalizable {
   int get total => _info.total;
 
   Map<String, dynamic> toJson() => {
-    'free': free,
-    'total': total,
-  };
+        'free': free,
+        'total': total,
+      };
 
   @override
   String toString() => toJson().toString();
@@ -290,23 +309,23 @@ class CudaDeviceProps implements ffi.Finalizable {
   int get pciDomainID => _props.pciDomainID;
 
   Map<String, dynamic> toJson() => {
-    'totalGlobalMem': totalGlobalMem,
-    'totalConstMem': totalConstMem,
-    'sharedMemPerBlock': sharedMemPerBlock,
-    'reservedSharedMemPerBlock': reservedSharedMemPerBlock,
-    'sharedMemPerMultiProcessor': sharedMemPerMultiProcessor,
-    'warpSize': warpSize,
-    'multiProcessorCount': multiProcessorCount,
-    'maxThreadsPerMultiProcessor': maxThreadsPerMultiProcessor,
-    'maxThreadsPerBlock': maxThreadsPerBlock,
-    'maxBlocksPerMultiProcessor': maxBlocksPerMultiProcessor,
-    'l2CacheSize': l2CacheSize,
-    'memPitch': memPitch,
-    'memoryBusWidth': memoryBusWidth,
-    'pciBusID': pciBusID,
-    'pciDeviceID': pciDeviceID,
-    'pciDomainID': pciDomainID,
-  };
+        'totalGlobalMem': totalGlobalMem,
+        'totalConstMem': totalConstMem,
+        'sharedMemPerBlock': sharedMemPerBlock,
+        'reservedSharedMemPerBlock': reservedSharedMemPerBlock,
+        'sharedMemPerMultiProcessor': sharedMemPerMultiProcessor,
+        'warpSize': warpSize,
+        'multiProcessorCount': multiProcessorCount,
+        'maxThreadsPerMultiProcessor': maxThreadsPerMultiProcessor,
+        'maxThreadsPerBlock': maxThreadsPerBlock,
+        'maxBlocksPerMultiProcessor': maxBlocksPerMultiProcessor,
+        'l2CacheSize': l2CacheSize,
+        'memPitch': memPitch,
+        'memoryBusWidth': memoryBusWidth,
+        'pciBusID': pciBusID,
+        'pciDeviceID': pciDeviceID,
+        'pciDomainID': pciDomainID,
+      };
 
   @override
   String toString() => toJson().toString();

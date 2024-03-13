@@ -168,7 +168,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
       final inp1 = CudaList.copy(as1d, stream: stream, context: ctx);
       final inp2 = CudaList.copy(other.as1d, stream: stream, context: ctx);
       final out = CudaList.sized(stream, nel, context: ctx);
-      CudaFFI.addition(
+      cuda.addition(
           stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
       final outTensor = Tensor.sized(size, name: '$name + ${other.name}');
       ctx.releaseOnErr(outTensor);
@@ -196,7 +196,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
       final stream = CudaStream(deviceId, context: ctx);
       final inp = CudaList.copy(as1d, stream: stream, context: ctx);
       final out = CudaList.sized(stream, outSize.nel, context: ctx);
-      CudaFFI.sum2D(stream, out.ptr.cast(), inp.ptr.cast(), inpSize.twoD);
+      cuda.sum2D(stream, out.ptr.cast(), inp.ptr.cast(), inpSize.twoD);
       final outTensor = Tensor.sized(outSize, name: 'sum2D($name)');
       ctx.releaseOnErr(outTensor);
       out.copyTo(outTensor.as1d, stream: stream);

@@ -36,6 +36,10 @@ void initializeTensorC({String? libPath}) {
   CFFI.initialize(dylib);
 }
 
+typedef VoidPtr = ffi.Pointer<ffi.Void>;
+typedef StrPtr = ffi.Pointer<ffi.Utf8>;
+typedef F64Ptr = ffi.Pointer<ffi.Double>;
+
 final class CSize2D extends ffi.Struct {
   @ffi.Uint32()
   external int r;
@@ -78,7 +82,7 @@ final class CSize3D extends ffi.Struct {
   }
 }
 
-class CPtr<T extends ffi.Struct> implements Resource, ffi.Finalizable {
+class CPtr<T extends ffi.NativeType> implements Resource, ffi.Finalizable {
   ffi.Pointer<T> _mem;
 
   CPtr(this._mem, {Context? context}) {

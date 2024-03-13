@@ -1,11 +1,9 @@
 import 'dart:collection';
 import 'dart:ffi' as ffi;
-import 'package:ffi/ffi.dart' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 abstract class CudaList extends NList {
-  factory CudaList.sized(CudaStream stream, int length,
-          {Context? context}) =>
+  factory CudaList.sized(CudaStream stream, int length, {Context? context}) =>
       _CudaListImpl.allocate(stream, length, context: context);
 
   factory CudaList.fromList(CudaStream stream, List<double> list,
@@ -42,20 +40,9 @@ class _CudaListImpl extends NList
 
   static _CudaListImpl allocate(CudaStream stream, int length,
       {Context? context}) {
-    final lContext = Context();
-    final ptr = ffi.calloc
-        .allocate<ffi.Pointer<ffi.Void>>(ffi.sizeOf<ffi.Pointer<ffi.Void>>());
-    try {
-      final err = cuda.allocate(stream.ptr, ptr, length * NList.byteSize);
-      if (err != ffi.nullptr) {
-        throw CudaException(err.toDartString());
-      }
-      return _CudaListImpl._(ptr.value.cast(), length, stream.deviceId,
-          context: context);
-    } finally {
-      lContext.release();
-      ffi.calloc.free(ptr); // TODO use context to free
-    }
+    final ptr = cuda.allocate(stream, length * NList.byteSize);
+    return _CudaListImpl._(ptr.cast(), length, stream.deviceId,
+        context: context);
   }
 
   static _CudaListImpl fromList(CudaStream stream, List<double> list,
@@ -185,8 +172,8 @@ mixin CudaListMixin implements CudaList {
       final stream = CudaStream(deviceId, context: lContext);
       final ret = CudaList.sized(stream, length, context: context);
       lContext.releaseOnErr(ret);
-      cuda.memcpy(stream, ret.ptr.cast(),
-          (ptr + start * NList.byteSize).cast(), length * NList.byteSize);
+      cuda.memcpy(stream, ret.ptr.cast(), (ptr + start * NList.byteSize).cast(),
+          length * NList.byteSize);
       return ret;
     } catch (e) {
       lContext.release(isError: true);

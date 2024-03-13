@@ -1,7 +1,6 @@
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
-import 'package:gpuc_dart/src/util/string.dart';
 
 class CudaFFI {
   final StrPtr Function(ffi.Pointer<CCudaDeviceProps>, int device)
@@ -110,9 +109,6 @@ class CudaFFI {
     );
   }
 }
-
-typedef VoidPtr = ffi.Pointer<ffi.Void>;
-typedef StrPtr = ffi.Pointer<ffi.Utf8>;
 
 typedef Op1D2Inp = StrPtr Function(ffi.Pointer<CCudaStream> stream, VoidPtr out,
     VoidPtr inp1, VoidPtr inp2, int size);

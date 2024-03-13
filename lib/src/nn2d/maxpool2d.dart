@@ -37,7 +37,7 @@ class MaxPool2D implements Layer2D {
       final outS = outSize2D(inp.size);
       final inpL = CudaList.copy(inp.as1d, stream: stream, context: ctx);
       final out = CudaList.sized(stream, outS.nel, context: ctx);
-      CudaFFI.maxPool2D(stream, out.ptr, inpL.ptr,
+      cuda.maxPool2D(stream, out.ptr, inpL.ptr,
           kernSize: kernelSize,
           outSize: outS,
           inpSize: Dim2(inp.size.rows, inp.size.cols),
