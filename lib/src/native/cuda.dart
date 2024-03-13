@@ -158,7 +158,7 @@ abstract class CudaFFI {
     final ptr =
         ffi.calloc.allocate<_CudaDeviceProps>(ffi.sizeOf<_CudaDeviceProps>());
     final ret = CudaDeviceProps(ptr);
-    CListFFI.finalizer.attach(ret, ptr.cast());
+    CFFI.finalizer.attach(ret, ptr.cast());
     final err = _getDeviceProps(ptr, device);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
@@ -169,7 +169,7 @@ abstract class CudaFFI {
   static CudaMemInfo getMemInfo(int device) {
     final ptr = ffi.calloc.allocate<_CudaMemInfo>(ffi.sizeOf<_CudaMemInfo>());
     final ret = CudaMemInfo(ptr);
-    CListFFI.finalizer.attach(ret, ptr.cast());
+    CFFI.finalizer.attach(ret, ptr.cast());
     final err = _getMemInfo(ptr, device);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());

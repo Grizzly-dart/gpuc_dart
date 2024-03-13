@@ -88,7 +88,7 @@ class _CListImpl extends NList
     if (_mem == ffi.nullptr) {
       throw Exception('Memory already freed');
     }
-    final newPtr = CListFFI.realloc(_mem.cast(), newLength * NList.byteSize);
+    final newPtr = CFFI.realloc(_mem.cast(), newLength * NList.byteSize);
     if (newPtr == ffi.nullptr) {
       throw Exception('Failed to allocate memory');
     }
@@ -107,7 +107,7 @@ mixin CListMixin implements CList {
       throw ArgumentError('Length mismatch');
     }
     if (src is CList) {
-      CListFFI.memcpy(ptr.cast(), src.ptr.cast(), lengthBytes);
+      CFFI.memcpy(ptr.cast(), src.ptr.cast(), lengthBytes);
     } else if (src is DartList) {
       for (var i = 0; i < length; i++) {
         ptr.asTypedList(length).setAll(0, src);
@@ -122,7 +122,7 @@ mixin CListMixin implements CList {
       throw ArgumentError('Length mismatch');
     }
     if (dst is CList) {
-      CListFFI.memcpy(dst.ptr.cast(), ptr.cast(), lengthBytes);
+      CFFI.memcpy(dst.ptr.cast(), ptr.cast(), lengthBytes);
       return;
     } else if (dst is DartList) {
       dst.setAll(0, ptr.asTypedList(length));
@@ -134,7 +134,7 @@ mixin CListMixin implements CList {
   @override
   CList read({Context? context}) {
     final ret = CList.sized(length, context: context);
-    CListFFI.memcpy(ret.ptr.cast(), ptr.cast(), lengthBytes);
+    CFFI.memcpy(ret.ptr.cast(), ptr.cast(), lengthBytes);
     return ret;
   }
 
@@ -146,7 +146,7 @@ mixin CListMixin implements CList {
       throw ArgumentError('Length out of range');
     }
     final ret = CList.sized(length, context: context);
-    CListFFI.memcpy(ret.ptr.cast(), (ptr + start * NList.byteSize).cast(),
+    CFFI.memcpy(ret.ptr.cast(), (ptr + start * NList.byteSize).cast(),
         length * NList.byteSize);
     return ret;
   }

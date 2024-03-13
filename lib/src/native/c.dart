@@ -17,7 +17,7 @@ void initializeTensorC({String? libPath}) {
   }
 
   String libraryPath;
-  if(libPath != null) {
+  if (libPath != null) {
     libraryPath = libPath;
   } else {
     libraryPath = path.join(Directory.current.path, 'lib', 'asset', os);
@@ -33,7 +33,7 @@ void initializeTensorC({String? libPath}) {
   }
 
   final dylib = ffi.DynamicLibrary.open(libraryPath);
-  CListFFI.initialize(dylib);
+  CFFI.initialize(dylib);
 }
 
 final class CSize2D extends ffi.Struct {
@@ -43,12 +43,15 @@ final class CSize2D extends ffi.Struct {
   @ffi.Uint32()
   external int c;
 
-  static ffi.Pointer<CSize2D> fromSize2D(Dim2 size, {Context? context}) {
-    final cSize = ffi.malloc.allocate<CSize2D>(ffi.sizeOf<CSize2D>());
-    CPtr(cSize.cast(), context: context);
-    cSize.ref.r = size.rows;
-    cSize.ref.c = size.cols;
-    return cSize;
+  static CPtr<CSize2D> allocate({Context? context}) =>
+      CPtr<CSize2D>.allocate(ffi.sizeOf<CSize2D>(), context: context);
+
+  static CPtr<CSize2D> fromSize2D(Dim2 size, {Context? context}) {
+    final cptr = CSize2D.allocate(context: context);
+    final cSize = cptr.ptr.ref;
+    cSize.r = size.rows;
+    cSize.c = size.cols;
+    return cptr;
   }
 }
 
@@ -62,24 +65,32 @@ final class CSize3D extends ffi.Struct {
   @ffi.Uint32()
   external int c;
 
-  static ffi.Pointer<CSize3D> fromSize(Dim size, {Context? context}) {
+  static CPtr<CSize3D> allocate({Context? context}) =>
+      CPtr<CSize3D>.allocate(ffi.sizeOf<CSize2D>(), context: context);
 
-    final cSize = ffi.malloc.allocate<CSize2D>(ffi.sizeOf<CSize2D>());
-    CPtr(cSize.cast(), context: context);
-    cSize.ref.r = size.rows;
-    cSize.ref.c = size.cols;
-    return cSize;
+  static CPtr<CSize3D> fromSize(Dim size, {Context? context}) {
+    final cptr = CSize3D.allocate(context: context);
+    final cSize = cptr.ptr.ref;
+    cSize.ch = size.channels;
+    cSize.r = size.rows;
+    cSize.c = size.cols;
+    return cptr;
   }
 }
 
-class CPtr implements Resource {
-  ffi.Pointer<ffi.Void> _mem;
+class CPtr<T extends ffi.Struct> implements Resource, ffi.Finalizable {
+  ffi.Pointer<T> _mem;
 
   CPtr(this._mem, {Context? context}) {
+    CFFI.finalizer.attach(this, _mem.cast());
     context?.add(this);
   }
 
-  ffi.Pointer<ffi.Void> get ptr => _mem;
+  factory CPtr.allocate(int byteSizePerItem,
+          {int count = 1, Context? context}) =>
+      CPtr(ffi.malloc.allocate(byteSizePerItem * 1), context: context);
+
+  ffi.Pointer<T> get ptr => _mem;
 
   @override
   void release() {
@@ -119,7 +130,7 @@ class CF64Ptr implements Resource {
   }
 }
 
-abstract class CListFFI {
+abstract class CFFI {
   static late final ffi
       .Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>
       freeNative;
@@ -146,5 +157,5 @@ abstract class CListFFI {
             ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, int)>('libtcMemcpy');
   }
 
-  static final finalizer = ffi.NativeFinalizer(CListFFI.freeNative);
+  static final finalizer = ffi.NativeFinalizer(CFFI.freeNative);
 }
