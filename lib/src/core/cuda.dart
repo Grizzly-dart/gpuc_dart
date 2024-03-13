@@ -46,7 +46,7 @@ class _CudaListImpl extends NList
     final ptr = ffi.calloc
         .allocate<ffi.Pointer<ffi.Void>>(ffi.sizeOf<ffi.Pointer<ffi.Void>>());
     try {
-      final err = CudaFFI.allocate(stream.ptr, ptr, length * NList.byteSize);
+      final err = cuda.allocate(stream.ptr, ptr, length * NList.byteSize);
       if (err != ffi.nullptr) {
         throw CudaException(err.toDartString());
       }
@@ -93,7 +93,7 @@ class _CudaListImpl extends NList
     if (index < 0 || index >= length) {
       throw RangeError('Index out of range');
     }
-    return CudaFFI.getDouble(_mem, index, deviceId);
+    return cuda.getDouble(_mem, index, deviceId);
   }
 
   @override
@@ -101,7 +101,7 @@ class _CudaListImpl extends NList
     if (index < 0 || index >= length) {
       throw RangeError('Index out of range');
     }
-    CudaFFI.setDouble(_mem, index, value, deviceId);
+    cuda.setDouble(_mem, index, value, deviceId);
   }
 
   @override
@@ -112,7 +112,7 @@ class _CudaListImpl extends NList
     if (_mem == ffi.nullptr) return;
     final stream = CudaStream(deviceId);
     try {
-      CudaFFI.release(stream.ptr, _mem.cast());
+      cuda.memFree(stream, _mem.cast());
       _mem = ffi.nullptr;
     } finally {
       stream.release();
@@ -135,7 +135,7 @@ mixin CudaListMixin implements CudaList {
     try {
       stream = stream ?? CudaStream(deviceId, context: context);
       src = src is CList ? src : src.read(context: context);
-      CudaFFI.memcpy(stream, ptr.cast(), src.ptr.cast(), lengthBytes);
+      cuda.memcpy(stream, ptr.cast(), src.ptr.cast(), lengthBytes);
     } finally {
       context.release();
     }
@@ -150,7 +150,7 @@ mixin CudaListMixin implements CudaList {
     stream = stream ?? CudaStream(deviceId, context: context);
     try {
       if (dst is CList) {
-        CudaFFI.memcpy(stream, dst.ptr.cast(), ptr.cast(), dst.lengthBytes);
+        cuda.memcpy(stream, dst.ptr.cast(), ptr.cast(), dst.lengthBytes);
         return;
       }
       final cSrc = read(context: context, stream: stream);
@@ -166,7 +166,7 @@ mixin CudaListMixin implements CudaList {
     final lContext = Context();
     try {
       stream = stream ?? CudaStream(deviceId, context: lContext);
-      CudaFFI.memcpy(stream, clist.ptr.cast(), ptr.cast(), clist.lengthBytes);
+      cuda.memcpy(stream, clist.ptr.cast(), ptr.cast(), clist.lengthBytes);
       return clist;
     } finally {
       lContext.release();
@@ -185,7 +185,7 @@ mixin CudaListMixin implements CudaList {
       final stream = CudaStream(deviceId, context: lContext);
       final ret = CudaList.sized(stream, length, context: context);
       lContext.releaseOnErr(ret);
-      CudaFFI.memcpy(stream, ret.ptr.cast(),
+      cuda.memcpy(stream, ret.ptr.cast(),
           (ptr + start * NList.byteSize).cast(), length * NList.byteSize);
       return ret;
     } catch (e) {
