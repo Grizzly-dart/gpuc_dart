@@ -9,7 +9,7 @@ void test(Dim size) {
 }
 
 void main() async {
-  initializeTensorc();
+  initializeNativeTensorLibrary();
   test(Dim([3, 3]));
   test(Dim([512, 512]));
   test(Dim([4096, 4096]));

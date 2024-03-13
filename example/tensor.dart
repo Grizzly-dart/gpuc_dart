@@ -1,7 +1,7 @@
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 void main() async {
-  initializeTensorc();
+  initializeNativeTensorLibrary();
   final t1 = Tensor.fromList(List.generate(16, (i) => i.toDouble()),
       size: Dim([4, 4]));
   print(t1[0]);

@@ -1,6 +1,6 @@
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 void main() {
-  initializeTensorc();
+  initializeNativeTensorLibrary();
   print(CudaFFI.getDeviceProps(0));
 }

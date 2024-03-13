@@ -2,7 +2,7 @@ import 'package:gpuc_dart/gpuc_dart.dart';
 import 'package:gpuc_dart/src/nn2d/maxpool2d.dart';
 
 void main() {
-  initializeTensorc();
+  initializeNativeTensorLibrary();
   final t1 = Tensor.fromList(
       List.generate(16 * 16, (index) => index.toDouble()),
       size: Dim2(16, 16));

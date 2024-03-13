@@ -1,6 +1,40 @@
 import 'dart:ffi' as ffi;
+import 'dart:io';
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
+import 'package:path/path.dart' as path;
+
+void initializeTensorCuda({String? libPath}) {
+  String os;
+  if (Platform.isLinux) {
+    os = 'linux';
+  } else if (Platform.isMacOS) {
+    os = 'darwin';
+  } else if (Platform.isWindows) {
+    os = 'windows';
+  } else {
+    return;
+  }
+
+  String libraryPath;
+  if(libPath != null) {
+    libraryPath = libPath;
+  } else {
+    libraryPath = path.join(Directory.current.path, 'lib', 'asset', os);
+  }
+  if (Platform.isLinux) {
+    libraryPath = path.join(libraryPath, 'libtensorcuda.so');
+  } else if (Platform.isMacOS) {
+    libraryPath = path.join(libraryPath, 'libtensorcuda.dylib');
+  } else if (Platform.isWindows) {
+    libraryPath = path.join(libraryPath, 'libtensorcuda.dll');
+  } else {
+    throw Exception('Unsupported platform');
+  }
+
+  final dylib = ffi.DynamicLibrary.open(libraryPath);
+  CudaFFI.initialize(dylib);
+}
 
 typedef Op1D2Inp = ffi.Pointer<ffi.Utf8> Function(
     ffi.Pointer<CCudaStream> stream,
@@ -52,6 +86,13 @@ typedef _MaxPool2DNative = ffi.Pointer<ffi.Utf8> Function(
   CSize2D, // dilation
 );
 
+typedef _Conv2D = ffi.Pointer<ffi.Utf8> Function(
+    ffi.Pointer<CCudaStream>,
+    ffi.Pointer<ffi.Double>,
+    ffi.Pointer<ffi.Double>,
+    ffi.Pointer<ffi.Double>,
+    );
+
 abstract class CudaFFI {
   static void initialize(ffi.DynamicLibrary dylib) {
     CCudaStream.initializeLib(dylib);
@@ -90,7 +131,7 @@ abstract class CudaFFI {
     _sum2D = dylib.lookupFunction<Op2DNative, Op2D>('libtcCudaSum2DCkern');
 
     _maxPool2D = dylib
-        .lookupFunction<_MaxPool2DNative, _MaxPool2D>('libtcCudaMaxPool2DF64');
+        .lookupFunction<_MaxPool2DNative, _MaxPool2D>('libtcCudaMaxPool2D');
   }
 
   static late final ffi.Pointer<ffi.Utf8> Function(

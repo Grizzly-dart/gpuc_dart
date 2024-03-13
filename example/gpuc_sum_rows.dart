@@ -8,7 +8,7 @@ void test() {
 }
 
 void main() async {
-  initializeTensorc();
+  initializeNativeTensorLibrary();
   test();
   print('Finished');
 }

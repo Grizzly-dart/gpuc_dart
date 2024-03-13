@@ -1,6 +1,40 @@
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
+import 'dart:io';
+import 'package:path/path.dart' as path;
+
+void initializeTensorC({String? libPath}) {
+  String os;
+  if (Platform.isLinux) {
+    os = 'linux';
+  } else if (Platform.isMacOS) {
+    os = 'darwin';
+  } else if (Platform.isWindows) {
+    os = 'windows';
+  } else {
+    return;
+  }
+
+  String libraryPath;
+  if(libPath != null) {
+    libraryPath = libPath;
+  } else {
+    libraryPath = path.join(Directory.current.path, 'lib', 'asset', os);
+  }
+  if (Platform.isLinux) {
+    libraryPath = path.join(libraryPath, 'libtensorc.so');
+  } else if (Platform.isMacOS) {
+    libraryPath = path.join(libraryPath, 'libtensorc.dylib');
+  } else if (Platform.isWindows) {
+    libraryPath = path.join(libraryPath, 'libtensorc.dll');
+  } else {
+    throw Exception('Unsupported platform');
+  }
+
+  final dylib = ffi.DynamicLibrary.open(libraryPath);
+  CListFFI.initialize(dylib);
+}
 
 final class CSize2D extends ffi.Struct {
   @ffi.Uint32()
@@ -10,6 +44,26 @@ final class CSize2D extends ffi.Struct {
   external int c;
 
   static ffi.Pointer<CSize2D> fromSize2D(Dim2 size, {Context? context}) {
+    final cSize = ffi.malloc.allocate<CSize2D>(ffi.sizeOf<CSize2D>());
+    CPtr(cSize.cast(), context: context);
+    cSize.ref.r = size.rows;
+    cSize.ref.c = size.cols;
+    return cSize;
+  }
+}
+
+final class CSize3D extends ffi.Struct {
+  @ffi.Uint32()
+  external int ch;
+
+  @ffi.Uint32()
+  external int r;
+
+  @ffi.Uint32()
+  external int c;
+
+  static ffi.Pointer<CSize3D> fromSize(Dim size, {Context? context}) {
+
     final cSize = ffi.malloc.allocate<CSize2D>(ffi.sizeOf<CSize2D>());
     CPtr(cSize.cast(), context: context);
     cSize.ref.r = size.rows;
@@ -68,7 +122,7 @@ class CF64Ptr implements Resource {
 abstract class CListFFI {
   static late final ffi
       .Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>
-  freeNative;
+      freeNative;
   static late final void Function(ffi.Pointer<ffi.Void>) free;
   static late final ffi.Pointer<ffi.Void> Function(
       ffi.Pointer<ffi.Void> oldPtr, int size) realloc;
@@ -78,7 +132,7 @@ abstract class CListFFI {
   static void initialize(ffi.DynamicLibrary dylib) {
     freeNative = dylib
         .lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
-        'libtcFree');
+            'libtcFree');
     free = dylib.lookupFunction<ffi.Void Function(ffi.Pointer<ffi.Void>),
         void Function(ffi.Pointer<ffi.Void>)>('libtcFree');
     realloc = dylib.lookupFunction<
