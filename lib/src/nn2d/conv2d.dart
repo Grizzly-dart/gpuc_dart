@@ -19,19 +19,22 @@ class Conv2D implements Layer2D {
 
   final Dim2 dilation;
 
+  // TODO need better name
   Conv2D.own(this.kernel,
-      {
-      this.bias,
+      {this.bias,
       this.groups = 1,
       this.stride = const Dim2(1, 1),
       this.dilation = const Dim2(1, 1),
       this.padding = const Dim2(0, 0),
       this.pad = 0,
-      this.padMode = PadMode.constant}): kernelSize = kernel.size.to2D() {
-    if(kernel.size.dims != 4) {
-      throw ArgumentError('kernel must be 4D');
+      this.padMode = PadMode.constant})
+      : kernelSize = kernel.size.to2D() {
+    if (kernel.size.dims < 2) {
+      throw ArgumentError('kernel must be at least 2D');
+    } else if (kernel.size.dims < 4) {
+      kernel.reshape(kernel.size.reshapeDims(4));
     }
-    if(bias != null) {
+    if (bias != null) {
       // TODO
     }
     // TODO validate weight shape

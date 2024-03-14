@@ -41,6 +41,17 @@ class Tensor with ListMixin<Tensor> implements Resource {
         name: name, context: context);
   }
 
+  factory Tensor.generate(/* Dim | Iterable<int> | int */ size,
+      double Function(Dim index) generator,
+      {String name = '', Context? context}) {
+    if (size is! Dim) size = Dim.from(size);
+    final data = CList.sized(size.nel, context: context);
+    for (var i = 0; i < size.nel; i++) {
+      data[i] = generator(size.unravel(i));
+    }
+    return Tensor(data, size, name: name, context: context);
+  }
+
   factory Tensor.random(/* Dim | Iterable<int> | int */ size,
       {Random? random, String name = '', Context? context}) {
     if (size is! Dim) size = Dim.from(size);
@@ -66,32 +77,9 @@ class Tensor with ListMixin<Tensor> implements Resource {
 
   double scalar([int index = 0]) => as1d[index];
 
-  void reshape(Dim newSize) {
-    if (newSize.nel != _size.nel) {
-      throw ArgumentError('Size mismatch');
-    }
-    _size = newSize;
-  }
+  void reshape(Dim newSize) => _size = _size.reshape(newSize);
 
-  void squeeze(int dims) {
-    _size = _size.squeeze(dims);
-  }
-
-  // TODO support squeezing
-  List<List<double>> toMatrix() {
-    if (_size.dims != 2) {
-      throw StateError('Must be a 2D tensor');
-    }
-    final matrix = <List<double>>[];
-    for (var i = 0; i < _size.rows; i++) {
-      final row = <double>[];
-      for (var j = 0; j < _size.cols; j++) {
-        row.add(as1d[i * _size.cols + j]);
-      }
-      matrix.add(row);
-    }
-    return matrix;
-  }
+  void squeeze(int dims) => _size = _size.squeeze(dims);
 
   set set(Tensor other) {
     if (other.nel != nel) {

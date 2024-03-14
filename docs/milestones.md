@@ -9,6 +9,7 @@
 
 # Milestone 3
 
++ Attention
 + ResnetBlock2D
 
 # Milestone 4

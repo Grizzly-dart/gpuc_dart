@@ -47,6 +47,10 @@ abstract class Dim {
 
   int get ravel;
 
+  Dim reshape(Dim newSize);
+
+  Dim reshapeDims(int dims);
+
   Dim2 squeeze2D({int colDims = 1});
 
   Dim squeezeFront(int dims);
@@ -58,6 +62,10 @@ abstract class Dim {
   // TODO swap
 
   UnmodifiableListView<int> get asList;
+
+  Dim incrementIndex(Dim index);
+
+  Dim zeroIndex();
 
   List<int> toList();
 }
@@ -147,6 +155,57 @@ mixin DimMixin implements Dim {
       sizes[i] = this[order[i]];
     }
     return Dim(sizes);
+  }
+
+  @override
+  Dim zeroIndex() => Dim(List.filled(dims, 0));
+
+  @override
+  Dim incrementIndex(Dim index) {
+    if (index.dims != dims) {
+      throw ArgumentError('Invalid index');
+    }
+    List<int> sizes = index.toList();
+    for (int i = dims - 1; i >= 0; i--) {
+      sizes[i]++;
+      if (sizes[i] < this[i]) {
+        break;
+      }
+      if (i > 0) {
+        sizes[i] = 0;
+      } else {
+        sizes = toList();
+      }
+    }
+    if (index is Dim2) {
+      return Dim2(sizes[0], sizes[1]);
+    } else if (index is Dim3) {
+      return Dim3(sizes[0], sizes[1], sizes[2]);
+    }
+    return Dim(sizes);
+  }
+
+  @override
+  Dim reshape(Dim newSize) {
+    if (nel == 0) {
+      throw StateError('Cannot reshape empty tensor');
+    }
+    if (nel != newSize.nel) {
+      throw ArgumentError(
+          'Cannot reshape. Number of elements must remain same');
+    }
+    return newSize;
+  }
+
+  @override
+  Dim reshapeDims(int dims) {
+    if (dims < this.dims) {
+      throw ArgumentError('Cannot shrink dimensions');
+    }
+    if (dims == this.dims) {
+      return this;
+    }
+    return Dim([...1.repeat(dims - this.dims), ...asList]);
   }
 }
 
