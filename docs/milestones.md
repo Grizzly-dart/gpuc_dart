@@ -5,6 +5,7 @@
 # Milestone 2
 
 + MaxPool2D, Conv2D
++ Linear, Sequential
 
 # Milestone 3
 

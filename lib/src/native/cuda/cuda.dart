@@ -130,7 +130,7 @@ class Cuda {
       ffi.Pointer<ffi.Void> inp1, Dim2 inpS) {
     final ctx = Context();
     try {
-      final sizePtr = CSize2D.fromSize2D(inpS, context: ctx);
+      final sizePtr = CSize2D.from(inpS, context: ctx);
       final err = cuda.sum2D(stream.ptr, out, inp1, sizePtr.ptr.ref);
       if (err != ffi.nullptr) {
         throw CudaException(err.toDartString());
@@ -151,12 +151,12 @@ class Cuda {
       double pad = 0,
       PadMode padMode = PadMode.constant,
       Dim2 dilation = const Dim2(1, 1)}) {
-    final kernSPtr = CSize2D.fromSize2D(kernSize);
-    final outSPtr = CSize2D.fromSize2D(outSize);
-    final inSPtr = CSize2D.fromSize2D(inpSize);
-    final strideSPtr = CSize2D.fromSize2D(stride);
-    final dilationSPtr = CSize2D.fromSize2D(dilation);
-    final paddingSPtr = CSize2D.fromSize2D(padding);
+    final kernSPtr = CSize2D.from(kernSize);
+    final outSPtr = CSize2D.from(outSize);
+    final inSPtr = CSize2D.from(inpSize);
+    final strideSPtr = CSize2D.from(stride);
+    final dilationSPtr = CSize2D.from(dilation);
+    final paddingSPtr = CSize2D.from(padding);
 
     final err = cuda.maxPool2D(
         stream.ptr,
@@ -191,7 +191,30 @@ class Cuda {
       double pad,
       Dim2 stride,
       Dim2 dilation) {
-    // TODO
+    final outSC = CSize3D.from(outS);
+    final inpSC = CSize3D.from(inpS);
+    final kernSC = CSize2D.from(kernS);
+    final paddingSC = CSize2D.from(padding);
+    final strideSC = CSize2D.from(stride);
+    final dilationSC = CSize2D.from(dilation);
+    final err = cuda.conv2D(
+        stream.ptr,
+        out,
+        inp,
+        kernel,
+        batches,
+        outSC.ptr.ref,
+        inpSC.ptr.ref,
+        kernSC.ptr.ref,
+        groups,
+        paddingSC.ptr.ref,
+        padMode.index,
+        pad,
+        strideSC.ptr.ref,
+        dilationSC.ptr.ref);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
   }
 }
 
@@ -214,6 +237,8 @@ class CudaStream extends Resource {
 
   @override
   void release() {
+    if(_stream == ffi.nullptr) return;
+
     final err = CudaFFI.instance!.destroyStream(_stream);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());

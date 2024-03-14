@@ -60,7 +60,7 @@ class MaxPool2D implements Layer2D {
   }
 
   Dim2 outSize2D(Dim inSize) =>
-      (inSize.twoD + (padding * 2) - (dilation * (kernelSize - 1))) ~/ stride +
+      (inSize.to2D() + (padding * 2) - (dilation * (kernelSize - 1))) ~/ stride +
       Dim2(1, 1);
 
   Dim outSize(Dim inSize) {

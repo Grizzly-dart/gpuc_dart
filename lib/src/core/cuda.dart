@@ -4,7 +4,7 @@ import 'package:gpuc_dart/gpuc_dart.dart';
 
 abstract class CudaList extends NList {
   factory CudaList.sized(CudaStream stream, int length, {Context? context}) =>
-      _CudaListImpl.allocate(stream, length, context: context);
+      _CudaListImpl.sized(stream, length, context: context);
 
   factory CudaList.fromList(CudaStream stream, List<double> list,
           {Context? context}) =>
@@ -38,7 +38,7 @@ class _CudaListImpl extends NList
     context?.add(this);
   }
 
-  static _CudaListImpl allocate(CudaStream stream, int length,
+  static _CudaListImpl sized(CudaStream stream, int length,
       {Context? context}) {
     final ptr = cuda.allocate(stream, length * NList.byteSize);
     return _CudaListImpl._(ptr.cast(), length, stream.deviceId,
@@ -47,7 +47,7 @@ class _CudaListImpl extends NList
 
   static _CudaListImpl fromList(CudaStream stream, List<double> list,
       {Context? context}) {
-    final ret = _CudaListImpl.allocate(stream, list.length, context: context);
+    final ret = _CudaListImpl.sized(stream, list.length, context: context);
     ret.copyFrom(DartList.own(list), stream: stream);
     return ret;
   }
@@ -58,7 +58,7 @@ class _CudaListImpl extends NList
     try {
       stream = stream ?? CudaStream(other.deviceId, context: lContext);
       final ret =
-          _CudaListImpl.allocate(stream, other.length, context: context);
+          _CudaListImpl.sized(stream, other.length, context: context);
       ret.copyFrom(other, stream: stream);
       return ret;
     } finally {

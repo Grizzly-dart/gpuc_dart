@@ -12,22 +12,22 @@ abstract class Dim {
     } else if (value is int) {
       return Dim([value]);
     } else if (value is ({int rows, int cols})) {
-      return Dim.twoD(value.rows, value.cols);
+      return Dim.to2D(value.rows, value.cols);
     } else if (value is ({int r, int c})) {
-      return Dim.twoD(value.r, value.c);
+      return Dim.to2D(value.r, value.c);
     }
     throw ArgumentError('Invalid type');
   }
 
   factory Dim(Iterable<int> sizes) => _DimImpl(List.from(sizes));
 
-  factory Dim.twoD(int rows, [int? cols]) => _DimImpl([rows, cols ?? rows]);
+  factory Dim.to2D(int rows, [int? cols]) => _DimImpl([rows, cols ?? rows]);
 
   int operator [](int index);
 
   int get dims;
 
-  Dim2 get twoD;
+  Dim2 to2D();
 
   int get nel;
 
@@ -210,7 +210,9 @@ class _DimImpl with DimMixin implements Dim {
   }();
 
   @override
-  Dim2 get twoD => Dim2(rows, cols);
+  Dim2 to2D() => Dim2(rows, cols);
+
+  Dim3 to3D() => Dim3(channels, rows, cols);
 
   @override
   late final asList = UnmodifiableListView(_sizes);
@@ -289,7 +291,9 @@ class Dim2 with DimMixin implements Dim {
   int get batch => 1;
 
   @override
-  Dim2 get twoD => this;
+  Dim2 to2D() => this;
+
+  Dim3 to3D(int channels) => Dim3(channels, rows, cols);
 
   @override
   Dim get strides => Dim([cols, 1]);
@@ -302,4 +306,93 @@ class Dim2 with DimMixin implements Dim {
 
   @override
   String toString() => 'Dim2($rows, $cols)';
+}
+
+class Dim3 with DimMixin implements Dim {
+  @override
+  final int channels;
+  @override
+  final int rows;
+  @override
+  final int cols;
+
+  const Dim3(this.channels, this.rows, this.cols);
+
+  Dim3 operator +(/* Size3D | int */ other) {
+    if (other is int) {
+      return Dim3(channels + other, rows + other, cols + other);
+    } else if (other is Dim3) {
+      return Dim3(
+          channels + other.channels, rows + other.rows, cols + other.cols);
+    }
+    throw ArgumentError('Invalid type');
+  }
+
+  Dim3 operator -(/* Size3D | int */ other) {
+    if (other is int) {
+      return Dim3(channels - other, rows - other, cols - other);
+    } else if (other is Dim3) {
+      return Dim3(
+          channels - other.channels, rows - other.rows, cols - other.cols);
+    }
+    throw ArgumentError('Invalid type');
+  }
+
+  Dim3 operator *(/* int | Size3D */ other) {
+    if (other is int) {
+      return Dim3(channels * other, rows * other, cols * other);
+    } else if (other is Dim3) {
+      return Dim3(
+          channels * other.channels, rows * other.rows, cols * other.cols);
+    }
+    throw ArgumentError('Invalid type');
+  }
+
+  Dim3 operator ~/(/* Size3D | int */ scalar) {
+    if (scalar is int) {
+      return Dim3(channels ~/ scalar, rows ~/ scalar, cols ~/ scalar);
+    } else if (scalar is Dim3) {
+      return Dim3(channels ~/ scalar.channels, rows ~/ scalar.rows,
+          cols ~/ scalar.cols);
+    }
+    throw ArgumentError('Invalid type');
+  }
+
+  @override
+  int operator [](int index) {
+    if (index == 0) {
+      return channels;
+    } else if (index == 1) {
+      return rows;
+    } else if (index == 2) {
+      return cols;
+    }
+    throw RangeError('Index out of range');
+  }
+
+  @override
+  int get dims => 3;
+
+  @override
+  int get nel => channels * rows * cols;
+
+  @override
+  Dim get strides => Dim([rows * cols, cols, 1]);
+
+  @override
+  UnmodifiableListView<int> get asList =>
+      UnmodifiableListView([channels, rows, cols]);
+
+  @override
+  List<int> toList() => [channels, rows, cols];
+
+  @override
+  String toString() => 'Dim3($channels, $rows, $cols)';
+
+  @override
+  // TODO: implement batch
+  int get batch => throw UnimplementedError();
+
+  @override
+  Dim2 to2D() => Dim2(rows, cols);
 }

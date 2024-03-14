@@ -196,7 +196,7 @@ class Tensor with ListMixin<Tensor> implements Resource {
       final stream = CudaStream(deviceId, context: ctx);
       final inp = CudaList.copy(as1d, stream: stream, context: ctx);
       final out = CudaList.sized(stream, outSize.nel, context: ctx);
-      cuda.sum2D(stream, out.ptr.cast(), inp.ptr.cast(), inpSize.twoD);
+      cuda.sum2D(stream, out.ptr.cast(), inp.ptr.cast(), inpSize.to2D());
       final outTensor = Tensor.sized(outSize, name: 'sum2D($name)');
       ctx.releaseOnErr(outTensor);
       out.copyTo(outTensor.as1d, stream: stream);
