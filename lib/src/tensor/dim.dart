@@ -450,7 +450,7 @@ class Dim3 with DimMixin implements Dim {
 
   @override
   // TODO: implement batch
-  int get batch => throw UnimplementedError();
+  int get batch => 1;
 
   @override
   Dim2 to2D() => Dim2(rows, cols);
