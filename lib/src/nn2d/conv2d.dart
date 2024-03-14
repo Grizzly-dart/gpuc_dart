@@ -31,11 +31,20 @@ class Conv2D implements Layer2D {
       : kernelSize = kernel.size.to2D() {
     if (kernel.size.dims < 2) {
       throw ArgumentError('kernel must be at least 2D');
+    } else if (kernel.size.dims > 4) {
+      throw ArgumentError('kernel must be at most 4D');
     } else if (kernel.size.dims < 4) {
       kernel.reshape(kernel.size.reshapeDims(4));
     }
+
     if (bias != null) {
       // TODO
+    }
+    if(outChannels % groups != 0) {
+      throw ArgumentError('outChannels must be divisible by groups');
+    }
+    if(inChannels % groups != 0) {
+      throw ArgumentError('inChannels must be divisible by groups');
     }
     // TODO validate weight shape
     // TODO validate bias shape
@@ -113,9 +122,14 @@ class Conv2D implements Layer2D {
 
   int get outChannels => kernel.size[0];
 
-  int get inChannels => kernel.size[1];
+  int get inChannels => kernel.size[1] * groups;
 
   // TODO is this correct calculation?
   Dim2 outSize2D(Dim inSize) =>
-      (inSize.to2D() + (padding * 2) - (dilation * (kernelSize - 1))) ~/ stride;
+      (inSize.to2D() +
+              (padding * 2) -
+              (dilation * (kernelSize - 1)) -
+              Dim2(1, 1)) ~/
+          stride +
+      Dim2(1, 1);
 }
