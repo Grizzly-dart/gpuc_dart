@@ -7,8 +7,8 @@ abstract class Dim {
   factory Dim.from(value) {
     if (value is Dim) {
       return value;
-    } else if (value is Iterable<int>) {
-      return Dim(value);
+    } else if (value is Iterable) {
+      return Dim(value.cast());
     } else if (value is int) {
       return Dim([value]);
     } else if (value is ({int rows, int cols})) {
@@ -68,6 +68,8 @@ abstract class Dim {
   Dim zeroIndex();
 
   List<int> toList();
+
+  List<int> toJson() => toList();
 }
 
 mixin DimMixin implements Dim {
@@ -207,6 +209,9 @@ mixin DimMixin implements Dim {
     }
     return Dim([...1.repeat(dims - this.dims), ...asList]);
   }
+
+  @override
+  List<int> toJson() => toList();
 }
 
 class _DimImpl with DimMixin implements Dim {

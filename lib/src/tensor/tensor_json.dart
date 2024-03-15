@@ -1,65 +1,74 @@
 import 'dart:convert';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
+import 'package:gpuc_dart/src/nn2d/nn2d.dart';
 
-enum TensorJsonType {
-  IntData,
-  DoubleData,
-  TensorData,
-  SizeData,
-  StringData,
+enum TensonType {
+  intData(int, 'Int'),
+  doubleData(double, 'Double'),
+  stringData(String, 'String'),
+  dimData(Dim, 'Dim'),
+  tensorData(Tensor, 'Tensor'),
+  ;
+
+  final Type dataType;
+  final String jsonName;
+
+  const TensonType(this.dataType, this.jsonName);
+
+  String toJson() => jsonName;
+
+  static TensonType fromJson(String jsonName) =>
+      values.firstWhere((e) => e.jsonName == jsonName);
 }
 
-abstract class TensorJsonData {
-  String get name;
+class TensonVar<T> {
+  final String name;
+  final T data;
 
-  static TensorJsonData fromMap(Map map) {
-    final type = TensorJsonType.values.byName(map['type']);
-    if(type == TensorJsonType.TensorData) {
-      return TensorJsonTensor.fromMap(map);
+  late final TensonType dataType;
+
+  TensonVar({required this.name, required this.data}) {
+    dataType = TensonType.values.firstWhere((e) => e.dataType == T);
+  }
+
+  static TensonVar fromMap(Map map) {
+    final type = TensonType.fromJson(map['type']);
+    if (type == TensonType.intData) {
+      return TensonVar(name: map['name'], data: map['data']);
+    } else if (type == TensonType.doubleData) {
+      return TensonVar<double>(name: map['name'], data: map['data']);
+    } else if (type == TensonType.stringData) {
+      return TensonVar<String>(name: map['name'], data: map['data']);
+    } else if (type == TensonType.dimData) {
+      return TensonVar<Dim>(name: map['name'], data: Dim.from(map['data']));
+    } else if (type == TensonType.tensorData) {
+      final dim = Dim.from(map['data']['size']);
+      final data = (map['data']['data'] as List).cast<double>();
+      return TensonVar<Tensor>(
+          name: map['name'],
+          data: Tensor.fromList(data, size: dim, name: map['name']));
     }
     throw UnsupportedError('$type not supported');
   }
 
-  static Map<String, TensorJsonData> fromList(List list) {
-    final ret = <String, TensorJsonData>{};
+  static Map<String, TensonVar> mapFromList(List list) {
+    final map = <String, TensonVar>{};
     for (final item in list) {
-      final t = TensorJsonData.fromMap(item);
-      ret[t.name] = t;
+      final v = TensonVar.fromMap(item);
+      map[v.name] = v;
     }
-    return ret;
+    return map;
   }
-}
-
-class TensorJsonTensor implements TensorJsonData {
-  final String name;
-  final Dim size;
-  final List<double> data;
-
-  TensorJsonType get type => TensorJsonType.TensorData;
-
-  TensorJsonTensor(
-      {required this.name, required this.size, required this.data});
-
-  factory TensorJsonTensor.fromMap(Map map) =>
-      TensorJsonTensor(
-          name: map['name'],
-          size: Dim.from(map['size']),
-          data: (map['data'] as List).cast());
 
   Map<String, dynamic> toJson() => {
         'name': name,
-        'size': size.toList(),
-        'type': type.name,
-        'data': data.toList(),
+        'type': dataType,
+        'data': data,
       };
 }
 
-class TensorJsonArgs {}
-
-class TensorJsonFile {}
-
-Map<String, TensorJson> parseTensorJson(String str) {
+Map<String, TensonVar> parseTenson(String str) {
   final list = jsonDecode(str);
-  return TensorJson.fromMapList(list);
+  return TensonVar.mapFromList(list);
 }

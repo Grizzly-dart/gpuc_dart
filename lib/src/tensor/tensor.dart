@@ -1,4 +1,3 @@
-import 'dart:collection';
 import 'dart:ffi' as ffi;
 import 'dart:math';
 import 'package:gpuc_dart/gpuc_dart.dart';
@@ -6,7 +5,7 @@ import 'package:gpuc_dart/src/tensor/matrix.dart';
 
 export 'dim.dart';
 
-class Tensor with ListMixin<Tensor> implements Resource {
+class Tensor implements Resource {
   String name;
 
   final NList as1d;
@@ -100,7 +99,6 @@ class Tensor with ListMixin<Tensor> implements Resource {
         context: context);
   }
 
-  @override
   Tensor operator [](dynamic /* Dim | int | Iterable<int> */ index) {
     if (index is! Dim) index = Dim.from(index);
     if (!_size.isIndex(index)) {
@@ -111,7 +109,6 @@ class Tensor with ListMixin<Tensor> implements Resource {
     return Tensor(as1d.view(index.nel * outSize.nel, outSize.nel), outSize);
   }
 
-  @override
   void operator []=(
       dynamic /* Dim | int | Iterable<int> */ index, Tensor value) {
     if (index is! Dim) index = Dim.from(index);
@@ -143,7 +140,6 @@ class Tensor with ListMixin<Tensor> implements Resource {
   Matrix as2d({int colDims = 1}) => Matrix(this, colDims: colDims);
 
   // TODO auto release inp1 and inp2
-  @override
   Tensor operator +(covariant Tensor other) {
     if (other.nel != nel) {
       throw ArgumentError('Size mismatch');
@@ -222,20 +218,6 @@ class Tensor with ListMixin<Tensor> implements Resource {
     l.release();
   });
 
-  @override
-  int get length => _size[0];
-
-  @override
-  set length(int newLength) {
-    if (newLength == 0) {
-      throw ArgumentError('Length must be at least 1');
-    }
-    final newSize = _size.toList();
-    newSize[0] = newLength;
-    _size = Dim(newSize);
-    as1d.length = nel;
-  }
-
   Tensor rearrange(List<int> order, {DeviceType? forceDeviceType}) {
     if (order.length != _size.dims) {
       throw ArgumentError('Invalid order length');
@@ -277,4 +259,10 @@ class Tensor with ListMixin<Tensor> implements Resource {
     }
     throw UnimplementedError('Device not implemented');
   }
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'size': _size.toList(),
+        'data': as1d.toList(),
+      };
 }

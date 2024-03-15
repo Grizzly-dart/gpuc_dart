@@ -1,68 +1,63 @@
-import 'package:gpuc_dart/gpuc_dart.dart';
+import 'dart:convert';
+import 'dart:io';
 
-void main() {
+import 'package:gpuc_dart/gpuc_dart.dart';
+import 'package:gpuc_dart/src/tensor/tensor_json.dart';
+
+Future<void> main() async {
   initializeNativeTensorLibrary();
 
-  test1Inp1Out();
-  test2Inp1Out();
-  test2Inp2Out();
-  test2Inp2Out2Groups();
+  await testConv2D();
+  await testConv2D(inChannels: 2);
+  await testConv2D(inChannels: 2, outChannels: 2);
+  await testConv2D(inChannels: 2, outChannels: 2, groups: 2);
 
   // Batches
-  test1Inp1Out(batches: 2);
-  test2Inp1Out(batches: 2);
-  test2Inp2Out(batches: 2);
-  test2Inp2Out2Groups(batches: 2);
+  await testConv2D(batches: 2);
+  await testConv2D(inChannels: 2, batches: 2);
+  await testConv2D(inChannels: 2, outChannels: 2, batches: 2);
+  await testConv2D(inChannels: 2, outChannels: 2, groups: 2, batches: 2);
 }
 
-void test1Inp1Out({int batches = 1}) {
-  print('=====> 1 Input 1 Output');
+Future<void> testConv2D(
+    {int batches = 1,
+    int inChannels = 1,
+    int outChannels = 1,
+    int groups = 1}) async {
+  print(
+      '=====> $batches Batches $inChannels Input $outChannels Output $groups Groups');
   final t1 = Tensor.fromList(
-      List.generate(batches * 1 * 3 * 3, (index) => index.toDouble() + 1),
-      size: Dim([batches, 1, 3, 3]));
+      List.generate(
+          batches * inChannels * 3 * 3, (index) => index.toDouble() + 1),
+      size: Dim([batches, inChannels, 3, 3]));
   final kernel = Tensor.fromList(
-      List.generate(3 * 3, (index) => index.toDouble() + 1),
-      size: Dim([3, 3]));
-  final conv2D = Conv2D.own(kernel);
+      List.generate(outChannels * inChannels ~/ groups * 3 * 3,
+          (index) => index.toDouble() + 1),
+      size: Dim([outChannels, inChannels ~/ groups, 3, 3]));
+  final conv2D = Conv2D.own(kernel, groups: groups);
   final t2 = conv2D.forward(t1);
   print(t2.as1d);
+  final resp = await python(kernel: kernel, input: t1, groups: groups);
+  t2.as1d.assertEqual(resp.as1d);
 }
 
-void test2Inp1Out({int batches = 1}) {
-  print('=====> 2 Input 1 Output');
-  final t1 = Tensor.fromList(
-      List.generate(batches * 2 * 3 * 3, (index) => index.toDouble() + 1),
-      size: Dim([batches, 2, 3, 3]));
-  final kernel = Tensor.fromList(
-      List.generate(2 * 3 * 3, (index) => index.toDouble() + 1),
-      size: Dim([1, 2, 3, 3]));
-  final conv2D = Conv2D.own(kernel);
-  final t2 = conv2D.forward(t1);
-  print(t2.as1d);
-}
-
-void test2Inp2Out({int batches = 1}) {
-  print('=====> 2 Input 2 Output');
-  final t1 = Tensor.fromList(
-      List.generate(batches * 2 * 3 * 3, (index) => index.toDouble() + 1),
-      size: Dim([batches, 2, 3, 3]));
-  final kernel = Tensor.fromList(
-      List.generate(2 * 2 * 3 * 3, (index) => index.toDouble() + 1),
-      size: Dim([2, 2, 3, 3]));
-  final conv2D = Conv2D.own(kernel);
-  final t2 = conv2D.forward(t1);
-  print(t2.as1d);
-}
-
-void test2Inp2Out2Groups({int batches = 1}) {
-  print('=====> 2 Input 2 Output 2 Groups');
-  final t1 = Tensor.fromList(
-      List.generate(batches * 2 * 3 * 3, (index) => index.toDouble() + 1),
-      size: Dim([batches, 2, 3, 3]));
-  final kernel = Tensor.fromList(
-      List.generate(2 * 1 * 3 * 3, (index) => index.toDouble() + 1),
-      size: Dim([2, 1, 3, 3]));
-  final conv2D = Conv2D.own(kernel, groups: 2);
-  final t2 = conv2D.forward(t1);
-  print(t2.as1d);
+Future<Tensor> python(
+    {required Tensor kernel, required Tensor input, int groups = 1}) async {
+  final process = await Process.start('bash', [
+    '-c',
+    'source ./test/python/activate && python3 ./test/python/conv2d.py'
+  ]);
+  process.stdin.write(jsonEncode([
+    TensonVar(name: 'groups', data: groups),
+    TensonVar(name: 'kernel', data: kernel),
+    TensonVar(name: 'input', data: input),
+  ]));
+  await process.stdin.close();
+  final out = await process.stdout.transform(utf8.decoder).join();
+  final err = await process.stderr.transform(utf8.decoder).join();
+  if (err.isNotEmpty) throw Exception(err);
+  final code = await process.exitCode;
+  if (code != 0) throw Exception('exit code: $code');
+  final resp = parseTenson(out);
+  return resp['output']!.data as Tensor;
 }
