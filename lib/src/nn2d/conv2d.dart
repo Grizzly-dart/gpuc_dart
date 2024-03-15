@@ -19,15 +19,17 @@ class Conv2D implements Layer2D {
 
   final Dim2 dilation;
 
-  // TODO need better name
-  Conv2D.own(this.kernel,
+  final bool padSameSize;
+
+  Conv2D.withWeights(this.kernel,
       {this.bias,
       this.groups = 1,
       this.stride = const Dim2(1, 1),
       this.dilation = const Dim2(1, 1),
       this.padding = const Dim2(0, 0),
       this.pad = 0,
-      this.padMode = PadMode.constant})
+      this.padMode = PadMode.constant,
+      this.padSameSize = false})
       : kernelSize = kernel.size.to2D() {
     if (kernel.size.dims < 2) {
       throw ArgumentError('kernel must be at least 2D');
@@ -40,10 +42,10 @@ class Conv2D implements Layer2D {
     if (bias != null) {
       // TODO
     }
-    if(outChannels % groups != 0) {
+    if (outChannels % groups != 0) {
       throw ArgumentError('outChannels must be divisible by groups');
     }
-    if(inChannels % groups != 0) {
+    if (inChannels % groups != 0) {
       throw ArgumentError('inChannels must be divisible by groups');
     }
     // TODO validate weight shape
@@ -57,17 +59,19 @@ class Conv2D implements Layer2D {
     Dim2 stride = const Dim2(1, 1),
     Dim2 dilation = const Dim2(1, 1),
     double pad = 0,
+    bool sameSize = false,
     PadMode padMode = PadMode.constant,
     Dim2 padding = const Dim2(0, 0),
   }) {
     final kernel = Tensor.sized(
         Dim([outChannels, inChannels, kernelSize.rows, kernelSize.cols]));
     final bias = Tensor.sized(Dim([outChannels]));
-    return Conv2D.own(
+    return Conv2D.withWeights(
       kernel,
       bias: bias,
       stride: stride,
       dilation: dilation,
+      padSameSize: sameSize,
       pad: pad,
       padMode: padMode,
       padding: padding,
@@ -79,6 +83,11 @@ class Conv2D implements Layer2D {
     if (input.size.channels != inChannels) {
       throw ArgumentError('input channels must be $inChannels');
     }
+    final out2DS = outSize2D(input.size);
+    Dim2 padding = this.padding;
+    if (padSameSize) {
+      padding = padSameSize2D(input.size.to2D());
+    }
 
     int batches = input.size.batch;
 
@@ -88,7 +97,6 @@ class Conv2D implements Layer2D {
     // TODO split batches if cannot fit in memory
     try {
       final stream = CudaStream(0, context: ctx);
-      final out2DS = outSize2D(input.size);
       final outS = Dim([batches, outChannels] + out2DS.toList());
       final out = CudaList.sized(stream, outS.nel, context: ctx);
       final inpL = CudaList.copy(input.as1d, stream: stream, context: ctx);
@@ -126,11 +134,20 @@ class Conv2D implements Layer2D {
   int get inChannels => kernel.size[1] * groups;
 
   // TODO is this correct calculation?
-  Dim2 outSize2D(Dim inSize) =>
-      (inSize.to2D() +
-              (padding * 2) -
-              (dilation * (kernelSize - 1)) -
-              Dim2(1, 1)) ~/
-          stride +
-      Dim2(1, 1);
+  Dim2 outSize2D(Dim inSize) {
+    Dim2 padding = this.padding;
+    if (padSameSize) {
+      padding = padSameSize2D(inSize.to2D());
+    }
+    return (inSize.to2D() +
+        (padding * 2) -
+        (dilation * (kernelSize - 1)) -
+        Dim2(1, 1)) ~/
+        stride +
+        Dim2(1, 1);
+  }
+
+  Dim2 padSameSize2D(Dim2 inSize) =>
+      (inSize * stride - stride + dilation * (kernelSize - 1) - inSize + 1) ~/
+      2;
 }

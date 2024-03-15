@@ -3,15 +3,17 @@ import 'dart:convert';
 import 'package:gpuc_dart/gpuc_dart.dart';
 import 'package:gpuc_dart/src/nn2d/nn2d.dart';
 
+export 'tenson_cmd.dart';
+
 enum TensonType {
-  intData(int, 'Int'),
-  doubleData(double, 'Double'),
-  stringData(String, 'String'),
-  dimData(Dim, 'Dim'),
-  tensorData(Tensor, 'Tensor'),
+  intData([int], 'Int'),
+  doubleData([double], 'Double'),
+  stringData([String], 'String'),
+  dimData([Dim, Dim2, Dim3], 'Dim'),
+  tensorData([Tensor], 'Tensor'),
   ;
 
-  final Type dataType;
+  final List<Type> dataType;
   final String jsonName;
 
   const TensonType(this.dataType, this.jsonName);
@@ -29,7 +31,7 @@ class TensonVar<T> {
   late final TensonType dataType;
 
   TensonVar({required this.name, required this.data}) {
-    dataType = TensonType.values.firstWhere((e) => e.dataType == T);
+    dataType = TensonType.values.firstWhere((e) => e.dataType.contains(T));
   }
 
   static TensonVar fromMap(Map map) {

@@ -6,7 +6,6 @@ import 'package:gpuc_dart/src/tensor/matrix.dart';
 
 export 'dim.dart';
 export 'tensor_future.dart';
-export 'tensor_json.dart';
 
 class Tensor implements Resource {
   String name;

@@ -1,12 +1,10 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:gpuc_dart/gpuc_dart.dart';
+import 'package:gpuc_dart/src/nn2d/nn2d.dart';
 
 Future<void> main() async {
   initializeNativeTensorLibrary();
 
-  for (int b = 1; b < 20; b += 5) {
+  /*for (int b = 1; b < 20; b += 5) {
     await testConv2D(batches: b);
     for (int i = 2; i < 100; i += 20) {
       await testConv2D(inChannels: i, batches: b);
@@ -27,51 +25,108 @@ Future<void> main() async {
         }
       }
     }
+  }*/
+
+  /*
+  for(int b = 1; b < 5; b++) {
+    await testConv2D(
+      inputSize: Dim2(16, 16),
+      padding: Dim2(2, 2),
+      batches: b,
+    );
+    await testConv2D(
+      inputSize: Dim2(16, 16),
+      stride: Dim2(2, 2),
+      batches: b,
+    );
+    await testConv2D(
+      inputSize: Dim2(16, 16),
+      dilation: Dim2(2, 2),
+      batches: b,
+    );
+    await testConv2D(
+      inputSize: Dim2(16, 16),
+      dilation: Dim2(2, 2),
+      stride: Dim2(2, 2),
+      padding: Dim2(2, 2),
+      batches: b,
+    );
   }
+   */
+
+  for(final padMode in PadMode.values) {
+    await testConv2D(
+      inputSize: Dim2(16, 16),
+      padding: Dim2(2, 2),
+      padMode: padMode,
+    );
+    await testConv2D(
+      inputSize: Dim2(16, 16),
+      padSameSize: true,
+      padMode: padMode,
+    );
+  }
+
+  /*for(final padMode in PadMode.values) {
+
+  }*/
 
   print('Finished');
 }
 
-Future<void> testConv2D(
-    {int batches = 1,
-    int inChannels = 1,
-    int outChannels = 1,
-    int groups = 1}) async {
+Future<void> testConv2D({
+  int batches = 1,
+  Dim2 inputSize = const Dim2(3, 3),
+  Dim2 kernelSize = const Dim2(3, 3),
+  int inChannels = 1,
+  int outChannels = 1,
+  int groups = 1,
+  Dim2 padding = const Dim2(0, 0),
+  Dim2 stride = const Dim2(1, 1),
+  Dim2 dilation = const Dim2(1, 1),
+  PadMode padMode = PadMode.constant,
+  bool padSameSize = false,
+}) async {
   print(
       '=====> Batches: $batches Input: $inChannels Output: $outChannels Groups: $groups');
   final t1 = Tensor.fromList(
-      List.generate(batches * inChannels * 3 * 3,
+      List.generate(batches * inChannels * inputSize.rows * inputSize.cols,
           (index) => (index.toDouble() + 1) * 1e-6),
-      size: Dim([batches, inChannels, 3, 3]));
+      size: Dim([batches, inChannels, inputSize.rows, inputSize.cols]));
   final kernel = Tensor.fromList(
-      List.generate(outChannels * inChannels ~/ groups * 3 * 3,
+      List.generate(
+          outChannels *
+              inChannels ~/
+              groups *
+              kernelSize.rows *
+              kernelSize.cols,
           (index) => index.toDouble() + 1),
-      size: Dim([outChannels, inChannels ~/ groups, 3, 3]));
-  final conv2D = Conv2D.own(kernel, groups: groups);
+      size: Dim([
+        outChannels,
+        inChannels ~/ groups,
+        kernelSize.rows,
+        kernelSize.cols
+      ]));
+  final conv2D = Conv2D.withWeights(kernel,
+      groups: groups,
+      padding: padding,
+      stride: stride,
+      dilation: dilation,
+      padMode: padMode,
+      padSameSize: padSameSize);
   final t2 = await conv2D.forward(t1);
+  print(t2.size);
   print(t2.as1d);
-  final resp = await python(kernel: kernel, input: t1, groups: groups);
+  final tensonCmd = TensonCmd();
+  final resp = await tensonCmd.conv2D(
+      kernel: kernel,
+      input: t1,
+      groups: groups,
+      padding: padding,
+      stride: stride,
+      dilation: dilation,
+      padMode: padMode,
+      padSameSize: padSameSize);
   print(resp.as1d);
   t2.as1d.assertEqual(resp.as1d, eps: t1.nel * t1.nel * 1e-5);
-}
-
-Future<Tensor> python(
-    {required Tensor kernel, required Tensor input, int groups = 1}) async {
-  final process = await Process.start('bash', [
-    '-c',
-    'source ./test/python/activate && python3 ./test/python/conv2d.py'
-  ]);
-  process.stdin.write(jsonEncode([
-    TensonVar(name: 'groups', data: groups),
-    TensonVar(name: 'kernel', data: kernel),
-    TensonVar(name: 'input', data: input),
-  ]));
-  await process.stdin.close();
-  final out = await process.stdout.transform(utf8.decoder).join();
-  final err = await process.stderr.transform(utf8.decoder).join();
-  if (err.isNotEmpty) throw Exception(err);
-  final code = await process.exitCode;
-  if (code != 0) throw Exception('exit code: $code');
-  final resp = parseTenson(out);
-  return resp['output']!.data as Tensor;
 }

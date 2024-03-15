@@ -255,5 +255,3 @@ class Device {
   @override
   int get hashCode => Object.hashAll([type.index, id]);
 }
-
-enum PadMode { constant, reflect, replicate, circular }
