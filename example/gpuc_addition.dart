@@ -1,18 +1,27 @@
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-void test(Dim size) {
+Future<void> test(Dim size) async {
   final rnd = MTRandom();
   final t1 = Tensor.random(size, random: rnd);
   final t2 = Tensor.random(size, random: rnd);
-  final t3 = t1 + t2;
-  t3.as2d().assertEqual(t1.as2d().plus(t2.as2d()));
+  final out = await(t1 + t2);
+  out.as2d().assertEqual(t1.as2d().plus(t2.as2d()));
+}
+
+Future<void> test3(Dim size) async {
+  final rnd = MTRandom();
+  final t1 = Tensor.random(size, random: rnd);
+  final t2 = Tensor.random(size, random: rnd);
+  final t3 = Tensor.random(size, random: rnd);
+  final out = await(t1 + t2 + t3);
+  out.as2d().assertEqual(t1.as2d().plus(t2.as2d()).plus(t3.as2d()));
 }
 
 void main() async {
   initializeNativeTensorLibrary();
-  test(Dim([3, 3]));
-  test(Dim([512, 512]));
-  test(Dim([4096, 4096]));
+  await test(Dim([3, 3]));
+  await test(Dim([512, 512]));
+  await test(Dim([4096, 4096]));
 
   print('Finished');
 }

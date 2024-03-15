@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:ffi' as ffi;
 import 'dart:math';
 import 'package:gpuc_dart/gpuc_dart.dart';
 import 'package:gpuc_dart/src/tensor/matrix.dart';
 
 export 'dim.dart';
+export 'tensor_future.dart';
+export 'tensor_json.dart';
 
 class Tensor implements Resource {
   String name;
@@ -140,7 +143,7 @@ class Tensor implements Resource {
   Matrix as2d({int colDims = 1}) => Matrix(this, colDims: colDims);
 
   // TODO auto release inp1 and inp2
-  Tensor operator +(covariant Tensor other) {
+  Future<Tensor> operator +(covariant Tensor other) async {
     if (other.nel != nel) {
       throw ArgumentError('Size mismatch');
     }
@@ -157,6 +160,7 @@ class Tensor implements Resource {
       final outTensor = Tensor.sized(size, name: '$name + ${other.name}');
       ctx.releaseOnErr(outTensor);
       out.copyTo(outTensor.as1d, stream: stream);
+      await stream.sync();
       return outTensor;
     } catch (e) {
       ctx.release(isError: true);
