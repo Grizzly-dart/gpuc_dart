@@ -26,7 +26,7 @@ class MaxPool2D implements Layer2D {
   }
 
   @override
-  Tensor forward(Tensor inp) {
+  Future<Tensor> forward(Tensor inp) async {
     // TODO validate
 
     // TODO device selection
@@ -50,6 +50,7 @@ class MaxPool2D implements Layer2D {
       final outTensor = Tensor.sized(outS);
       ctx.releaseOnErr(outTensor);
       out.copyTo(outTensor.as1d, stream: stream);
+      await stream.sync();
       return outTensor;
     } catch (e) {
       ctx.release(isError: true);

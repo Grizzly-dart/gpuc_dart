@@ -5,7 +5,7 @@ export 'groupnorm2d.dart';
 export 'conv2d.dart';
 
 abstract class Layer2D {
-  Tensor forward(Tensor input);
+  Future<Tensor> forward(Tensor input);
 
   // TODO load wandb
 

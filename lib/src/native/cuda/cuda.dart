@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ffi' as ffi;
 import 'dart:io';
 import 'package:ffi/ffi.dart' as ffi;
@@ -130,7 +131,7 @@ class Cuda {
       ffi.Pointer<ffi.Void> inp1, Dim2 inpS) {
     final ctx = Context();
     try {
-      final sizePtr = CSize2D.from(inpS, context: ctx);
+      final sizePtr = CSize2D.from(inpS);
       final err = cuda.sum2D(stream.ptr, out, inp1, sizePtr.ptr.ref);
       if (err != ffi.nullptr) {
         throw CudaException(err.toDartString());
@@ -235,9 +236,31 @@ class CudaStream extends Resource {
 
   int get deviceId => _stream.ref.deviceId;
 
+  Future<void> sync() async {
+    final completer = Completer<void>();
+    void callback(StrPtr err) {
+      if (err != ffi.nullptr) {
+        completer.completeError(CudaException(err.toDartString()));
+      } else {
+        completer.complete();
+      }
+    }
+
+    final nc = ffi.NativeCallable<ffi.Void Function(StrPtr)>.listener(callback);
+    try {
+      final err = CudaFFI.instance!.syncStream(_stream, nc.nativeFunction);
+      if (err != ffi.nullptr) {
+        completer.completeError(CudaException(err.toDartString()));
+      }
+      await completer.future;
+    } finally {
+      nc.close();
+    }
+  }
+
   @override
   void release() {
-    if(_stream == ffi.nullptr) return;
+    if (_stream == ffi.nullptr) return;
 
     final err = CudaFFI.instance!.destroyStream(_stream);
     if (err != ffi.nullptr) {

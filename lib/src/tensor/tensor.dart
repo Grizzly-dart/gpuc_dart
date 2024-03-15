@@ -166,7 +166,7 @@ class Tensor implements Resource {
     }
   }
 
-  Tensor sumRows({int colDims = 1}) {
+  Future<Tensor> sumRows({int colDims = 1}) async {
     if (size.dims < 2) {
       throw StateError('Must be at least a 2D tensor');
     }
@@ -184,6 +184,7 @@ class Tensor implements Resource {
       final outTensor = Tensor.sized(outSize, name: 'sum2D($name)');
       ctx.releaseOnErr(outTensor);
       out.copyTo(outTensor.as1d, stream: stream);
+      // await stream.sync();
       return outTensor;
     } catch (e) {
       ctx.release(isError: true);

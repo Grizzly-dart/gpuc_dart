@@ -47,11 +47,11 @@ final class CSize2D extends ffi.Struct {
   @ffi.Uint32()
   external int c;
 
-  static CPtr<CSize2D> allocate({Context? context}) =>
-      CPtr<CSize2D>.allocate(ffi.sizeOf<CSize2D>(), context: context);
+  static CPtr<CSize2D> allocate() =>
+      CPtr<CSize2D>.allocate(ffi.sizeOf<CSize2D>());
 
-  static CPtr<CSize2D> from(Dim2 size, {Context? context}) {
-    final cptr = CSize2D.allocate(context: context);
+  static CPtr<CSize2D> from(Dim2 size) {
+    final cptr = CSize2D.allocate();
     final cSize = cptr.ptr.ref;
     cSize.r = size.rows;
     cSize.c = size.cols;
@@ -69,11 +69,11 @@ final class CSize3D extends ffi.Struct {
   @ffi.Uint32()
   external int c;
 
-  static CPtr<CSize3D> allocate({Context? context}) =>
-      CPtr<CSize3D>.allocate(ffi.sizeOf<CSize2D>(), context: context);
+  static CPtr<CSize3D> allocate() =>
+      CPtr<CSize3D>.allocate(ffi.sizeOf<CSize2D>());
 
-  static CPtr<CSize3D> from(Dim3 size, {Context? context}) {
-    final cptr = CSize3D.allocate(context: context);
+  static CPtr<CSize3D> from(Dim3 size) {
+    final cptr = CSize3D.allocate();
     final cSize = cptr.ptr.ref;
     cSize.ch = size.channels;
     cSize.r = size.rows;

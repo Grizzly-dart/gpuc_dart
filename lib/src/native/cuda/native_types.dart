@@ -1,6 +1,7 @@
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
+import 'package:gpuc_dart/src/native/c.dart';
 
 class CudaFFI {
   final StrPtr Function(ffi.Pointer<CCudaDeviceProps>, int device)
@@ -18,8 +19,8 @@ class CudaFFI {
       ffi.Pointer<CCudaStream> stream, int device) createStream;
   final ffi.Pointer<ffi.Utf8> Function(ffi.Pointer<CCudaStream> stream)
       destroyStream;
-
-  // TODO wait stream
+  final StrPtr Function(ffi.Pointer<CCudaStream>,
+      ffi.Pointer<ffi.NativeFunction<ffi.Void Function(StrPtr)>>) syncStream;
 
   final Op1D2Inp addition;
   final Op2D sum2D;
@@ -39,6 +40,7 @@ class CudaFFI {
     required this.conv2D,
     required this.createStream,
     required this.destroyStream,
+    required this.syncStream,
   });
 
   static CudaFFI? instance;
@@ -85,6 +87,12 @@ class CudaFFI {
         ffi.Pointer<ffi.Utf8> Function(ffi.Pointer<CCudaStream>),
         ffi.Pointer<ffi.Utf8> Function(
             ffi.Pointer<CCudaStream>)>('libtcCudaDestroyStream');
+    final syncStream = dylib.lookupFunction<
+            StrPtr Function(ffi.Pointer<CCudaStream>,
+                ffi.Pointer<ffi.NativeFunction<ffi.Void Function(StrPtr)>>),
+            StrPtr Function(ffi.Pointer<CCudaStream>,
+                ffi.Pointer<ffi.NativeFunction<ffi.Void Function(StrPtr)>>)>(
+        'libtcCudaSyncStream');
 
     final addition =
         dylib.lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaAdd2');
@@ -102,6 +110,7 @@ class CudaFFI {
       memcpy: memcpy,
       createStream: createStream,
       destroyStream: destroyStream,
+      syncStream: syncStream,
       addition: addition,
       sum2D: sum2D,
       maxPool2D: maxPool2D,

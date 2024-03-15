@@ -12,7 +12,7 @@ class GroupNorm2D extends Layer2D {
   }
 
   @override
-  Tensor forward(Tensor input) {
+  Future<Tensor> forward(Tensor input) async {
     throw UnimplementedError();
   }
 }

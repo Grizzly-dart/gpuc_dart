@@ -17,3 +17,7 @@
 # Low prio
 + ROCm implementation
 + SYCL implementation
+
+# Decisions
+
++ Should GPU operations be async-await?

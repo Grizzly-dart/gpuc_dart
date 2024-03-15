@@ -75,7 +75,7 @@ class Conv2D implements Layer2D {
   }
 
   @override
-  Tensor forward(Tensor input) {
+  Future<Tensor> forward(Tensor input) async {
     if (input.size.channels != inChannels) {
       throw ArgumentError('input channels must be $inChannels');
     }
@@ -111,6 +111,7 @@ class Conv2D implements Layer2D {
       final outTensor = Tensor.sized(outS);
       ctx.releaseOnErr(outTensor);
       out.copyTo(outTensor.as1d, stream: stream);
+      await stream.sync();
       return outTensor;
     } catch (e) {
       ctx.release(isError: true);
