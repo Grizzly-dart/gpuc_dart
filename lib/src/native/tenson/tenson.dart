@@ -11,6 +11,7 @@ enum TensonType {
   stringData([String], 'String'),
   dimData([Dim, Dim2, Dim3], 'Dim'),
   tensorData([Tensor], 'Tensor'),
+  nullData([Null], 'Null'),
   ;
 
   final List<Type> dataType;
@@ -31,7 +32,11 @@ class TensonVar<T> {
   late final TensonType dataType;
 
   TensonVar({required this.name, required this.data}) {
-    dataType = TensonType.values.firstWhere((e) => e.dataType.contains(T));
+    if(data != null) {
+      dataType = TensonType.values.firstWhere((e) => e.dataType.contains(T));
+    } else {
+      dataType = TensonType.nullData;
+    }
   }
 
   static TensonVar fromMap(Map map) {

@@ -39,6 +39,8 @@ abstract class Dim {
 
   int get batch;
 
+  int get numMatrices;
+
   bool isIndex(Dim other);
 
   Dim get strides;
@@ -265,6 +267,14 @@ class _DimImpl with DimMixin implements Dim {
   }
 
   @override
+  int get numMatrices {
+    if (dims < 2) {
+      return 1;
+    }
+    return asList.take(dims - 2).prod;
+  }
+
+  @override
   late final Dim strides = () {
     final strides = List<int>.filled(dims, 1);
     for (int i = dims - 2; i >= 0; i--) {
@@ -355,6 +365,9 @@ class Dim2 with DimMixin implements Dim {
   int get batch => 1;
 
   @override
+  int get numMatrices => 1;
+
+  @override
   Dim2 to2D() => this;
 
   Dim3 to3D(int channels) => Dim3(channels, rows, cols);
@@ -441,6 +454,12 @@ class Dim3 with DimMixin implements Dim {
   int get nel => channels * rows * cols;
 
   @override
+  int get batch => 1;
+
+  @override
+  int get numMatrices => channels;
+
+  @override
   Dim get strides => Dim([rows * cols, cols, 1]);
 
   @override
@@ -452,10 +471,6 @@ class Dim3 with DimMixin implements Dim {
 
   @override
   String toString() => 'Dim3($channels, $rows, $cols)';
-
-  @override
-  // TODO: implement batch
-  int get batch => 1;
 
   @override
   Dim2 to2D() => Dim2(rows, cols);

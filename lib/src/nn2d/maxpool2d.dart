@@ -7,10 +7,6 @@ class MaxPool2D implements Layer2D {
 
   final Dim2 padding;
 
-  final double pad;
-
-  final PadMode padMode;
-
   final Dim2 dilation;
 
   // TODO return indices
@@ -18,8 +14,6 @@ class MaxPool2D implements Layer2D {
   MaxPool2D(this.kernelSize,
       {Dim2? stride,
       this.padding = const Dim2(0, 0),
-      this.pad = 0,
-      this.padMode = PadMode.constant,
       this.dilation = const Dim2(1, 1)})
       : stride = stride ?? kernelSize {
     // TODO validate
@@ -44,9 +38,7 @@ class MaxPool2D implements Layer2D {
           stride: stride,
           dilation: dilation,
           padding: padding,
-          padMode: padMode,
-          pad: pad,
-          matrices: inp.size.asList.skip(2).prod);
+          matrices: inp.size.asList.take(inp.size.dims - 2).prod);
       final outTensor = Tensor.sized(outS);
       ctx.releaseOnErr(outTensor);
       out.copyTo(outTensor.as1d, stream: stream);

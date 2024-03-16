@@ -3,6 +3,7 @@ import 'dart:ffi' as ffi;
 import 'dart:math';
 import 'package:gpuc_dart/gpuc_dart.dart';
 import 'package:gpuc_dart/src/tensor/matrix.dart';
+import 'package:text_table/text_table.dart';
 
 export 'dim.dart';
 export 'tensor_future.dart';
@@ -141,6 +142,16 @@ class Tensor implements Resource {
 
   Matrix as2d({int colDims = 1}) => Matrix(this, colDims: colDims);
 
+  Matrix matrix(index) {
+    if (index < 0 || index >= size.numMatrices) {
+      throw ArgumentError('Index out of range');
+    }
+    // TODO standardize tensor views
+    return Matrix(Tensor(
+        as1d.view(index * _size.rows * _size.cols, _size.rows * _size.cols),
+        _size.to2D()));
+  }
+
   // TODO auto release inp1 and inp2
   Future<Tensor> operator +(covariant Tensor other) async {
     if (other.nel != nel) {
@@ -262,6 +273,12 @@ class Tensor implements Resource {
        */
     }
     throw UnimplementedError('Device not implemented');
+  }
+
+  void printTextTable() {
+    for (int i = 0; i < size.numMatrices; i++) {
+      print(TableRenderer(minColWidth: Fixed(40)).render(matrix(i)));
+    }
   }
 
   Map<String, dynamic> toJson() => {

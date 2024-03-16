@@ -15,15 +15,18 @@ class CudaFFI {
   final StrPtr Function(ffi.Pointer<CCudaStream> stream,
       ffi.Pointer<ffi.Void> dst, ffi.Pointer<ffi.Void> src, int size) memcpy;
 
-  final ffi.Pointer<ffi.Utf8> Function(
-      ffi.Pointer<CCudaStream> stream, int device) createStream;
-  final ffi.Pointer<ffi.Utf8> Function(ffi.Pointer<CCudaStream> stream)
-      destroyStream;
+  final StrPtr Function(ffi.Pointer<CCudaStream> stream, int device)
+      createStream;
+  final StrPtr Function(ffi.Pointer<CCudaStream> stream) destroyStream;
   final StrPtr Function(ffi.Pointer<CCudaStream>,
       ffi.Pointer<ffi.NativeFunction<ffi.Void Function(StrPtr)>>) syncStream;
 
   final Op1D2Inp addition;
   final Op2D sum2D;
+
+  final StrPtr Function(
+          ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr, int m, int n, int k)
+      matmul;
 
   final MaxPool2D maxPool2D;
   final Conv2D conv2D;
@@ -34,13 +37,14 @@ class CudaFFI {
     required this.allocate,
     required this.memFree,
     required this.memcpy,
-    required this.addition,
-    required this.sum2D,
-    required this.maxPool2D,
-    required this.conv2D,
     required this.createStream,
     required this.destroyStream,
     required this.syncStream,
+    required this.addition,
+    required this.sum2D,
+    required this.matmul,
+    required this.maxPool2D,
+    required this.conv2D,
   });
 
   static CudaFFI? instance;
@@ -97,6 +101,13 @@ class CudaFFI {
     final addition =
         dylib.lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaAdd2');
     final sum2D = dylib.lookupFunction<Op2DNative, Op2D>('libtcCudaSum2D');
+
+    final matmul = dylib.lookupFunction<
+        StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
+            ffi.Uint32, ffi.Uint32, ffi.Uint32),
+        StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr, int,
+            int, int)>('libtcCudaMatMul');
+
     final maxPool2D =
         dylib.lookupFunction<MaxPool2DNative, MaxPool2D>('libtcCudaMaxPool2D');
     final conv2D =
@@ -113,6 +124,7 @@ class CudaFFI {
       syncStream: syncStream,
       addition: addition,
       sum2D: sum2D,
+      matmul: matmul,
       maxPool2D: maxPool2D,
       conv2D: conv2D,
     );
@@ -138,8 +150,6 @@ typedef MaxPool2D = ffi.Pointer<ffi.Utf8> Function(
   CSize2D, // inpS
   int, // matrices
   CSize2D, // padding
-  int, // padMode
-  double, // padValue
   CSize2D, // stride
   CSize2D, // dilation
 );
@@ -152,8 +162,6 @@ typedef MaxPool2DNative = ffi.Pointer<ffi.Utf8> Function(
   CSize2D, // inpS
   ffi.Uint32, // matrices
   CSize2D, // padding
-  ffi.Uint8, // padMode
-  ffi.Double, // padValue
   CSize2D, // stride
   CSize2D, // dilation
 );

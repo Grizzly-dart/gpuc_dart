@@ -149,8 +149,6 @@ class Cuda {
       required int matrices,
       Dim2 stride = const Dim2(1, 1),
       Dim2 padding = const Dim2(0, 0),
-      double pad = 0,
-      PadMode padMode = PadMode.constant,
       Dim2 dilation = const Dim2(1, 1)}) {
     final kernSPtr = CSize2D.from(kernSize);
     final outSPtr = CSize2D.from(outSize);
@@ -168,8 +166,6 @@ class Cuda {
         inSPtr.ptr.ref,
         matrices,
         paddingSPtr.ptr.ref,
-        padMode.index,
-        pad,
         strideSPtr.ptr.ref,
         dilationSPtr.ptr.ref);
     if (err != ffi.nullptr) {

@@ -1,5 +1,5 @@
-import json
 from sys import stdin
+import json
 
 import torch
 

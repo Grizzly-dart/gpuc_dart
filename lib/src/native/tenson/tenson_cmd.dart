@@ -4,6 +4,35 @@ import 'dart:io';
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 class TensonCmd {
+  Future<Tensor> maxPool2D(
+      {required Dim2 kernelSize,
+      required Tensor input,
+      Dim2 padding = const Dim2(0, 0),
+      Dim2? stride = const Dim2(1, 1),
+      Dim2 dilation = const Dim2(1, 1),
+      PadMode padMode = PadMode.constant}) async {
+    final process = await Process.start('bash', [
+      '-c',
+      'source ./test/python/activate && python3 ./test/python/maxpool2d.py'
+    ]);
+    process.stdin.write(jsonEncode([
+      TensonVar(name: 'padding_mode', data: mapPadMode(padMode)),
+      TensonVar(name: 'stride', data: stride),
+      TensonVar(name: 'padding', data: padding),
+      TensonVar(name: 'dilation', data: dilation),
+      TensonVar(name: 'kernelSize', data: kernelSize),
+      TensonVar(name: 'input', data: input),
+    ]));
+    await process.stdin.close();
+    final out = await process.stdout.transform(utf8.decoder).join();
+    final err = await process.stderr.transform(utf8.decoder).join();
+    if (err.isNotEmpty) throw Exception(err);
+    final code = await process.exitCode;
+    if (code != 0) throw Exception('exit code: $code');
+    final resp = parseTenson(out);
+    return resp['output']!.data as Tensor;
+  }
+
   Future<Tensor> conv2D({
     required Tensor kernel,
     required Tensor input,
