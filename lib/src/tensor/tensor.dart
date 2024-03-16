@@ -152,9 +152,16 @@ class Tensor implements Resource {
         _size.to2D()));
   }
 
+  Future<Tensor> matmul(FutureOr<Tensor> other) async {
+    final b = await other;
+    // TODO implement matmul
+    throw UnimplementedError();
+  }
+
   // TODO auto release inp1 and inp2
-  Future<Tensor> operator +(covariant Tensor other) async {
-    if (other.nel != nel) {
+  Future<Tensor> operator +(covariant FutureOr<Tensor> other) async {
+    Tensor b = await other;
+    if (b.nel != nel) {
       throw ArgumentError('Size mismatch');
     }
     final ctx = Context();
@@ -163,11 +170,11 @@ class Tensor implements Resource {
       final stream = CudaStream(deviceId, context: ctx);
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
       final inp1 = CudaList.copy(as1d, stream: stream, context: ctx);
-      final inp2 = CudaList.copy(other.as1d, stream: stream, context: ctx);
+      final inp2 = CudaList.copy(b.as1d, stream: stream, context: ctx);
       final out = CudaList.sized(stream, nel, context: ctx);
       cuda.addition(
           stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
-      final outTensor = Tensor.sized(size, name: '$name + ${other.name}');
+      final outTensor = Tensor.sized(size, name: '$name + ${b.name}');
       ctx.releaseOnErr(outTensor);
       out.copyTo(outTensor.as1d, stream: stream);
       await stream.sync();

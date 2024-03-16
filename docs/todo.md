@@ -6,9 +6,7 @@
 + tensor.json read and write
 
 # Layers
-+ MaxPool2D
 + Group normalization
-+ Conv2D
 + ResNet
 
 # Multi device
@@ -20,4 +18,5 @@
 
 # Decisions
 
-+ Should GPU operations be async-await?
++ Find a way to keep Tensors in GPU memory between operations
++ Find way to track Tensors in GPU and transfer them to CPU when free memory is not sufficient
