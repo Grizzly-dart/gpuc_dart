@@ -40,7 +40,7 @@ class Conv2D implements Layer2D {
     }
 
     if (bias != null) {
-      // TODO
+      // TODO validate bias shape
     }
     if (outChannels % groups != 0) {
       throw ArgumentError('outChannels must be divisible by groups');
@@ -48,8 +48,6 @@ class Conv2D implements Layer2D {
     if (inChannels % groups != 0) {
       throw ArgumentError('inChannels must be divisible by groups');
     }
-    // TODO validate weight shape
-    // TODO validate bias shape
   }
 
   factory Conv2D(
@@ -63,6 +61,7 @@ class Conv2D implements Layer2D {
     PadMode padMode = PadMode.constant,
     Dim2 padding = const Dim2(0, 0),
   }) {
+    // TODO generate random values for kernel and bias
     final kernel = Tensor.sized(
         Dim([outChannels, inChannels, kernelSize.rows, kernelSize.cols]));
     final bias = Tensor.sized(Dim([outChannels]));
