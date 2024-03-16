@@ -24,6 +24,9 @@ abstract class CudaList extends NList {
 
   @override
   CudaListView view(int start, int length);
+
+  @override
+  void release({CudaStream? stream});
 }
 
 class _CudaListImpl extends NList
@@ -95,14 +98,15 @@ class _CudaListImpl extends NList
   ffi.Pointer<ffi.Double> get ptr => _mem;
 
   @override
-  void release() {
+  void release({CudaStream? stream}) {
     if (_mem == ffi.nullptr) return;
-    final stream = CudaStream(deviceId);
+    final ctx = Context();
     try {
+      stream ??= CudaStream(deviceId, context: ctx);
       cuda.memFree(stream, _mem.cast());
       _mem = ffi.nullptr;
     } finally {
-      stream.release();
+      ctx.release();
     }
   }
 
@@ -227,7 +231,7 @@ class CudaListView extends NList
   ffi.Pointer<ffi.Double> get ptr => _list.ptr + _offset;
 
   @override
-  void release() {}
+  void release({CudaStream? stream}) {}
 
   @override
   set length(int newLength) {

@@ -128,17 +128,21 @@ class Cuda {
   }
 
   void sum2D(CudaStream stream, ffi.Pointer<ffi.Void> out,
-      ffi.Pointer<ffi.Void> inp1, Dim2 inpS) {
+      ffi.Pointer<ffi.Void> inp, Dim2 inpS) {
     final ctx = Context();
     try {
       final sizePtr = CSize2D.from(inpS);
-      final err = cuda.sum2D(stream.ptr, out, inp1, sizePtr.ptr.ref);
+      final err = cuda.sum2D(stream.ptr, out, inp, sizePtr.ptr.ref);
       if (err != ffi.nullptr) {
         throw CudaException(err.toDartString());
       }
     } finally {
       ctx.release();
     }
+  }
+
+  void matmul(CudaStream stream, F64Ptr out, F64Ptr inp1, F64Ptr inp2, int m, int n, int k) {
+    // TODO
   }
 
   void maxPool2D(CudaStream stream, ffi.Pointer<ffi.Double> out,

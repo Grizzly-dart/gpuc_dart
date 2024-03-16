@@ -11,7 +11,7 @@ dependencies:
   ffi: ^2.1.2
   mt19937: ^0.1.0
   path: ^1.9.0
-  grizzly: ^1.0.5
+  grizzly: ^1.0.6
   text_table:
 
 dev_dependencies:
