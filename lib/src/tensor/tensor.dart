@@ -152,7 +152,7 @@ class Tensor implements Resource {
         _size.to2D()));
   }
 
-  Future<Tensor> matmul(FutureOr<Tensor> other) async {
+  Future<Tensor> matmul(FutureOr<Tensor> other, {Tensor? out}) async {
     final b = await other;
     if (size.cols != b.size.rows) {
       throw ArgumentError('Columns of A must match rows of B');
@@ -160,16 +160,22 @@ class Tensor implements Resource {
     if (size.numMatrices != b.size.numMatrices) {
       throw ArgumentError('Number of matrices must match');
     }
-    final outSize = Dim2(size.rows, b.size.cols);
+    final outSize2D = Dim2(size.rows, b.size.cols);
+    final outSize =
+        outSize2D.extend2D(_size.asList.take(_size.asList.length - 2));
     final inp1Size = _size.to2D();
     final inp2Size = b.size.to2D();
     final ctx = Context();
     try {
       int deviceId = 0; // TODO implement device selection
-      final outTensor = Tensor.sized(
-          [..._size.asList.take(_size.asList.length - 2), ...outSize.toList()],
-          name: '$name * ${b.name}');
-      ctx.releaseOnErr(outTensor);
+      if (out == null) {
+        out = Tensor.sized(outSize, name: '$name * ${b.name}');
+        ctx.releaseOnErr(out);
+      } else {
+        if (out.size != outSize) {
+          throw ArgumentError('Size mismatch');
+        }
+      }
       final streams = <CudaStream>[];
       for (final int matrix in size.numMatrices.range) {
         final stream = CudaStream(deviceId, context: ctx);
@@ -182,17 +188,17 @@ class Tensor implements Resource {
             b.as1d.view(matrix * inp2Size.nel, inp2Size.nel),
             stream: stream,
             context: ctx);
-        final out = CudaList.sized(stream, outSize.nel, context: ctx);
-        cuda.matmul(stream, out.ptr.cast(), inp1.ptr, inp2.ptr, size.rows,
+        final outMat = CudaList.sized(stream, outSize2D.nel, context: ctx);
+        cuda.matmul(stream, outMat.ptr.cast(), inp1.ptr, inp2.ptr, size.rows,
             size.cols, b.size.cols);
-        out.copyTo(outTensor.as1d.view(matrix * outSize.nel, outSize.nel),
+        outMat.copyTo(out.as1d.view(matrix * outSize2D.nel, outSize2D.nel),
             stream: stream);
         inp1.release(stream: stream);
         inp2.release(stream: stream);
-        out.release(stream: stream);
+        outMat.release(stream: stream);
       }
       await Future.wait(streams.map((s) => s.sync()));
-      return outTensor;
+      return out;
     } catch (e) {
       ctx.release(isError: true);
       rethrow;

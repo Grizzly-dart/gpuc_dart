@@ -53,6 +53,10 @@ abstract class Dim {
 
   Dim reshapeDims(int dims);
 
+  Dim extend(Iterable<int> sizes);
+
+  Dim extend2D(Iterable<int> sizes);
+
   Dim2 squeeze2D({int colDims = 1});
 
   Dim squeezeFront(int dims);
@@ -113,6 +117,12 @@ mixin DimMixin implements Dim {
     }
     return true;
   }
+
+  @override
+  Dim extend(Iterable<int> sizes) => Dim([...sizes, ...asList]);
+
+  @override
+  Dim extend2D(Iterable<int> sizes) => Dim([...sizes, rows, cols]);
 
   @override
   Dim2 squeeze2D({int colDims = 1}) {

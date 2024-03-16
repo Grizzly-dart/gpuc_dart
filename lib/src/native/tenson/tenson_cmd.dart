@@ -4,6 +4,14 @@ import 'dart:io';
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 class TensonCmd {
+  Future<Tensor> matmul(Tensor a, Tensor b) async {
+    final resp = await _execute('matmul', [
+      TensonVar(name: 'inputA', data: a),
+      TensonVar(name: 'inputB', data: b),
+    ]);
+    return resp['output']!.data as Tensor;
+  }
+
   Future<Tensor> maxPool2D(
       {required Dim2 kernelSize,
       required Tensor input,
@@ -11,25 +19,14 @@ class TensonCmd {
       Dim2? stride = const Dim2(1, 1),
       Dim2 dilation = const Dim2(1, 1),
       PadMode padMode = PadMode.constant}) async {
-    final process = await Process.start('bash', [
-      '-c',
-      'source ./test/python/activate && python3 ./test/python/maxpool2d.py'
-    ]);
-    process.stdin.write(jsonEncode([
+    final resp = await _execute('maxpool2d', [
       TensonVar(name: 'padding_mode', data: mapPadMode(padMode)),
       TensonVar(name: 'stride', data: stride),
       TensonVar(name: 'padding', data: padding),
       TensonVar(name: 'dilation', data: dilation),
       TensonVar(name: 'kernelSize', data: kernelSize),
       TensonVar(name: 'input', data: input),
-    ]));
-    await process.stdin.close();
-    final out = await process.stdout.transform(utf8.decoder).join();
-    final err = await process.stderr.transform(utf8.decoder).join();
-    if (err.isNotEmpty) throw Exception(err);
-    final code = await process.exitCode;
-    if (code != 0) throw Exception('exit code: $code');
-    final resp = parseTenson(out);
+    ]);
     return resp['output']!.data as Tensor;
   }
 
@@ -43,11 +40,7 @@ class TensonCmd {
     PadMode padMode = PadMode.constant,
     bool padSameSize = false,
   }) async {
-    final process = await Process.start('bash', [
-      '-c',
-      'source ./test/python/activate && python3 ./test/python/conv2d.py'
-    ]);
-    process.stdin.write(jsonEncode([
+    final resp = await _execute('conv2d', [
       TensonVar(name: 'padding_mode', data: mapPadMode(padMode)),
       if (!padSameSize)
         TensonVar(name: 'stride', data: stride)
@@ -64,14 +57,7 @@ class TensonCmd {
       TensonVar(name: 'groups', data: groups),
       TensonVar(name: 'kernel', data: kernel),
       TensonVar(name: 'input', data: input),
-    ]));
-    await process.stdin.close();
-    final out = await process.stdout.transform(utf8.decoder).join();
-    final err = await process.stderr.transform(utf8.decoder).join();
-    if (err.isNotEmpty) throw Exception(err);
-    final code = await process.exitCode;
-    if (code != 0) throw Exception('exit code: $code');
-    final resp = parseTenson(out);
+    ]);
     return resp['output']!.data as Tensor;
   }
 
@@ -86,5 +72,21 @@ class TensonCmd {
       case PadMode.circular:
         return 'circular';
     }
+  }
+
+  Future<Map<String, TensonVar>> _execute(
+      String script, List<TensonVar> args) async {
+    final process = await Process.start('bash', [
+      '-c',
+      'source ./test/python/activate && python3 ./test/python/$script.py'
+    ]);
+    process.stdin.write(jsonEncode(args));
+    await process.stdin.close();
+    final out = await process.stdout.transform(utf8.decoder).join();
+    final err = await process.stderr.transform(utf8.decoder).join();
+    if (err.isNotEmpty) throw Exception(err);
+    final code = await process.exitCode;
+    if (code != 0) throw Exception('exit code: $code');
+    return parseTenson(out);
   }
 }

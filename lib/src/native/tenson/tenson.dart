@@ -32,8 +32,9 @@ class TensonVar<T> {
   late final TensonType dataType;
 
   TensonVar({required this.name, required this.data}) {
-    if(data != null) {
-      dataType = TensonType.values.firstWhere((e) => e.dataType.contains(T));
+    if (data != null) {
+      dataType = TensonType.values
+          .firstWhere((e) => e.dataType.contains(data.runtimeType));
     } else {
       dataType = TensonType.nullData;
     }
