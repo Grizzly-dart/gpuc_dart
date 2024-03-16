@@ -141,8 +141,12 @@ class Cuda {
     }
   }
 
-  void matmul(CudaStream stream, F64Ptr out, F64Ptr inp1, F64Ptr inp2, int m, int n, int k) {
-    // TODO
+  void matmul(CudaStream stream, F64Ptr out, F64Ptr inp1, F64Ptr inp2, int m,
+      int n, int k) {
+    final err = cuda.matmul(stream.ptr, out, inp1, inp2, m, n, k);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
   }
 
   void maxPool2D(CudaStream stream, ffi.Pointer<ffi.Double> out,

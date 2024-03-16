@@ -173,6 +173,7 @@ class Tensor implements Resource {
       final streams = <CudaStream>[];
       for (final int matrix in size.numMatrices.range) {
         final stream = CudaStream(deviceId, context: ctx);
+        streams.add(stream);
         final inp1 = CudaList.copy(
             as1d.view(matrix * inp2Size.nel, inp1Size.nel),
             stream: stream,
