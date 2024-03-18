@@ -39,10 +39,11 @@ Future<void> test(
   print('=====> batches: $batches, m: $m, n: $n, k: $k');
   final a = Tensor.generate(Dim2(m, n), (i) => rand.nextDouble());
   final b = Tensor.generate(Dim2(n, k), (i) => rand.nextDouble());
+  // TODO transpose b
   // a.printTextTable();
   // b.printTextTable();
   final watch = Stopwatch()..start();
-  final out = await a.matmul(b);
+  final out = await a.matmulT(b);
   print('Elapsed: ${watch.elapsedMilliseconds} ms');
   print(out.as1d);
   final out2 = await TensonCmd().matmul(a, b);

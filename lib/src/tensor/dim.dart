@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:math';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
 
@@ -28,6 +29,10 @@ abstract class Dim {
   int get dims;
 
   Dim2 to2D();
+
+  Dim reversed();
+
+  Dim get t;
 
   int get nel;
 
@@ -76,6 +81,8 @@ abstract class Dim {
   List<int> toList();
 
   List<int> toJson() => toList();
+
+  int id2D(Dim index);
 }
 
 mixin DimMixin implements Dim {
@@ -224,6 +231,13 @@ mixin DimMixin implements Dim {
 
   @override
   List<int> toJson() => toList();
+
+  @override
+  String toString() => 'Dim(${asList.join(', ')})';
+
+  @override
+  int id2D(Dim index) =>
+      index.rows * pow(10, cols.toString().length).toInt() + index.cols;
 }
 
 class _DimImpl with DimMixin implements Dim {
@@ -292,6 +306,17 @@ class _DimImpl with DimMixin implements Dim {
     }
     return Dim(strides);
   }();
+
+  @override
+  Dim reversed() => Dim(_sizes.reversed);
+
+  @override
+  Dim get t {
+    if (dims < 2) {
+      throw StateError('Not enough dimensions');
+    }
+    return Dim([...asList.take(dims - 2), _sizes[dims - 1], _sizes[dims - 2]]);
+  }
 
   @override
   Dim2 to2D() => Dim2(rows, cols);
@@ -376,6 +401,12 @@ class Dim2 with DimMixin implements Dim {
 
   @override
   int get numMatrices => 1;
+
+  @override
+  Dim2 reversed() => Dim2(cols, rows);
+
+  @override
+  Dim2 get t => Dim2(cols, rows);
 
   @override
   Dim2 to2D() => this;
@@ -484,4 +515,10 @@ class Dim3 with DimMixin implements Dim {
 
   @override
   Dim2 to2D() => Dim2(rows, cols);
+
+  @override
+  Dim3 reversed() => Dim3(cols, rows, channels);
+
+  @override
+  Dim3 get t => Dim3(channels, cols, rows);
 }

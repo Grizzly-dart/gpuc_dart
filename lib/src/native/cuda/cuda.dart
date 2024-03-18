@@ -142,10 +142,31 @@ class Cuda {
   }
 
   void matmul(CudaStream stream, F64Ptr out, F64Ptr inp1, F64Ptr inp2, int m,
-      int n, int k) {
-    final err = cuda.matmul(stream.ptr, out, inp1, inp2, m, n, k);
+      int n, int k, int batches) {
+    final err = cuda.matmul(stream.ptr, out, inp1, inp2, m, n, k, batches);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
+    }
+  }
+
+  void matmulT(CudaStream stream, F64Ptr out, F64Ptr inp1, F64Ptr inp2, int m,
+      int n, int k, int batches) {
+    final err = cuda.matmulT(stream.ptr, out, inp1, inp2, m, n, k, batches);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void transpose2D(CudaStream stream, F64Ptr out, F64Ptr inp, Dim3 size) {
+    final ctx = Context();
+    try {
+      final sizePtr = CSize3D.from(size);
+      final err = cuda.transpose2D(stream.ptr, out, inp, sizePtr.ptr.ref);
+      if (err != ffi.nullptr) {
+        throw CudaException(err.toDartString());
+      }
+    } finally {
+      ctx.release();
     }
   }
 

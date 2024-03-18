@@ -4,6 +4,13 @@ import 'dart:io';
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 class TensonCmd {
+  Future<Tensor> transpose2D(Tensor input) async {
+    final resp = await _execute('transpose2d', [
+      TensonVar(name: 'input', data: input),
+    ]);
+    return resp['output']!.data as Tensor;
+  }
+
   Future<Tensor> matmul(Tensor a, Tensor b) async {
     final resp = await _execute('matmul', [
       TensonVar(name: 'inputA', data: a),

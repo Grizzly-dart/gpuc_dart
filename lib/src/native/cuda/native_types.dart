@@ -24,9 +24,14 @@ class CudaFFI {
   final Op1D2Inp addition;
   final Op2D sum2D;
 
-  final StrPtr Function(
-          ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr, int m, int n, int k)
-      matmul;
+  final StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, CSize3D)
+      transpose2D;
+
+  final StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr, int m,
+      int n, int k, int batches) matmul;
+
+  final StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr, int m,
+      int n, int k, int batches) matmulT;
 
   final MaxPool2D maxPool2D;
   final Conv2D conv2D;
@@ -42,7 +47,9 @@ class CudaFFI {
     required this.syncStream,
     required this.addition,
     required this.sum2D,
+    required this.transpose2D,
     required this.matmul,
+    required this.matmulT,
     required this.maxPool2D,
     required this.conv2D,
   });
@@ -102,11 +109,21 @@ class CudaFFI {
         dylib.lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaAdd2');
     final sum2D = dylib.lookupFunction<Op2DNative, Op2D>('libtcCudaSum2D');
 
+    final transpose2D = dylib.lookupFunction<
+        StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, CSize3D),
+        StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr,
+            CSize3D)>('libtcCudaTranspose2d');
+
     final matmul = dylib.lookupFunction<
         StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
-            ffi.Uint32, ffi.Uint32, ffi.Uint32),
+            ffi.Uint32, ffi.Uint32, ffi.Uint32, ffi.Uint32),
         StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr, int,
-            int, int)>('libtcCudaMatMul');
+            int, int, int)>('libtcCudaMatMul');
+    final matmulT = dylib.lookupFunction<
+        StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
+            ffi.Uint32, ffi.Uint32, ffi.Uint32, ffi.Uint32),
+        StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr, int,
+            int, int, int)>('libtcCudaMatMulT');
 
     final maxPool2D =
         dylib.lookupFunction<MaxPool2DNative, MaxPool2D>('libtcCudaMaxPool2D');
@@ -124,7 +141,9 @@ class CudaFFI {
       syncStream: syncStream,
       addition: addition,
       sum2D: sum2D,
+      transpose2D: transpose2D,
       matmul: matmul,
+      matmulT: matmulT,
       maxPool2D: maxPool2D,
       conv2D: conv2D,
     );
