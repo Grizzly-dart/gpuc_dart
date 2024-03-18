@@ -359,6 +359,90 @@ class Tensor implements Resource {
     }
   }
 
+  Future<Tensor> operator -(covariant FutureOr<Tensor> other) async {
+    Tensor b = await other;
+    if (b.nel != nel) {
+      throw ArgumentError('Size mismatch');
+    }
+    final ctx = Context();
+    try {
+      int deviceId = 0; // TODO implement device selection
+      final stream = CudaStream(deviceId, context: ctx);
+      // TODO implement split processing if not all data fits into memory or to maximize parallelism
+      final inp1 = CudaList.copy(as1d, stream: stream, context: ctx);
+      final inp2 = CudaList.copy(b.as1d, stream: stream, context: ctx);
+      final out = CudaList.sized(stream, nel, context: ctx);
+      cuda.subtract(
+          stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
+      final outTensor = Tensor.sized(size, name: '$name + ${b.name}');
+      ctx.releaseOnErr(outTensor);
+      out.copyTo(outTensor.as1d, stream: stream);
+      await stream.sync();
+      return outTensor;
+    } catch (e) {
+      ctx.release(isError: true);
+      rethrow;
+    } finally {
+      ctx.release();
+    }
+  }
+
+  Future<Tensor> operator *(covariant FutureOr<Tensor> other) async {
+    Tensor b = await other;
+    if (b.nel != nel) {
+      throw ArgumentError('Size mismatch');
+    }
+    final ctx = Context();
+    try {
+      int deviceId = 0; // TODO implement device selection
+      final stream = CudaStream(deviceId, context: ctx);
+      // TODO implement split processing if not all data fits into memory or to maximize parallelism
+      final inp1 = CudaList.copy(as1d, stream: stream, context: ctx);
+      final inp2 = CudaList.copy(b.as1d, stream: stream, context: ctx);
+      final out = CudaList.sized(stream, nel, context: ctx);
+      cuda.multiply(
+          stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
+      final outTensor = Tensor.sized(size, name: '$name + ${b.name}');
+      ctx.releaseOnErr(outTensor);
+      out.copyTo(outTensor.as1d, stream: stream);
+      await stream.sync();
+      return outTensor;
+    } catch (e) {
+      ctx.release(isError: true);
+      rethrow;
+    } finally {
+      ctx.release();
+    }
+  }
+
+  Future<Tensor> operator /(covariant FutureOr<Tensor> other) async {
+    Tensor b = await other;
+    if (b.nel != nel) {
+      throw ArgumentError('Size mismatch');
+    }
+    final ctx = Context();
+    try {
+      int deviceId = 0; // TODO implement device selection
+      final stream = CudaStream(deviceId, context: ctx);
+      // TODO implement split processing if not all data fits into memory or to maximize parallelism
+      final inp1 = CudaList.copy(as1d, stream: stream, context: ctx);
+      final inp2 = CudaList.copy(b.as1d, stream: stream, context: ctx);
+      final out = CudaList.sized(stream, nel, context: ctx);
+      cuda.divide(
+          stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
+      final outTensor = Tensor.sized(size, name: '$name + ${b.name}');
+      ctx.releaseOnErr(outTensor);
+      out.copyTo(outTensor.as1d, stream: stream);
+      await stream.sync();
+      return outTensor;
+    } catch (e) {
+      ctx.release(isError: true);
+      rethrow;
+    } finally {
+      ctx.release();
+    }
+  }
+
   Future<Tensor> sumRows({int colDims = 1}) async {
     if (size.dims < 2) {
       throw StateError('Must be at least a 2D tensor');

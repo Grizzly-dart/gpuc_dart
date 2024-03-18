@@ -127,6 +127,30 @@ class Cuda {
     }
   }
 
+  void subtract(CudaStream stream, ffi.Pointer<ffi.Void> out,
+      ffi.Pointer<ffi.Void> inp1, ffi.Pointer<ffi.Void> inp2, int size) {
+    final err = cuda.subtract(stream.ptr, out, inp1, inp2, size);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void multiply(CudaStream stream, ffi.Pointer<ffi.Void> out,
+      ffi.Pointer<ffi.Void> inp1, ffi.Pointer<ffi.Void> inp2, int size) {
+    final err = cuda.multiply(stream.ptr, out, inp1, inp2, size);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void divide(CudaStream stream, ffi.Pointer<ffi.Void> out,
+      ffi.Pointer<ffi.Void> inp1, ffi.Pointer<ffi.Void> inp2, int size) {
+    final err = cuda.divide(stream.ptr, out, inp1, inp2, size);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
   void sum2D(CudaStream stream, ffi.Pointer<ffi.Void> out,
       ffi.Pointer<ffi.Void> inp, Dim2 inpS) {
     final ctx = Context();

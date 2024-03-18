@@ -22,6 +22,9 @@ class CudaFFI {
       ffi.Pointer<ffi.NativeFunction<ffi.Void Function(StrPtr)>>) syncStream;
 
   final Op1D2Inp addition;
+  final Op1D2Inp subtract;
+  final Op1D2Inp multiply;
+  final Op1D2Inp divide;
   final Op2D sum2D;
 
   final StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, CSize3D)
@@ -32,6 +35,9 @@ class CudaFFI {
 
   final StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr, int m,
       int n, int k, int batches) matmulT;
+
+  final StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
+      F64Ptr, int m, int n, int k, int batches) addmm;
 
   final MaxPool2D maxPool2D;
   final Conv2D conv2D;
@@ -46,10 +52,14 @@ class CudaFFI {
     required this.destroyStream,
     required this.syncStream,
     required this.addition,
+    required this.subtract,
+    required this.multiply,
+    required this.divide,
     required this.sum2D,
     required this.transpose2D,
     required this.matmul,
     required this.matmulT,
+    required this.addmm,
     required this.maxPool2D,
     required this.conv2D,
   });
@@ -107,6 +117,12 @@ class CudaFFI {
 
     final addition =
         dylib.lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaAdd2');
+    final subtract =
+        dylib.lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaSubtract2');
+    final multiply =
+        dylib.lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaMultiply2');
+    final divide =
+        dylib.lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaDivide2');
     final sum2D = dylib.lookupFunction<Op2DNative, Op2D>('libtcCudaSum2D');
 
     final transpose2D = dylib.lookupFunction<
@@ -124,6 +140,11 @@ class CudaFFI {
             ffi.Uint32, ffi.Uint32, ffi.Uint32, ffi.Uint32),
         StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr, int,
             int, int, int)>('libtcCudaMatMulT');
+    final addmm = dylib.lookupFunction<
+        StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
+            F64Ptr, ffi.Uint32, ffi.Uint32, ffi.Uint32, ffi.Uint32),
+        StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
+            F64Ptr, int, int, int, int)>('libtcCudaAddmm');
 
     final maxPool2D =
         dylib.lookupFunction<MaxPool2DNative, MaxPool2D>('libtcCudaMaxPool2D');
@@ -140,10 +161,14 @@ class CudaFFI {
       destroyStream: destroyStream,
       syncStream: syncStream,
       addition: addition,
+      subtract: subtract,
+      multiply: multiply,
+      divide: divide,
       sum2D: sum2D,
       transpose2D: transpose2D,
       matmul: matmul,
       matmulT: matmulT,
+      addmm: addmm,
       maxPool2D: maxPool2D,
       conv2D: conv2D,
     );
