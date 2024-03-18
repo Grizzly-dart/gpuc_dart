@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:gpuc_dart/src/nn2d/nn2d.dart';
 
 class Conv2D implements Layer2D {
@@ -78,17 +80,18 @@ class Conv2D implements Layer2D {
   }
 
   @override
-  Future<Tensor> forward(Tensor input) async {
-    if (input.size.channels != inChannels) {
+  Future<Tensor> forward(FutureOr<Tensor> input) async {
+    final inp = await input;
+    if (inp.size.channels != inChannels) {
       throw ArgumentError('input channels must be $inChannels');
     }
-    final out2DS = outSize2D(input.size);
+    final out2DS = outSize2D(inp.size);
     Dim2 padding = this.padding;
     if (padSameSize) {
-      padding = padSameSize2D(input.size.to2D());
+      padding = padSameSize2D(inp.size.to2D());
     }
 
-    int batches = input.size.batch;
+    int batches = inp.size.batch;
 
     // TODO device selection
     final ctx = Context();
@@ -98,7 +101,7 @@ class Conv2D implements Layer2D {
       final stream = CudaStream(0, context: ctx);
       final outS = Dim([batches, outChannels] + out2DS.toList());
       final out = CudaList.sized(stream, outS.nel, context: ctx);
-      final inpL = CudaList.copy(input.as1d, stream: stream, context: ctx);
+      final inpL = CudaList.copy(inp.as1d, stream: stream, context: ctx);
       final kernL = CudaList.copy(kernel.as1d, stream: stream, context: ctx);
       cuda.conv2D(
           stream,
@@ -107,7 +110,7 @@ class Conv2D implements Layer2D {
           kernL.ptr,
           batches,
           Dim3(outChannels, out2DS.rows, out2DS.cols),
-          Dim3(inChannels, input.size.rows, input.size.cols),
+          Dim3(inChannels, inp.size.rows, inp.size.cols),
           kernelSize,
           groups,
           padding,

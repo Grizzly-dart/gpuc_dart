@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:gpuc_dart/src/nn2d/nn2d.dart';
 
 class MaxPool2D implements Layer2D {
@@ -20,7 +22,8 @@ class MaxPool2D implements Layer2D {
   }
 
   @override
-  Future<Tensor> forward(Tensor inp) async {
+  Future<Tensor> forward(FutureOr<Tensor> input) async {
+    final inp = await input;
     // TODO validate
 
     // TODO device selection

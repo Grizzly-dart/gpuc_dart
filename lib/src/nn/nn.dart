@@ -1,7 +1,9 @@
+import 'dart:async';
+
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 abstract class Layer {
-  Future<Tensor> forward(Tensor input);
+  Future<Tensor> forward(FutureOr<Tensor> input);
 }
 
 // TODO error messages should be more technical and domain specific
@@ -34,13 +36,14 @@ class Linear extends Layer {
   }
 
   @override
-  Future<Tensor> forward(Tensor input) {
-    if (input.size.cols != weight.size.rows) {
+  Future<Tensor> forward(FutureOr<Tensor> input) async {
+    final inp = await input;
+    if (inp.size.cols != weight.size.rows) {
       throw ArgumentError('input columns must be equal to weight rows');
     }
 
     if(bias == null) {
-      return input.matmul(weight);
+      return inp.matmul(weight);
     } else {
       throw UnimplementedError();
     }

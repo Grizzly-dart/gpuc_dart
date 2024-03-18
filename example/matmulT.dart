@@ -5,7 +5,7 @@ import 'package:gpuc_dart/gpuc_dart.dart';
 Future<void> main() async {
   initializeNativeTensorLibrary();
   await test(m: 1, n: 2, k: 1);
-  await test(m: 2, n: 2, k: 2);
+  /*await test(m: 2, n: 2, k: 2);
   await test(m: 16, n: 4, k: 10);
   await test(m: 34, n: 67, k: 43);
   for(int m = 1; m <= 33; m++) {
@@ -17,7 +17,7 @@ Future<void> main() async {
   }
   await test(batches: 1, m: 32, n: 16, k: 24);
   await test(batches: 10, m: 4096, n: 2048, k: 4096);
-  await test(batches: 1, m: 4096, n: 2048, k: 4096);
+  await test(batches: 1, m: 4096, n: 2048, k: 4096);*/
   /*for (int b = 1; b <= 1000; b += 7) {
     for (int m = 1; m <= 4096; m += 7) {
       for (int n = 1; n <= 4096; n += 7) {
@@ -39,7 +39,7 @@ Future<void> test(
   print('=====> batches: $batches, m: $m, n: $n, k: $k');
   final a = Tensor.generate(Dim2(m, n), (i) => rand.nextDouble());
   final b = Tensor.generate(Dim2(n, k), (i) => rand.nextDouble());
-  // TODO transpose b
+  b.transpose2D(out: b);
   // a.printTextTable();
   // b.printTextTable();
   final watch = Stopwatch()..start();
