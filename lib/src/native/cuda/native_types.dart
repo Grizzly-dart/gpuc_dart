@@ -1,7 +1,6 @@
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
-import 'package:gpuc_dart/src/native/c.dart';
 
 class CudaFFI {
   final StrPtr Function(ffi.Pointer<CCudaDeviceProps>, int device)
@@ -37,7 +36,7 @@ class CudaFFI {
       int n, int k, int batches) matmulT;
 
   final StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
-      F64Ptr, int m, int n, int k, int batches) addmm;
+      F64Ptr, int m, int n, int k, int batches) caddmm;
 
   final MaxPool2D maxPool2D;
   final Conv2D conv2D;
@@ -59,7 +58,7 @@ class CudaFFI {
     required this.transpose2D,
     required this.matmul,
     required this.matmulT,
-    required this.addmm,
+    required this.caddmm,
     required this.maxPool2D,
     required this.conv2D,
   });
@@ -140,11 +139,11 @@ class CudaFFI {
             ffi.Uint32, ffi.Uint32, ffi.Uint32, ffi.Uint32),
         StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr, int,
             int, int, int)>('libtcCudaMatMulT');
-    final addmm = dylib.lookupFunction<
+    final caddmm = dylib.lookupFunction<
         StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
             F64Ptr, ffi.Uint32, ffi.Uint32, ffi.Uint32, ffi.Uint32),
         StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
-            F64Ptr, int, int, int, int)>('libtcCudaAddmm');
+            F64Ptr, int, int, int, int)>('libtcCudaCaddmm');
 
     final maxPool2D =
         dylib.lookupFunction<MaxPool2DNative, MaxPool2D>('libtcCudaMaxPool2D');
@@ -168,7 +167,7 @@ class CudaFFI {
       transpose2D: transpose2D,
       matmul: matmul,
       matmulT: matmulT,
-      addmm: addmm,
+      caddmm: caddmm,
       maxPool2D: maxPool2D,
       conv2D: conv2D,
     );

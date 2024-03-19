@@ -14,9 +14,6 @@ abstract class NList implements Resource, List<double> {
 
   ffi.Pointer<ffi.Double> get ptr;
 
-  @override
-  void release();
-
   // TODO subview
 
   // TODO implement partial write
@@ -37,6 +34,9 @@ abstract class NList implements Resource, List<double> {
     copyTo(DartList.own(list));
     return list;
   }
+
+  @override
+  void release();
 
 /*
   static NList allocate(int length,

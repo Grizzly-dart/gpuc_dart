@@ -158,14 +158,16 @@ mixin CListMixin implements CList {
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    if(this is CListView) {
+    if (this is CListView) {
       start += (this as CListView)._offset;
     }
     return CListView(this, start, length);
   }
 }
 
-class CListView extends NList with CListMixin, ListMixin<double> implements CList {
+class CListView extends NList
+    with CListMixin, ListMixin<double>
+    implements CList {
   final CList _list;
 
   final int _offset;

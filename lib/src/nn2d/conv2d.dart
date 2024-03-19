@@ -38,7 +38,7 @@ class Conv2D implements Layer2D {
     } else if (kernel.size.dims > 4) {
       throw ArgumentError('kernel must be at most 4D');
     } else if (kernel.size.dims < 4) {
-      kernel.reshape(kernel.size.reshapeDims(4));
+      kernel.size = kernel.size.ensureDims(4);
     }
 
     if (bias != null) {

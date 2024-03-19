@@ -56,7 +56,7 @@ abstract class Dim {
 
   Dim reshape(Dim newSize);
 
-  Dim reshapeDims(int dims);
+  Dim ensureDims(int dims);
 
   Dim extend(Iterable<int> sizes);
 
@@ -149,7 +149,7 @@ mixin DimMixin implements Dim {
   Dim squeezeFront(int dims) {
     if (dims > this.dims) {
       throw ArgumentError('Dimension out of range');
-    } else if (rows == this.dims) {
+    } else if (dims == this.dims) {
       return Dim([nel]);
     }
     return Dim([asList.take(dims).prod, ...asList.skip(dims)]);
@@ -159,7 +159,7 @@ mixin DimMixin implements Dim {
   Dim squeeze(int dims) {
     if (dims > this.dims) {
       throw ArgumentError('Dimension out of range');
-    } else if (rows == this.dims) {
+    } else if (dims == this.dims) {
       return Dim([nel]);
     }
     int n = this.dims - dims;
@@ -211,9 +211,6 @@ mixin DimMixin implements Dim {
 
   @override
   Dim reshape(Dim newSize) {
-    if (nel == 0) {
-      throw StateError('Cannot reshape empty tensor');
-    }
     if (nel != newSize.nel) {
       throw ArgumentError(
           'Cannot reshape. Number of elements must remain same');
@@ -222,7 +219,7 @@ mixin DimMixin implements Dim {
   }
 
   @override
-  Dim reshapeDims(int dims) {
+  Dim ensureDims(int dims) {
     if (dims < this.dims) {
       throw ArgumentError('Cannot shrink dimensions');
     }

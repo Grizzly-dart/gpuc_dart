@@ -48,6 +48,13 @@ class Cuda {
 
   CudaFFI get cuda => _cuda ?? CudaFFI.instance!;
 
+  bool exists() {
+    if(_cuda == null && CudaFFI.instance == null) {
+      return false;
+    }
+    return true;
+  }
+
   CudaDeviceProps getDeviceProps(int device) {
     final ret = CudaDeviceProps.allocate();
     final err = cuda.getDeviceProps(ret.ptr, device);
@@ -119,6 +126,19 @@ class Cuda {
     }
   }
 
+  void transpose2D(CudaStream stream, F64Ptr out, F64Ptr inp, Dim3 size) {
+    final ctx = Context();
+    try {
+      final sizePtr = CSize3D.from(size);
+      final err = cuda.transpose2D(stream.ptr, out, inp, sizePtr.ptr.ref);
+      if (err != ffi.nullptr) {
+        throw CudaException(err.toDartString());
+      }
+    } finally {
+      ctx.release();
+    }
+  }
+
   void addition(CudaStream stream, ffi.Pointer<ffi.Void> out,
       ffi.Pointer<ffi.Void> inp1, ffi.Pointer<ffi.Void> inp2, int size) {
     final err = cuda.addition(stream.ptr, out, inp1, inp2, size);
@@ -181,16 +201,11 @@ class Cuda {
     }
   }
 
-  void transpose2D(CudaStream stream, F64Ptr out, F64Ptr inp, Dim3 size) {
-    final ctx = Context();
-    try {
-      final sizePtr = CSize3D.from(size);
-      final err = cuda.transpose2D(stream.ptr, out, inp, sizePtr.ptr.ref);
-      if (err != ffi.nullptr) {
-        throw CudaException(err.toDartString());
-      }
-    } finally {
-      ctx.release();
+  void caddmm(CudaStream stream, F64Ptr out, F64Ptr inp1, F64Ptr inp2,
+      F64Ptr add, int m, int n, int k, int batches) {
+    final err = cuda.caddmm(stream.ptr, out, inp1, inp2, add, m, n, k, batches);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
     }
   }
 
