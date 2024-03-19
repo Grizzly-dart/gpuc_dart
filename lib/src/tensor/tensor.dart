@@ -44,12 +44,12 @@ class Tensor implements Resource {
   }
 
   factory Tensor.generate(/* Dim | Iterable<int> | int */ size,
-      double Function(Dim index) generator,
+      double Function(Dim size, Dim index) generator,
       {String name = '', Context? context}) {
     if (size is! Dim) size = Dim.from(size);
     final data = CList.sized(size.nel, context: context);
     for (var i = 0; i < size.nel; i++) {
-      data[i] = generator(size.unravel(i));
+      data[i] = generator(size, size.unravel(i));
     }
     return Tensor(data, size, name: name, context: context);
   }
@@ -167,7 +167,7 @@ class Tensor implements Resource {
         out = Tensor.sized(outSize, name: 'transpose2D($name)');
         ctx.releaseOnErr(out);
       } else {
-        if (out.size != outSize) {
+        if (out.nel != _size.nel) {
           throw ArgumentError('Size mismatch');
         }
       }
@@ -180,6 +180,7 @@ class Tensor implements Resource {
           Dim3(_size.numMatrices, _size.rows, _size.cols));
       outData.copyTo(out.as1d, stream: stream);
       await stream.sync();
+      out.reshape(outSize);
       return out;
     } catch (e) {
       ctx.release(isError: true);
@@ -319,6 +320,7 @@ class Tensor implements Resource {
         inp1.release(stream: stream);
         inp2.release(stream: stream);
         outMat.release(stream: stream);
+        batchStart += split;
       }
       await Future.wait(streams.map((s) => s.sync()));
       return out;
@@ -523,7 +525,7 @@ class Tensor implements Resource {
       final outData = DartList.sized(outSize.nel);
       for (int i = 0; i < _size.nel; i++) {
         final index = _size.unravel(i);
-        final outIndex = index.rearrange(order).ravel;
+        final outIndex = outSize.ravel(index.rearrange(order));
         outData[outIndex] = as1d[i];
       }
       final outTensor = Tensor(outData, outSize, name: 'rearrange($name)');

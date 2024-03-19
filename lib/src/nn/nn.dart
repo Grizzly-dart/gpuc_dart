@@ -27,7 +27,7 @@ class Linear extends Layer {
 
   Linear(int inFeatures, int outFeatures, {bool bias = true}) {
     // TODO fill with random normal
-    weight = Tensor.generate(Dim2(inFeatures, outFeatures), (i) => 0);
+    weight = Tensor.generate(Dim2(inFeatures, outFeatures), (_, _1) => 0);
     if (bias) {
       this.bias = Tensor.sized(Dim([outFeatures]));
     } else {

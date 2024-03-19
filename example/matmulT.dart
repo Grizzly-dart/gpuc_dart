@@ -4,9 +4,11 @@ import 'package:gpuc_dart/gpuc_dart.dart';
 
 Future<void> main() async {
   initializeNativeTensorLibrary();
-  await test(m: 1, n: 2, k: 1);
-  /*await test(m: 2, n: 2, k: 2);
-  await test(m: 16, n: 4, k: 10);
+  await test(m: 3, n: 2, k: 3);
+  // await test(m: 1, n: 2, k: 1);
+  // await test(m: 2, n: 2, k: 2);
+  // await test(m: 16, n: 4, k: 10);
+  /*
   await test(m: 34, n: 67, k: 43);
   for(int m = 1; m <= 33; m++) {
     for(int n = 1; n <= 33; n++) {
@@ -30,20 +32,18 @@ Future<void> main() async {
   print('Finished!');
 }
 
-Future<void> test(
-    {int batches = 1,
-    int m = 2,
-    int n = 2,
-    int k = 2}) async {
-  final rand = Random(batches * m * n * k);
+Future<void> test({int batches = 1, int m = 2, int n = 2, int k = 2}) async {
+  final rand = MTRandom(seed: batches * m * n * k);
   print('=====> batches: $batches, m: $m, n: $n, k: $k');
-  final a = Tensor.generate(Dim2(m, n), (i) => rand.nextDouble());
-  final b = Tensor.generate(Dim2(n, k), (i) => rand.nextDouble());
-  b.transpose2D(out: b);
-  // a.printTextTable();
-  // b.printTextTable();
+  final a = Tensor.generate(
+      Dim2(m, n), (s, i) => s.ravel(i) + 1 /* rand.nextDouble()*/);
+  final b = Tensor.generate(
+      Dim2(n, k), (s, i) => s.ravel(i) + 7 /*rand.nextDouble()*/);
+  final bT = await b.transpose2D();
+  a.printTextTable();
+  bT.printTextTable();
   final watch = Stopwatch()..start();
-  final out = await a.matmulT(b);
+  final out = await a.matmulT(bT);
   print('Elapsed: ${watch.elapsedMilliseconds} ms');
   print(out.as1d);
   final out2 = await TensonCmd().matmul(a, b);

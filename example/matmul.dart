@@ -37,8 +37,8 @@ Future<void> test(
     int k = 2}) async {
   final rand = Random(batches * m * n * k);
   print('=====> batches: $batches, m: $m, n: $n, k: $k');
-  final a = Tensor.generate(Dim2(m, n), (i) => rand.nextDouble());
-  final b = Tensor.generate(Dim2(n, k), (i) => rand.nextDouble());
+  final a = Tensor.generate(Dim2(m, n), (s, i) => rand.nextDouble());
+  final b = Tensor.generate(Dim2(n, k), (s, i) => rand.nextDouble());
   // a.printTextTable();
   // b.printTextTable();
   final watch = Stopwatch()..start();

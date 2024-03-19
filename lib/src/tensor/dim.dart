@@ -52,7 +52,7 @@ abstract class Dim {
 
   Dim unravel(int index);
 
-  int get ravel;
+  int ravel(Dim index);
 
   Dim reshape(Dim newSize);
 
@@ -100,14 +100,17 @@ mixin DimMixin implements Dim {
   }
 
   @override
-  int get ravel {
+  int ravel(Dim index) {
+    if(index.dims > dims) {
+      throw ArgumentError('Invalid index');
+    }
     if (dims == 1) {
       return this[0];
     }
     int ret = 0;
     final strides = this.strides;
     for (int i = dims - 1; i >= 0; i--) {
-      ret += this[i] * strides[i];
+      ret += index[i] * strides[i];
     }
     return ret;
   }
@@ -253,7 +256,14 @@ class _DimImpl with DimMixin implements Dim {
   int get dims => _sizes.length;
 
   @override
-  int operator [](int index) => _sizes[index];
+  int operator [](int index) {
+    if (index < 0) {
+      throw RangeError('Negative index');
+    } else if(index > dims) {
+      return 0;
+    }
+    return _sizes[index];
+  }
 
   @override
   int get nel => _sizes.reduce((a, b) => a * b);
