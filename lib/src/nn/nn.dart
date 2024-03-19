@@ -42,7 +42,7 @@ class Linear extends Layer {
       throw ArgumentError('input columns must be equal to weight rows');
     }
 
-    if(bias == null) {
+    if (bias == null) {
       return inp.matmul(weight);
     } else {
       throw UnimplementedError();
@@ -51,4 +51,19 @@ class Linear extends Layer {
 
   Dim outSize(Dim inSize) =>
       Dim([...inSize.asList.take(inSize.dims - 1), weight.size.cols]);
+}
+
+class Sequential extends Layer {
+  final List<Layer> layers;
+
+  Sequential(this.layers);
+
+  @override
+  Future<Tensor> forward(FutureOr<Tensor> input) async {
+    var out = await input;
+    for (final layer in layers) {
+      out = await layer.forward(out);
+    }
+    return out;
+  }
 }

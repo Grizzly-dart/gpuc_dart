@@ -11,10 +11,11 @@ class TensonCmd {
     return resp['output']!.data as Tensor;
   }
 
-  Future<Tensor> matmul(Tensor a, Tensor b) async {
+  Future<Tensor> matmul(Tensor a, Tensor b, {Tensor? c}) async {
     final resp = await _execute('matmul', [
       TensonVar(name: 'inputA', data: a),
       TensonVar(name: 'inputB', data: b),
+      if (c != null) TensonVar(name: 'inputC', data: c),
     ]);
     return resp['output']!.data as Tensor;
   }
