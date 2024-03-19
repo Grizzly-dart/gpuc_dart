@@ -36,7 +36,10 @@ class CudaFFI {
       int n, int k, int batches) matmulT;
 
   final StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
-      F64Ptr, int m, int n, int k, int batches) caddmm;
+      F64Ptr, int m, int n, int k, int batches) matmulCadd;
+
+  final StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
+      F64Ptr, F64Ptr, int m, int n, int k, int batches) matmulTCadd;
 
   final MaxPool2D maxPool2D;
   final Conv2D conv2D;
@@ -58,7 +61,8 @@ class CudaFFI {
     required this.transpose2D,
     required this.matmul,
     required this.matmulT,
-    required this.caddmm,
+    required this.matmulCadd,
+    required this.matmulTCadd,
     required this.maxPool2D,
     required this.conv2D,
   });
@@ -139,11 +143,16 @@ class CudaFFI {
             ffi.Uint32, ffi.Uint32, ffi.Uint32, ffi.Uint32),
         StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr, int,
             int, int, int)>('libtcCudaMatMulT');
-    final caddmm = dylib.lookupFunction<
+    final matmulCadd = dylib.lookupFunction<
         StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
             F64Ptr, ffi.Uint32, ffi.Uint32, ffi.Uint32, ffi.Uint32),
         StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
-            F64Ptr, int, int, int, int)>('libtcCudaCaddmm');
+            F64Ptr, int, int, int, int)>('libtcCudaMatMulCadd');
+    final matmulTCadd = dylib.lookupFunction<
+        StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
+            F64Ptr, F64Ptr, ffi.Uint32, ffi.Uint32, ffi.Uint32, ffi.Uint32),
+        StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
+            F64Ptr, F64Ptr, int, int, int, int)>('libtcCudaMatMulTCadd');
 
     final maxPool2D =
         dylib.lookupFunction<MaxPool2DNative, MaxPool2D>('libtcCudaMaxPool2D');
@@ -167,7 +176,8 @@ class CudaFFI {
       transpose2D: transpose2D,
       matmul: matmul,
       matmulT: matmulT,
-      caddmm: caddmm,
+      matmulCadd: matmulCadd,
+      matmulTCadd: matmulTCadd,
       maxPool2D: maxPool2D,
       conv2D: conv2D,
     );

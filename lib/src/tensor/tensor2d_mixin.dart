@@ -158,7 +158,14 @@ mixin Tensor2dMixin implements Tensor {
 
   @override
   Future<Tensor> matmulCadd(FutureOr<Tensor> other, FutureOr<Tensor> c,
-      {Tensor? out}) {
+      {Tensor? out}) async {
+    if (cuda.exists()) {
+      int deviceId = 0; // TODO implement device selection
+      return await cuda.splitMatmulCadd(deviceId, this, await other, await c,
+          out: out);
+    }
+    // TODO if CFFI exists, use it
+    // TODO implement Dart
     throw UnimplementedError();
   }
 

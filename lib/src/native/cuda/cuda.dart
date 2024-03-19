@@ -201,9 +201,17 @@ class Cuda {
     }
   }
 
-  void caddmm(CudaStream stream, F64Ptr out, F64Ptr inp1, F64Ptr inp2,
+  void matmulCadd(CudaStream stream, F64Ptr out, F64Ptr inp1, F64Ptr inp2,
       F64Ptr add, int m, int n, int k, int batches) {
-    final err = cuda.caddmm(stream.ptr, out, inp1, inp2, add, m, n, k, batches);
+    final err = cuda.matmulCadd(stream.ptr, out, inp1, inp2, add, m, n, k, batches);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void matmulTCadd(CudaStream stream, F64Ptr out, F64Ptr inp1, F64Ptr inp2,
+      F64Ptr add, int m, int n, int k, int batches) {
+    final err = cuda.matmulTCadd(stream.ptr, out, inp1, inp2, add, m, n, k, batches);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
