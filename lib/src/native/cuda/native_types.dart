@@ -39,7 +39,7 @@ class CudaFFI {
       F64Ptr, int m, int n, int k, int batches) matmulCadd;
 
   final StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
-      F64Ptr, F64Ptr, int m, int n, int k, int batches) matmulTCadd;
+      F64Ptr, int m, int n, int k, int batches) matmulTCadd;
 
   final MaxPool2D maxPool2D;
   final Conv2D conv2D;
@@ -150,9 +150,9 @@ class CudaFFI {
             F64Ptr, int, int, int, int)>('libtcCudaMatMulCadd');
     final matmulTCadd = dylib.lookupFunction<
         StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
-            F64Ptr, F64Ptr, ffi.Uint32, ffi.Uint32, ffi.Uint32, ffi.Uint32),
+            F64Ptr, ffi.Uint32, ffi.Uint32, ffi.Uint32, ffi.Uint32),
         StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
-            F64Ptr, F64Ptr, int, int, int, int)>('libtcCudaMatMulTCadd');
+            F64Ptr, int, int, int, int)>('libtcCudaMatMulTCadd');
 
     final maxPool2D =
         dylib.lookupFunction<MaxPool2DNative, MaxPool2D>('libtcCudaMaxPool2D');

@@ -5,21 +5,25 @@ import 'package:gpuc_dart/src/nn2d/nn2d.dart';
 
 export 'tenson_cmd.dart';
 
-enum TensonType {
-  intData([int], 'Int'),
-  doubleData([double], 'Double'),
-  stringData([String], 'String'),
-  dimData([Dim, Dim2, Dim3], 'Dim'),
-  tensorData([Tensor], 'Tensor'),
-  nullData([Null], 'Null'),
+enum TensonType<T> {
+  intData<int>('Int'),
+  doubleData<double>('Double'),
+  stringData<String>('String'),
+  dimData<Dim>('Dim'),
+  tensorData<Tensor>('Tensor'),
+  nullData<Null>('Null'),
   ;
 
-  final List<Type> dataType;
   final String jsonName;
 
-  const TensonType(this.dataType, this.jsonName);
+  const TensonType(this.jsonName);
 
   String toJson() => jsonName;
+
+  bool typeMatch(v) {
+    if (v == null) return this == TensonType.nullData;
+    return v is T;
+  }
 
   static TensonType fromJson(String jsonName) =>
       values.firstWhere((e) => e.jsonName == jsonName);
@@ -33,8 +37,7 @@ class TensonVar<T> {
 
   TensonVar({required this.name, required this.data}) {
     if (data != null) {
-      dataType = TensonType.values
-          .firstWhere((e) => e.dataType.contains(data.runtimeType));
+      dataType = TensonType.values.firstWhere((e) => e.typeMatch(data));
     } else {
       dataType = TensonType.nullData;
     }

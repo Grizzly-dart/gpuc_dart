@@ -11,6 +11,7 @@
 
 + Attention
 + ResnetBlock2D
++ Embedding
 
 # Milestone 4
 
