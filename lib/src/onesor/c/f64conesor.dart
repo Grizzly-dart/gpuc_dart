@@ -3,7 +3,7 @@ import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-abstract class F64COnesor implements COnesor<double> {
+abstract class F64COnesor implements COnesor<double>, F64Onesor {
   @override
   ffi.Pointer<ffi.Double> get ptr;
 
@@ -27,7 +27,12 @@ abstract class F64COnesor implements COnesor<double> {
 }
 
 class _F64COnesor
-    with COnesorMixin<double>, F64COnesorMixin, ListMixin<double>
+    with
+        F64Onesor,
+        COnesorMixin<double>,
+        F64COnesorMixin,
+        ListMixin<double>,
+        OnesorMixin<double>
     implements F64COnesor {
   ffi.Pointer<ffi.Double> _ptr;
 
@@ -80,7 +85,12 @@ class _F64COnesor
 }
 
 class F64COnesorView
-    with COnesorMixin<double>, F64COnesorMixin, ListMixin<double>
+    with
+        F64Onesor,
+        COnesorMixin<double>,
+        F64COnesorMixin,
+        ListMixin<double>,
+        OnesorMixin<double>
     implements F64COnesor, COnesorView<double> {
   final COnesor<double> _list;
 
@@ -113,12 +123,6 @@ mixin F64COnesorMixin implements COnesorMixin<double> {
   List<double> asTypedList(int length) => ptr.asTypedList(length);
 
   @override
-  int get lengthBytes => length * bytesPerItem;
-
-  @override
-  int get bytesPerItem => 8;
-
-  @override
   double operator [](int index) => ptr[index];
 
   @override
@@ -129,9 +133,6 @@ mixin F64COnesorMixin implements COnesorMixin<double> {
 
   @override
   int get deviceId => 0;
-
-  @override
-  double get defaultValue => 0;
 
   @override
   F64COnesor slice(int start, int length, {Context? context}) {

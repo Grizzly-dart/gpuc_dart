@@ -26,8 +26,12 @@ class CudaFFI {
   final Op1D2Inp divide;
   final Op2D sum2D;
 
-  final StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, CSize3D)
+  final StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, CDim3)
       transpose2D;
+
+  final StrPtr Function(
+          ffi.Pointer<CCudaStream>, VoidPtr, VoidPtr, VoidPtr, CDim2, int, int)
+      pickRows;
 
   final StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr, int m,
       int n, int k, int batches) matmul;
@@ -59,6 +63,7 @@ class CudaFFI {
     required this.divide,
     required this.sum2D,
     required this.transpose2D,
+    required this.pickRows,
     required this.matmul,
     required this.matmulT,
     required this.matmulCadd,
@@ -129,9 +134,15 @@ class CudaFFI {
     final sum2D = dylib.lookupFunction<Op2DNative, Op2D>('libtcCudaSum2D');
 
     final transpose2D = dylib.lookupFunction<
-        StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, CSize3D),
+        StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, CDim3),
         StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr,
-            CSize3D)>('libtcCudaTranspose2d');
+            CDim3)>('libtcCudaTranspose2d');
+
+    final pickRows = dylib.lookupFunction<
+        StrPtr Function(ffi.Pointer<CCudaStream>, VoidPtr, VoidPtr, VoidPtr,
+            CDim2, ffi.Uint8, ffi.Uint8),
+        StrPtr Function(ffi.Pointer<CCudaStream>, VoidPtr, VoidPtr, VoidPtr,
+            CDim2, int, int)>('libtcCudaPickRows');
 
     final matmul = dylib.lookupFunction<
         StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
@@ -174,6 +185,7 @@ class CudaFFI {
       divide: divide,
       sum2D: sum2D,
       transpose2D: transpose2D,
+      pickRows: pickRows,
       matmul: matmul,
       matmulT: matmulT,
       matmulCadd: matmulCadd,
@@ -190,33 +202,33 @@ typedef Op1D2InpNative = StrPtr Function(ffi.Pointer<CCudaStream> stream,
     VoidPtr out, VoidPtr inp1, VoidPtr inp2, ffi.Uint32 size);
 
 typedef Op2D = StrPtr Function(
-    ffi.Pointer<CCudaStream> stream, VoidPtr out, VoidPtr inp1, CSize2D);
+    ffi.Pointer<CCudaStream> stream, VoidPtr out, VoidPtr inp1, CDim2);
 typedef Op2DNative = StrPtr Function(
-    ffi.Pointer<CCudaStream> stream, VoidPtr out, VoidPtr inp1, CSize2D);
+    ffi.Pointer<CCudaStream> stream, VoidPtr out, VoidPtr inp1, CDim2);
 
 typedef MaxPool2D = ffi.Pointer<ffi.Utf8> Function(
   ffi.Pointer<CCudaStream>,
   ffi.Pointer<ffi.Double>,
   ffi.Pointer<ffi.Double>,
-  CSize2D, // kernS
-  CSize2D, // outS
-  CSize2D, // inpS
+  CDim2, // kernS
+  CDim2, // outS
+  CDim2, // inpS
   int, // matrices
-  CSize2D, // padding
-  CSize2D, // stride
-  CSize2D, // dilation
+  CDim2, // padding
+  CDim2, // stride
+  CDim2, // dilation
 );
 typedef MaxPool2DNative = ffi.Pointer<ffi.Utf8> Function(
   ffi.Pointer<CCudaStream>,
   ffi.Pointer<ffi.Double>,
   ffi.Pointer<ffi.Double>,
-  CSize2D, // kernS
-  CSize2D, // outS
-  CSize2D, // inpS
+  CDim2, // kernS
+  CDim2, // outS
+  CDim2, // inpS
   ffi.Uint32, // matrices
-  CSize2D, // padding
-  CSize2D, // stride
-  CSize2D, // dilation
+  CDim2, // padding
+  CDim2, // stride
+  CDim2, // dilation
 );
 
 typedef Conv2DNative = ffi.Pointer<ffi.Utf8> Function(
@@ -225,15 +237,15 @@ typedef Conv2DNative = ffi.Pointer<ffi.Utf8> Function(
   ffi.Pointer<ffi.Double>, // inp
   ffi.Pointer<ffi.Double>, // kernel
   ffi.Uint32, // batches
-  CSize3D, // outS
-  CSize3D, // inpS
-  CSize2D, // kernS
+  CDim3, // outS
+  CDim3, // inpS
+  CDim2, // kernS
   ffi.Uint32, // groups
-  CSize2D, // padding
+  CDim2, // padding
   ffi.Uint8, // padMode
   ffi.Double, // pad
-  CSize2D, // stride
-  CSize2D, // dilation
+  CDim2, // stride
+  CDim2, // dilation
 );
 typedef Conv2D = ffi.Pointer<ffi.Utf8> Function(
   ffi.Pointer<CCudaStream>,
@@ -241,15 +253,15 @@ typedef Conv2D = ffi.Pointer<ffi.Utf8> Function(
   ffi.Pointer<ffi.Double>, // inp
   ffi.Pointer<ffi.Double>, // kernel
   int, // batches
-  CSize3D, // outS
-  CSize3D, // inpS
-  CSize2D, // kernS
+  CDim3, // outS
+  CDim3, // inpS
+  CDim2, // kernS
   int, // groups
-  CSize2D, // padding
+  CDim2, // padding
   int, // padMode
   double, // pad
-  CSize2D, // stride
-  CSize2D, // dilation
+  CDim2, // stride
+  CDim2, // dilation
 );
 
 final class CCudaDeviceProps extends ffi.Struct {

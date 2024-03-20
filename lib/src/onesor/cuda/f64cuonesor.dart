@@ -2,63 +2,7 @@ import 'dart:collection';
 import 'dart:ffi' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-abstract class CuOnesor<T extends num> implements Onesor<T> {
-  ffi.Pointer<ffi.SizedNativeType> get ptr;
-
-  @override
-  COnesor<T> read({Context? context, CudaStream? stream});
-
-  @override
-  void copyFrom(Onesor<T> src, {CudaStream? stream});
-
-  @override
-  void copyTo(Onesor<T> dst, {CudaStream? stream});
-
-  @override
-  CuOnesor<T> slice(int start, int length,
-      {Context? context, CudaStream? stream});
-
-  @override
-  void release({CudaStream? stream});
-}
-
-mixin CuOnesorMixin<T extends num> implements CuOnesor<T> {
-  @override
-  void copyFrom(Onesor<T> src, {CudaStream? stream}) {
-    if (lengthBytes != src.lengthBytes) {
-      throw ArgumentError('Length mismatch');
-    }
-    final context = Context();
-    try {
-      stream = stream ?? CudaStream(deviceId, context: context);
-      src = src is COnesor<T> ? src : src.read(context: context);
-      cuda.memcpy(stream, ptr.cast(), src.ptr.cast(), lengthBytes);
-    } finally {
-      context.release();
-    }
-  }
-
-  @override
-  void copyTo(Onesor<T> dst, {CudaStream? stream}) {
-    if (lengthBytes != dst.lengthBytes) {
-      throw ArgumentError('Length mismatch');
-    }
-    final context = Context();
-    stream = stream ?? CudaStream(deviceId, context: context);
-    try {
-      if (dst is COnesor<T>) {
-        cuda.memcpy(stream, dst.ptr.cast(), ptr.cast(), dst.lengthBytes);
-        return;
-      }
-      final cSrc = read(context: context, stream: stream);
-      dst.copyFrom(cSrc);
-    } finally {
-      context.release();
-    }
-  }
-}
-
-abstract class F64CuOnesor implements Onesor<double>, CuOnesor<double> {
+abstract class F64CuOnesor implements CuOnesor<double>, F64Onesor {
   @override
   ffi.Pointer<ffi.Double> get ptr;
 
@@ -81,7 +25,12 @@ abstract class F64CuOnesor implements Onesor<double>, CuOnesor<double> {
 }
 
 class _F64CuOnesor
-    with CuOnesorMixin<double>, F64CuOnesorMixin, ListMixin<double>
+    with
+        F64Onesor,
+        CuOnesorMixin<double>,
+        F64CuOnesorMixin,
+        ListMixin<double>,
+        OnesorMixin<double>
     implements F64CuOnesor {
   ffi.Pointer<ffi.Double> _ptr;
 
@@ -138,7 +87,12 @@ class _F64CuOnesor
 }
 
 class F64CuOnesorView
-    with CuOnesorMixin<double>, F64CuOnesorMixin, ListMixin<double>
+    with
+        F64Onesor,
+        CuOnesorMixin<double>,
+        F64CuOnesorMixin,
+        ListMixin<double>,
+        OnesorMixin<double>
     implements F64CuOnesor, OnesorView<double> {
   final CuOnesor<double> _list;
 
@@ -164,17 +118,6 @@ class F64CuOnesorView
 mixin F64CuOnesorMixin implements F64CuOnesor {
   @override
   DeviceType get deviceType => DeviceType.cuda;
-
-  @override
-  int get lengthBytes => length * bytesPerItem;
-
-  @override
-  int get bytesPerItem => 8;
-
-  @override
-  double get defaultValue => 0;
-
-  // TODO
 
   @override
   double operator [](int index) {

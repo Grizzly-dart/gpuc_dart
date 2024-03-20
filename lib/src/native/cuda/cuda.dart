@@ -49,7 +49,7 @@ class Cuda {
   CudaFFI get cuda => _cuda ?? CudaFFI.instance!;
 
   bool exists() {
-    if(_cuda == null && CudaFFI.instance == null) {
+    if (_cuda == null && CudaFFI.instance == null) {
       return false;
     }
     return true;
@@ -129,13 +129,26 @@ class Cuda {
   void transpose2D(CudaStream stream, F64Ptr out, F64Ptr inp, Dim3 size) {
     final ctx = Context();
     try {
-      final sizePtr = CSize3D.from(size);
+      final sizePtr = CDim3.from(size);
       final err = cuda.transpose2D(stream.ptr, out, inp, sizePtr.ptr.ref);
       if (err != ffi.nullptr) {
         throw CudaException(err.toDartString());
       }
     } finally {
       ctx.release();
+    }
+  }
+
+  void pickRows(CudaStream stream, ffi.Pointer out, ffi.Pointer inp,
+      ffi.Pointer indices, Dim2 size) {
+    final type = NumType.typeOf(out);
+    final iType = NumType.typeOf(indices);
+
+    final sizePtr = CDim2.from(size);
+    final err = cuda.pickRows(stream.ptr, out.cast(), inp.cast(),
+        indices.cast(), sizePtr.ptr.ref, type.id, iType.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
     }
   }
 
@@ -175,7 +188,7 @@ class Cuda {
       ffi.Pointer<ffi.Void> inp, Dim2 inpS) {
     final ctx = Context();
     try {
-      final sizePtr = CSize2D.from(inpS);
+      final sizePtr = CDim2.from(inpS);
       final err = cuda.sum2D(stream.ptr, out, inp, sizePtr.ptr.ref);
       if (err != ffi.nullptr) {
         throw CudaException(err.toDartString());
@@ -203,7 +216,8 @@ class Cuda {
 
   void matmulCadd(CudaStream stream, F64Ptr out, F64Ptr inp1, F64Ptr inp2,
       F64Ptr add, int m, int n, int k, int batches) {
-    final err = cuda.matmulCadd(stream.ptr, out, inp1, inp2, add, m, n, k, batches);
+    final err =
+        cuda.matmulCadd(stream.ptr, out, inp1, inp2, add, m, n, k, batches);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -211,7 +225,8 @@ class Cuda {
 
   void matmulTCadd(CudaStream stream, F64Ptr out, F64Ptr inp1, F64Ptr inp2,
       F64Ptr add, int m, int n, int k, int batches) {
-    final err = cuda.matmulTCadd(stream.ptr, out, inp1, inp2, add, m, n, k, batches);
+    final err =
+        cuda.matmulTCadd(stream.ptr, out, inp1, inp2, add, m, n, k, batches);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -226,12 +241,12 @@ class Cuda {
       Dim2 stride = const Dim2(1, 1),
       Dim2 padding = const Dim2(0, 0),
       Dim2 dilation = const Dim2(1, 1)}) {
-    final kernSPtr = CSize2D.from(kernSize);
-    final outSPtr = CSize2D.from(outSize);
-    final inSPtr = CSize2D.from(inpSize);
-    final strideSPtr = CSize2D.from(stride);
-    final dilationSPtr = CSize2D.from(dilation);
-    final paddingSPtr = CSize2D.from(padding);
+    final kernSPtr = CDim2.from(kernSize);
+    final outSPtr = CDim2.from(outSize);
+    final inSPtr = CDim2.from(inpSize);
+    final strideSPtr = CDim2.from(stride);
+    final dilationSPtr = CDim2.from(dilation);
+    final paddingSPtr = CDim2.from(padding);
 
     final err = cuda.maxPool2D(
         stream.ptr,
@@ -264,12 +279,12 @@ class Cuda {
       double pad,
       Dim2 stride,
       Dim2 dilation) {
-    final outSC = CSize3D.from(outS);
-    final inpSC = CSize3D.from(inpS);
-    final kernSC = CSize2D.from(kernS);
-    final paddingSC = CSize2D.from(padding);
-    final strideSC = CSize2D.from(stride);
-    final dilationSC = CSize2D.from(dilation);
+    final outSC = CDim3.from(outS);
+    final inpSC = CDim3.from(inpS);
+    final kernSC = CDim2.from(kernS);
+    final paddingSC = CDim2.from(padding);
+    final strideSC = CDim2.from(stride);
+    final dilationSC = CDim2.from(dilation);
     final err = cuda.conv2D(
         stream.ptr,
         out,

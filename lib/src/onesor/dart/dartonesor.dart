@@ -163,10 +163,20 @@ mixin DartOnesorMixin<T extends num> implements Onesor<T> {
   }
 
   @override
+  NumType<T> get numType {
+    if (T == int) {
+      return NumType.i64 as NumType<T>;
+    } else if (T == double || T == num) {
+      return NumType.f64 as NumType<T>;
+    }
+    throw UnsupportedError('Unsupported type');
+  }
+
+  @override
   T get defaultValue {
     if (T == int) {
       return 0 as T;
-    } else if (T == double) {
+    } else if (T == double || T == num) {
       return 0.0 as T;
     }
     throw UnsupportedError('Unsupported type');
@@ -176,7 +186,7 @@ mixin DartOnesorMixin<T extends num> implements Onesor<T> {
   int get bytesPerItem {
     if (T == int) {
       return 4;
-    } else if (T == double) {
+    } else if (T == double || T == num) {
       return 8;
     }
     throw UnsupportedError('Unsupported type');

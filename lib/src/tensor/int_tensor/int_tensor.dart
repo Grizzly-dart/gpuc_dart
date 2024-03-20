@@ -39,7 +39,7 @@ abstract class Tensor<T extends num> implements Resource {
 
   Matrix<T> as2d({int colDims = 1});
 
-  Tensor<T> selectRows(Tensor<int> indices);
+  Future<Tensor<T>> pickRows(FutureOr<Tensor<int>> indices);
 
   Future<Tensor<T>> t({Tensor<T>? out});
 
@@ -62,6 +62,8 @@ abstract class Tensor<T extends num> implements Resource {
       });
 
   Map<String, dynamic> toJson();
+
+
 }
 
 mixin TypedTensorMixin<T extends num> implements Tensor<T> {
@@ -102,9 +104,29 @@ mixin TypedTensorMixin<T extends num> implements Tensor<T> {
   }
 
   @override
-  Tensor<T> selectRows(Tensor<int> indices) {
-    // TODO
-    throw UnimplementedError();
+  Future<Tensor<T>> pickRows(FutureOr<Tensor<int>> indices, {Tensor<T>? out}) async {
+    final b = await indices;
+    final ctx = Context();
+    // TODO check if input is small enough to be
+    try {
+      if (cuda.exists()) {
+        int deviceId = 0; // select device
+        final outSize = Dim([...b.size.asList, size.cols]);
+        final stream = CudaStream(deviceId, context: ctx);
+
+        final inpBuf = ;
+        final indicesBuf = ;
+        final outBuf = ;
+        cuda.pickRows(stream, outBuf, inpBuf, indicesBuf, outSize.squeeze2D());
+        out ??= Tensor<T>(outBuf, outSize, context: ctx);
+        return out;
+      }
+    } catch (e) {
+      ctx.release(isError: true);
+      rethrow;
+    } finally {
+      ctx.release();
+    }
   }
 
   // TODO accelerate this on GPU
