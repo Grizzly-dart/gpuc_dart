@@ -39,6 +39,8 @@ abstract class Tensor<T extends num> implements Resource {
 
   Matrix<T> as2d({int colDims = 1});
 
+  Tensor<T> selectRows(Tensor<int> indices);
+
   Future<Tensor<T>> t({Tensor<T>? out});
 
   Future<Tensor<T>> matmul(FutureOr<Tensor<T>> other,
@@ -97,6 +99,12 @@ mixin TypedTensorMixin<T extends num> implements Tensor<T> {
     }
     return Matrix<T>(
         OffsetTypedTensorView(this, size.numMatricesDim.unravel(index)));
+  }
+
+  @override
+  Tensor<T> selectRows(Tensor<int> indices) {
+    // TODO
+    throw UnimplementedError();
   }
 
   // TODO accelerate this on GPU

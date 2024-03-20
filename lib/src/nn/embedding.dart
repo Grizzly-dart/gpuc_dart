@@ -17,9 +17,8 @@ class Embedding implements Layer<int> {
   }
 
   @override
-  Future<F64Tensor> forward(FutureOr<Tensor<int>> input) {
-    // TODO
-    throw UnimplementedError();
+  Future<Tensor<double>> forward(FutureOr<Tensor<int>> input) async {
+    return weight.selectRows(await input);
   }
 
   int get numEmbeddings => weight.size.rows;
