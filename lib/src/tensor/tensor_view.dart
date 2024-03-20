@@ -1,17 +1,25 @@
 import 'package:gpuc_dart/gpuc_dart.dart';
+import 'package:gpuc_dart/src/tensor/int_tensor/int_tensor.dart';
 import 'package:gpuc_dart/src/tensor/tensor_mixin.dart';
 
-class TensorView with TensorMixin, Tensor2dMixin implements Tensor {
+class OffsetTensorView
+    with TensorMixin, Tensor2dMixin, TypedTensorMixin<double>
+    implements Tensor {
   @override
   String name = 'unnamed';
 
-  // TODO make as1d be view
+  final Tensor _inner;
+
+  final Dim offset;
+
   @override
-  final NList as1d;
+  late final OnesorView<double> as1d =
+      _inner.as1d.view(offset.nel * size.nel, size.nel);
 
-  Dim _size;
+  late Dim _size = Dim(size.asList.skip(offset.dims));
 
-  TensorView(this.as1d, this._size, {this.name = 'unnamed'}) {
+  OffsetTensorView(this._inner, this.offset, {this.name = 'unnamed'}) {
+    // TODO validate
     if (as1d.length != size.nel) {
       throw ArgumentError('Size does not match');
     }

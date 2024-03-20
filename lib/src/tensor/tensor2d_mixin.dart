@@ -18,8 +18,8 @@ mixin Tensor2dMixin implements Tensor {
       // TODO implement C summing for non-web
       int deviceId = 0; // TODO implement device selection
       final stream = CudaStream(deviceId, context: ctx);
-      final inp = CudaList.copy(as1d, stream: stream, context: ctx);
-      final out = CudaList.sized(stream, outSize.nel, context: ctx);
+      final inp = F64CuOnesor.copy(as1d, stream: stream, context: ctx);
+      final out = F64CuOnesor.sized(stream, outSize.nel, context: ctx);
       cuda.sum2D(stream, out.ptr.cast(), inp.ptr.cast(), inpSize.to2D());
       final outTensor = Tensor.sized(outSize, name: 'sum2D($name)');
       ctx.releaseOnErr(outTensor);
@@ -35,7 +35,7 @@ mixin Tensor2dMixin implements Tensor {
   }
 
   @override
-  Future<Tensor> t({Tensor? out}) async {
+  Future<TypedTensor<double>> t({TypedTensor<double>? out}) async {
     if (size.dims < 2) {
       throw StateError('Must be at least a 2D tensor');
     }
@@ -57,8 +57,8 @@ mixin Tensor2dMixin implements Tensor {
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
       final inpSize2D = size.to2D();
       final stream = CudaStream(deviceId, context: ctx);
-      final inp = CudaList.copy(as1d, context: ctx);
-      final outData = CudaList.sized(stream, outSize.nel, context: ctx);
+      final inp = F64CuOnesor.copy(as1d, context: ctx);
+      final outData = F64CuOnesor.sized(stream, outSize.nel, context: ctx);
       cuda.transpose2D(stream, outData.ptr.cast(), inp.ptr.cast(),
           Dim3(size.numMatrices, size.rows, size.cols));
       outData.copyTo(out.as1d, stream: stream);
@@ -74,7 +74,8 @@ mixin Tensor2dMixin implements Tensor {
   }
 
   @override
-  Future<Tensor> matmul(FutureOr<Tensor> other, {Tensor? out}) async {
+  Future<TypedTensor<double>> matmul(FutureOr<TypedTensor<double>> other,
+      {TypedTensor<double>? out}) async {
     if (cuda.exists()) {
       int deviceId = 0; // TODO implement device selection
       return await cuda.matmulSplit(deviceId, this, await other, out: out);
@@ -85,7 +86,8 @@ mixin Tensor2dMixin implements Tensor {
   }
 
   @override
-  Future<Tensor> matmulT(FutureOr<Tensor> other, {Tensor? out}) async {
+  Future<TypedTensor<double>> matmulT(FutureOr<TypedTensor<double>> other,
+      {TypedTensor<double>? out}) async {
     if (cuda.exists()) {
       int deviceId = 0; // TODO implement device selection
       return await cuda.matmulSplit(deviceId, this, await other, out: out);
@@ -96,8 +98,9 @@ mixin Tensor2dMixin implements Tensor {
   }
 
   @override
-  Future<Tensor> matmulCadd(FutureOr<Tensor> other, FutureOr<Tensor> c,
-      {Tensor? out}) async {
+  Future<TypedTensor<double>> matmulCadd(
+      FutureOr<TypedTensor<double>> other, FutureOr<TypedTensor<double>> c,
+      {TypedTensor<double>? out}) async {
     if (cuda.exists()) {
       int deviceId = 0; // TODO implement device selection
       return cuda.splitMatmulCadd(deviceId, this, await other, await c,
@@ -109,8 +112,9 @@ mixin Tensor2dMixin implements Tensor {
   }
 
   @override
-  Future<Tensor> matmulCaddT(FutureOr<Tensor> other, FutureOr<Tensor> c,
-      {Tensor? out}) async {
+  Future<TypedTensor<double>> matmulCaddT(
+      FutureOr<TypedTensor<double>> other, FutureOr<TypedTensor<double>> c,
+      {TypedTensor<double>? out}) async {
     if (cuda.exists()) {
       int deviceId = 0; // TODO implement device selection
       return cuda.splitMatmulTCadd(deviceId, this, await other, await c,

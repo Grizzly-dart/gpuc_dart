@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-abstract class Layer {
-  Future<Tensor> forward(FutureOr<Tensor> input);
+abstract class Layer<I extends num> {
+  Future<TypedTensor<double>> forward(FutureOr<TypedTensor<I>> input);
 }
 
 // TODO error messages should be more technical and domain specific
-class Linear extends Layer {
+class Linear extends Layer<double> {
   late Tensor weight;
   late Tensor? bias;
 
@@ -36,7 +36,7 @@ class Linear extends Layer {
   }
 
   @override
-  Future<Tensor> forward(FutureOr<Tensor> input) async {
+  Future<TypedTensor<double>> forward(FutureOr<TypedTensor<double>> input) async {
     final inp = await input;
     if (inp.size.cols != weight.size.rows) {
       throw ArgumentError('input columns must be equal to weight rows');
@@ -63,11 +63,11 @@ class Sequential extends Layer {
   }
 
   @override
-  Future<Tensor> forward(FutureOr<Tensor> input) async {
+  Future<TypedTensor<double>> forward(FutureOr<TypedTensor> input) async {
     var out = await input;
     for (final layer in layers) {
       out = await layer.forward(out);
     }
-    return out;
+    return out as TypedTensor<double>;
   }
 }

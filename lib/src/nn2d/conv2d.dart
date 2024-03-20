@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-class Conv2D implements Layer2D {
+class Conv2D implements Layer2D<double> {
   final Tensor kernel;
 
   final Tensor? bias;
@@ -79,7 +79,7 @@ class Conv2D implements Layer2D {
   }
 
   @override
-  Future<Tensor> forward(FutureOr<Tensor> input) async {
+  Future<Tensor> forward(FutureOr<TypedTensor<double>> input) async {
     final inp = await input;
     if (inp.size.channels != inChannels) {
       throw ArgumentError('input channels must be $inChannels');
@@ -99,9 +99,9 @@ class Conv2D implements Layer2D {
     try {
       final stream = CudaStream(0, context: ctx);
       final outS = Dim([batches, outChannels] + out2DS.toList());
-      final out = CudaList.sized(stream, outS.nel, context: ctx);
-      final inpL = CudaList.copy(inp.as1d, stream: stream, context: ctx);
-      final kernL = CudaList.copy(kernel.as1d, stream: stream, context: ctx);
+      final out = F64CuOnesor.sized(stream, outS.nel, context: ctx);
+      final inpL = F64CuOnesor.copy(inp.as1d, stream: stream, context: ctx);
+      final kernL = F64CuOnesor.copy(kernel.as1d, stream: stream, context: ctx);
       cuda.conv2D(
           stream,
           out.ptr,

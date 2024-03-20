@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-class Embedding implements Layer {
+class Embedding implements Layer<int> {
   final Tensor weight;
 
   // TODO padding index
@@ -17,9 +17,9 @@ class Embedding implements Layer {
   }
 
   @override
-  Future<Tensor> forward(FutureOr<Tensor> input) {
-
+  Future<Tensor> forward(FutureOr<TypedTensor<int>> input) {
     // TODO
+    throw UnimplementedError();
   }
 
   int get numEmbeddings => weight.size.rows;

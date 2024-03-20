@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-class GroupNorm2D extends Layer2D {
+class GroupNorm2D extends Layer2D<double> {
   final int numGroups;
   final int numChannels;
   final bool affine;
@@ -14,7 +14,7 @@ class GroupNorm2D extends Layer2D {
   }
 
   @override
-  Future<Tensor> forward(FutureOr<Tensor> input) async {
+  Future<Tensor> forward(FutureOr<TypedTensor<double>> input) async {
     final inp = await input;
     throw UnimplementedError();
   }

@@ -1,38 +1,10 @@
 import 'dart:async';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
+import 'package:gpuc_dart/src/tensor/int_tensor/int_tensor.dart';
 import 'package:text_table/text_table.dart';
 
 mixin TensorMixin implements Tensor {
-  @override
-  F64Ptr get ptr => as1d.ptr;
-
-  @override
-  int get nel => size.nel;
-
-  @override
-  DeviceType get deviceType => as1d.deviceType;
-
-  @override
-  int get deviceId => as1d.deviceId;
-
-  @override
-  Device get device => as1d.device;
-
-  @override
-  void squeeze(int dims) => size = size.squeeze(dims);
-
-  @override
-  double scalar([int index = 0]) => as1d[index];
-
-  @override
-  set set(Tensor other) {
-    if (other.nel != nel) {
-      throw ArgumentError('Size mismatch');
-    }
-    as1d.copyFrom(other.as1d);
-  }
-
   // TODO start and length
   @override
   Tensor slice(/* Dim | int | Iterable<int> */ index, {Context? context}) {
@@ -53,8 +25,7 @@ mixin TensorMixin implements Tensor {
       throw ArgumentError('Index out of range');
     }
 
-    final outSize = Dim(size.asList.skip(index.dims));
-    return TensorView(as1d.view(index.nel * outSize.nel, outSize.nel), outSize);
+    return OffsetTensorView(this, index);
   }
 
   @override
@@ -74,7 +45,7 @@ mixin TensorMixin implements Tensor {
   }
 
   @override
-  NList row(int index, {int colDims = 1}) {
+  Onesor<double> row(int index, {int colDims = 1}) {
     if (size.dims < 2) {
       throw StateError('Must be at least a 2D tensor');
     }
@@ -83,19 +54,6 @@ mixin TensorMixin implements Tensor {
       throw ArgumentError('Index out of range');
     }
     return as1d.view(index * size2d.cols, size2d.cols);
-  }
-
-  @override
-  Matrix as2d({int colDims = 1}) => Matrix(this, colDims: colDims);
-
-  @override
-  Matrix matrix(index) {
-    if (index < 0 || index >= size.numMatrices) {
-      throw ArgumentError('Index out of range');
-    }
-    return Matrix(TensorView(
-        as1d.view(index * size.rows * size.cols, size.rows * size.cols),
-        size.to2D()));
   }
 
   @override
@@ -109,9 +67,9 @@ mixin TensorMixin implements Tensor {
       int deviceId = 0; // TODO implement device selection
       final stream = CudaStream(deviceId, context: ctx);
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1 = CudaList.copy(as1d, stream: stream, context: ctx);
-      final inp2 = CudaList.copy(b.as1d, stream: stream, context: ctx);
-      final out = CudaList.sized(stream, nel, context: ctx);
+      final inp1 = F64CuOnesor.copy(as1d, stream: stream, context: ctx);
+      final inp2 = F64CuOnesor.copy(b.as1d, stream: stream, context: ctx);
+      final out = F64CuOnesor.sized(stream, nel, context: ctx);
       cuda.addition(
           stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
       final outTensor = Tensor.sized(size, name: '$name + ${b.name}');
@@ -138,9 +96,9 @@ mixin TensorMixin implements Tensor {
       int deviceId = 0; // TODO implement device selection
       final stream = CudaStream(deviceId, context: ctx);
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1 = CudaList.copy(as1d, stream: stream, context: ctx);
-      final inp2 = CudaList.copy(b.as1d, stream: stream, context: ctx);
-      final out = CudaList.sized(stream, nel, context: ctx);
+      final inp1 = F64CuOnesor.copy(as1d, stream: stream, context: ctx);
+      final inp2 = F64CuOnesor.copy(b.as1d, stream: stream, context: ctx);
+      final out = F64CuOnesor.sized(stream, nel, context: ctx);
       cuda.subtract(
           stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
       final outTensor = Tensor.sized(size, name: '$name + ${b.name}');
@@ -167,9 +125,9 @@ mixin TensorMixin implements Tensor {
       int deviceId = 0; // TODO implement device selection
       final stream = CudaStream(deviceId, context: ctx);
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1 = CudaList.copy(as1d, stream: stream, context: ctx);
-      final inp2 = CudaList.copy(b.as1d, stream: stream, context: ctx);
-      final out = CudaList.sized(stream, nel, context: ctx);
+      final inp1 = F64CuOnesor.copy(as1d, stream: stream, context: ctx);
+      final inp2 = F64CuOnesor.copy(b.as1d, stream: stream, context: ctx);
+      final out = F64CuOnesor.sized(stream, nel, context: ctx);
       cuda.multiply(
           stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
       final outTensor = Tensor.sized(size, name: '$name + ${b.name}');
@@ -196,9 +154,9 @@ mixin TensorMixin implements Tensor {
       int deviceId = 0; // TODO implement device selection
       final stream = CudaStream(deviceId, context: ctx);
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1 = CudaList.copy(as1d, stream: stream, context: ctx);
-      final inp2 = CudaList.copy(b.as1d, stream: stream, context: ctx);
-      final out = CudaList.sized(stream, nel, context: ctx);
+      final inp1 = F64CuOnesor.copy(as1d, stream: stream, context: ctx);
+      final inp2 = F64CuOnesor.copy(b.as1d, stream: stream, context: ctx);
+      final out = F64CuOnesor.sized(stream, nel, context: ctx);
       cuda.divide(
           stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
       final outTensor = Tensor.sized(size, name: '$name + ${b.name}');
@@ -214,8 +172,9 @@ mixin TensorMixin implements Tensor {
     }
   }
 
+  /*
   @override
-  Tensor rearrange(List<int> order, {DeviceType? forceDeviceType}) {
+  void rearrange(List<int> order, {DeviceType? forceDeviceType}) {
     if (order.length != size.dims) {
       throw ArgumentError('Invalid order length');
     }
@@ -256,49 +215,12 @@ mixin TensorMixin implements Tensor {
     }
     throw UnimplementedError('Device not implemented');
   }
+   */
 
   @override
-  bool isEqual(Tensor other, {double epsilon = 1e-8}) {
-    int nel = size.nel;
-    if (nel > other.size.nel) {
-      nel = other.size.nel;
-    }
-    for (var i = 0; i < nel; i++) {
-      if ((as1d[i] - other.as1d[i]).abs() > epsilon) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  @override
-  void assertEqual(Tensor other, {double eps = 1e-8}) {
-    int nel = size.nel;
-    if (nel > other.size.nel) {
-      nel = other.size.nel;
-    }
-    for (var i = 0; i < nel; i++) {
-      final aVal = as1d[i];
-      final bVal = other.as1d[i];
-      final diff = (aVal - bVal).abs();
-      if (diff > eps) {
-        throw AssertionError(
-            '@${size.unravel(i)}; $diff = $aVal - $bVal; eps: $eps');
-      }
-    }
-  }
-
-  @override
-  void printTextTable() {
+  void printTextTable({int precision = 4}) {
     for (int i = 0; i < size.numMatrices; i++) {
       print(TableRenderer().render(matrix(i)));
     }
   }
-
-  @override
-  Map<String, dynamic> toJson() => {
-        'name': name,
-        'size': size.toList(),
-        'data': as1d.toList(),
-      };
 }

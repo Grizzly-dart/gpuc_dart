@@ -1,9 +1,11 @@
 import 'dart:collection';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
+import 'package:gpuc_dart/src/onesor/dart/dartonesor.dart';
+import 'package:gpuc_dart/src/tensor/int_tensor/int_tensor.dart';
 
-class Matrix with ListMixin<List<double>> implements List<List<double>> {
-  final Tensor tensor;
+class Matrix<T extends num> with ListMixin<List<T>> implements List<List<T>> {
+  final TypedTensor<T> tensor;
 
   final int colDims;
 
@@ -17,12 +19,12 @@ class Matrix with ListMixin<List<double>> implements List<List<double>> {
   int get length => size.rows;
 
   @override
-  List<double> operator [](int index) =>
+  List<T> operator [](int index) =>
       tensor.as1d.view(index * size.cols, size.cols);
 
   @override
-  void operator []=(int index, List<double> value) {
-    tensor.as1d.view(index * size.cols, size.cols).copyFrom(DartList.own(value));
+  void operator []=(int index, List<T> value) {
+    tensor.as1d.view(index * size.cols, size.cols).copyFrom(DartOnesor(value));
   }
 
   @override

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ffi' as ffi;
 import 'dart:math';
 import 'package:gpuc_dart/gpuc_dart.dart';
 import 'package:gpuc_dart/src/tensor/tensor_mixin.dart';
@@ -9,13 +8,16 @@ export 'matrix.dart';
 export 'tensor_future.dart';
 export 'tensor2d_mixin.dart';
 export 'tensor_view.dart';
+export 'int_tensor/int_tensor.dart';
 
-class _Tensor with TensorMixin, Tensor2dMixin implements Tensor {
+class _Tensor
+    with TensorMixin, Tensor2dMixin, TypedTensorMixin<double>
+    implements Tensor {
   @override
   String name;
 
   @override
-  final NList as1d;
+  final Onesor<double> as1d;
 
   Dim _size;
 
@@ -43,24 +45,14 @@ class _Tensor with TensorMixin, Tensor2dMixin implements Tensor {
     as1d.release();
   }
 
-  static final _finalizer = Finalizer<NList>((NList l) {
+  static final _finalizer = Finalizer<Onesor>((Onesor l) {
     l.release();
   });
 }
 
-abstract class Tensor implements Resource {
-  String get name;
-
-  set name(String name);
-
-  NList get as1d;
-
-  Dim get size;
-  set size(Dim size);
-
-  int get nel;
-
-  factory Tensor(NList as1d, Dim size, {String name = '', Context? context}) =>
+abstract class Tensor implements TypedTensor<double> {
+  factory Tensor(Onesor<double> as1d, Dim size,
+          {String name = '', Context? context}) =>
       _Tensor(as1d, size, name: name, context: context);
 
   factory Tensor.fromList(List<double> list,
@@ -72,14 +64,14 @@ abstract class Tensor implements Resource {
     } else {
       size = Dim([list.length]);
     }
-    final data = CList.fromList(list, context: context);
+    final data = F64COnesor.fromList(list, context: context);
     return Tensor(data, size, name: name, context: context);
   }
 
   factory Tensor.sized(/* Dim | Iterable<int> | int */ size,
       {String name = '', Context? context}) {
     if (size is! Dim) size = Dim.from(size);
-    return Tensor(CList.sized(size.nel, context: context), size,
+    return Tensor(F64COnesor.sized(size.nel, context: context), size,
         name: name, context: context);
   }
 
@@ -87,7 +79,7 @@ abstract class Tensor implements Resource {
       double Function(Dim size, Dim index) generator,
       {String name = '', Context? context}) {
     if (size is! Dim) size = Dim.from(size);
-    final data = CList.sized(size.nel, context: context);
+    final data = F64COnesor.sized(size.nel, context: context);
     for (var i = 0; i < size.nel; i++) {
       data[i] = generator(size, size.unravel(i));
     }
@@ -98,27 +90,14 @@ abstract class Tensor implements Resource {
       {Random? random, String name = '', Context? context}) {
     if (size is! Dim) size = Dim.from(size);
     random ??= Random();
-    final data = CList.sized(size.nel, context: context);
+    final data = F64COnesor.sized(size.nel, context: context);
     for (var i = 0; i < size.nel; i++) {
       data[i] = random.nextDouble();
     }
     return Tensor(data, size, name: name, context: context);
   }
 
-  ffi.Pointer<ffi.Double> get ptr;
-
-  DeviceType get deviceType;
-
-  int get deviceId;
-
-  Device get device;
-
-  double scalar([int index = 0]);
-
-  void squeeze(int dims);
-
-  set set(Tensor other);
-
+  @override
   Tensor slice(/* Dim | int | Iterable<int> */ index, {Context? context});
 
   Tensor operator [](dynamic /* Dim | int | Iterable<int> */ index);
@@ -127,23 +106,28 @@ abstract class Tensor implements Resource {
       dynamic /* Dim | int | Iterable<int> */ index, Tensor value);
 
   // TODO return NListView
-  NList row(int index, {int colDims = 1});
+  Onesor<double> row(int index, {int colDims = 1});
 
-  Matrix as2d({int colDims = 1});
+  @override
+  Future<TypedTensor<double>> t({covariant TypedTensor<double>? out});
 
-  Matrix matrix(index);
+  @override
+  Future<TypedTensor<double>> matmul(FutureOr<TypedTensor<double>> other,
+      {TypedTensor<double>? out});
 
-  Future<Tensor> t({Tensor? out});
+  @override
+  Future<TypedTensor<double>> matmulT(FutureOr<TypedTensor<double>> other,
+      {TypedTensor<double>? out});
 
-  Future<Tensor> matmul(FutureOr<Tensor> other, {Tensor? out});
+  @override
+  Future<TypedTensor<double>> matmulCadd(
+      FutureOr<TypedTensor<double>> other, FutureOr<TypedTensor<double>> c,
+      {TypedTensor<double>? out});
 
-  Future<Tensor> matmulT(FutureOr<Tensor> other, {Tensor? out});
-
-  Future<Tensor> matmulCadd(FutureOr<Tensor> other, FutureOr<Tensor> c,
-      {Tensor? out});
-
-  Future<Tensor> matmulCaddT(FutureOr<Tensor> other, FutureOr<Tensor> c,
-      {Tensor? out});
+  @override
+  Future<TypedTensor<double>> matmulCaddT(
+      FutureOr<TypedTensor<double>> other, FutureOr<TypedTensor<double>> c,
+      {TypedTensor<double>? out});
 
   Future<Tensor> operator +(covariant FutureOr<Tensor> other);
 
@@ -155,19 +139,5 @@ abstract class Tensor implements Resource {
 
   Future<Tensor> sumRows({int colDims = 1});
 
-  @override
-  void release();
-
-  bool isEqual(Tensor other, {double epsilon = 1e-8});
-
-  void assertEqual(Tensor other, {double eps = 1e-8});
-
-  @override
-  String toString() => '$as1d';
-
-  Tensor rearrange(List<int> order, {DeviceType? forceDeviceType});
-
-  void printTextTable();
-
-  Map<String, dynamic> toJson();
+// TODO Tensor rearrange(List<int> order, {DeviceType? forceDeviceType});
 }

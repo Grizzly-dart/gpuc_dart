@@ -4,25 +4,26 @@ import 'dart:io';
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 class TensonCmd {
-  Future<Tensor> transpose2D(Tensor input) async {
+  Future<TypedTensor<T>> transpose2D<T extends num>(TypedTensor<T> input) async {
     final resp = await _execute('transpose2d', [
       TensonVar(name: 'input', data: input),
     ]);
-    return resp['output']!.data as Tensor;
+    return resp['output']!.data;
   }
 
-  Future<Tensor> matmul(Tensor a, Tensor b, {Tensor? c}) async {
+  Future<TypedTensor> matmul(TypedTensor a, TypedTensor b,
+      {TypedTensor? c}) async {
     final resp = await _execute('matmul', [
       TensonVar(name: 'inputA', data: a),
       TensonVar(name: 'inputB', data: b),
       if (c != null) TensonVar(name: 'inputC', data: c),
     ]);
-    return resp['output']!.data as Tensor;
+    return resp['output']!.data;
   }
 
-  Future<Tensor> maxPool2D(
+  Future<TypedTensor> maxPool2D(
       {required Dim2 kernelSize,
-      required Tensor input,
+      required TypedTensor input,
       Dim2 padding = const Dim2(0, 0),
       Dim2? stride = const Dim2(1, 1),
       Dim2 dilation = const Dim2(1, 1),
@@ -35,12 +36,12 @@ class TensonCmd {
       TensonVar(name: 'kernelSize', data: kernelSize),
       TensonVar(name: 'input', data: input),
     ]);
-    return resp['output']!.data as Tensor;
+    return resp['output']!.data;
   }
 
-  Future<Tensor> conv2D({
-    required Tensor kernel,
-    required Tensor input,
+  Future<TypedTensor> conv2D({
+    required TypedTensor kernel,
+    required TypedTensor input,
     int groups = 1,
     Dim2 padding = const Dim2(0, 0),
     Dim2 stride = const Dim2(1, 1),
@@ -66,16 +67,17 @@ class TensonCmd {
       TensonVar(name: 'kernel', data: kernel),
       TensonVar(name: 'input', data: input),
     ]);
-    return resp['output']!.data as Tensor;
+    return resp['output']!.data;
   }
 
-  Future<Tensor> linear(Tensor input, Tensor weight, Tensor? bias) async {
+  Future<Tensor> linear(TypedTensor<double> input, TypedTensor<double> weight,
+      TypedTensor<double>? bias) async {
     final resp = await _execute('linear', [
       TensonVar(name: 'input', data: input),
       TensonVar(name: 'weight', data: weight),
       if (bias != null) TensonVar(name: 'bias', data: bias),
     ]);
-    return resp['output']!.data as Tensor;
+    return resp['output']!.data;
   }
 
   String mapPadMode(PadMode padMode) {

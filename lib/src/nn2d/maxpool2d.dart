@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-class MaxPool2D implements Layer2D {
+class MaxPool2D implements Layer2D<double> {
   final Dim2 kernelSize;
 
   final Dim2 stride;
@@ -21,7 +21,7 @@ class MaxPool2D implements Layer2D {
   }
 
   @override
-  Future<Tensor> forward(FutureOr<Tensor> input) async {
+  Future<Tensor> forward(FutureOr<TypedTensor<double>> input) async {
     final inp = await input;
     // TODO validate
 
@@ -31,8 +31,8 @@ class MaxPool2D implements Layer2D {
     try {
       final stream = CudaStream(0, context: ctx);
       final outS = outSize2D(inp.size);
-      final inpL = CudaList.copy(inp.as1d, stream: stream, context: ctx);
-      final out = CudaList.sized(stream, outS.nel, context: ctx);
+      final inpL = F64CuOnesor.copy(inp.as1d, stream: stream, context: ctx);
+      final out = F64CuOnesor.sized(stream, outS.nel, context: ctx);
       cuda.maxPool2D(stream, out.ptr, inpL.ptr,
           kernSize: kernelSize,
           outSize: outS,

@@ -5,8 +5,9 @@ import 'package:gpuc_dart/gpuc_dart.dart';
 
 extension CudaSplitExtension on Cuda {
   // TODO use tensor views instead
-  Future<Tensor> matmulSplit(int deviceId, Tensor a, Tensor b,
-      {Tensor? out}) async {
+  Future<TypedTensor<double>> matmulSplit(
+      int deviceId, TypedTensor<double> a, TypedTensor<double> b,
+      {TypedTensor<double>? out}) async {
     if (a.size.cols != b.size.rows) {
       throw ArgumentError('Columns of A must match rows of B');
     }
@@ -45,18 +46,18 @@ extension CudaSplitExtension on Cuda {
         int split = min(batchSize, numMats - batchStart);
         final stream = CudaStream(deviceId, context: ctx);
         streams.add(stream);
-        final inp1 = CudaList.copy(
+        final inp1 = F64CuOnesor.copy(
             a.as1d.view(batchStart * batchSize * inp1Size2D.nel,
                 split * inp1Size2D.nel),
             stream: stream,
             context: ctx);
-        final inp2 = CudaList.copy(
+        final inp2 = F64CuOnesor.copy(
             b.as1d.view(batchStart * batchSize * inp2Size2D.nel,
                 split * inp2Size2D.nel),
             stream: stream,
             context: ctx);
         final outMat =
-            CudaList.sized(stream, split * outSize2D.nel, context: ctx);
+            F64CuOnesor.sized(stream, split * outSize2D.nel, context: ctx);
         cuda.matmul(stream, outMat.ptr.cast(), inp1.ptr, inp2.ptr, a.size.rows,
             a.size.cols, b.size.cols, split);
         outMat.copyTo(
@@ -78,8 +79,9 @@ extension CudaSplitExtension on Cuda {
     }
   }
 
-  Future<Tensor> matmulTSplit(int deviceId, Tensor a, Tensor b,
-      {Tensor? out}) async {
+  Future<TypedTensor<double>> matmulTSplit(
+      int deviceId, TypedTensor<double> a, TypedTensor<double> b,
+      {TypedTensor<double>? out}) async {
     final inp1Size2D = a.size.to2D();
     final inp2Size2D = b.size.to2D().t;
     if (inp1Size2D.cols != inp2Size2D.rows) {
@@ -116,18 +118,18 @@ extension CudaSplitExtension on Cuda {
         int split = min(batchSize, numMats - batchStart);
         final stream = CudaStream(deviceId, context: ctx);
         streams.add(stream);
-        final inp1 = CudaList.copy(
+        final inp1 = F64CuOnesor.copy(
             a.as1d.view(batchStart * batchSize * inp1Size2D.nel,
                 split * inp1Size2D.nel),
             stream: stream,
             context: ctx);
-        final inp2 = CudaList.copy(
+        final inp2 = F64CuOnesor.copy(
             b.as1d.view(batchStart * batchSize * inp2Size2D.nel,
                 split * inp2Size2D.nel),
             stream: stream,
             context: ctx);
         final outMat =
-            CudaList.sized(stream, split * outSize2D.nel, context: ctx);
+            F64CuOnesor.sized(stream, split * outSize2D.nel, context: ctx);
         cuda.matmulT(stream, outMat.ptr.cast(), inp1.ptr, inp2.ptr, a.size.rows,
             a.size.cols, inp2Size2D.cols, split);
         outMat.copyTo(
@@ -149,8 +151,9 @@ extension CudaSplitExtension on Cuda {
     }
   }
 
-  Future<Tensor> splitMatmulCadd(int deviceId, Tensor a, Tensor b, Tensor add,
-      {Tensor? out}) async {
+  Future<TypedTensor<double>> splitMatmulCadd(int deviceId,
+      TypedTensor<double> a, TypedTensor<double> b, TypedTensor<double> add,
+      {TypedTensor<double>? out}) async {
     if (a.size.cols != b.size.rows) {
       throw ArgumentError('Columns of A must match rows of B');
     }
@@ -172,7 +175,7 @@ extension CudaSplitExtension on Cuda {
     final ctx = Context();
     try {
       final stream = CudaStream(deviceId, context: ctx);
-      final addCuda = CudaList.copy(add.as1d, stream: stream, context: ctx);
+      final addCuda = F64CuOnesor.copy(add.as1d, stream: stream, context: ctx);
       if (out == null) {
         out = Tensor.sized(outSize, name: '${a.name} * ${b.name}');
         ctx.releaseOnErr(out);
@@ -195,18 +198,18 @@ extension CudaSplitExtension on Cuda {
         int split = min(batchSize, numMats - batchStart);
         final stream = CudaStream(deviceId, context: ctx);
         streams.add(stream);
-        final inp1 = CudaList.copy(
+        final inp1 = F64CuOnesor.copy(
             a.as1d.view(batchStart * batchSize * inp1Size2D.nel,
                 split * inp1Size2D.nel),
             stream: stream,
             context: ctx);
-        final inp2 = CudaList.copy(
+        final inp2 = F64CuOnesor.copy(
             b.as1d.view(batchStart * batchSize * inp2Size2D.nel,
                 split * inp2Size2D.nel),
             stream: stream,
             context: ctx);
         final outMat =
-            CudaList.sized(stream, split * outSize2D.nel, context: ctx);
+            F64CuOnesor.sized(stream, split * outSize2D.nel, context: ctx);
         cuda.matmulCadd(stream, outMat.ptr.cast(), inp1.ptr, inp2.ptr,
             addCuda.ptr, a.size.rows, a.size.cols, b.size.cols, split);
         outMat.copyTo(
@@ -228,8 +231,9 @@ extension CudaSplitExtension on Cuda {
     }
   }
 
-  Future<Tensor> splitMatmulTCadd(int deviceId, Tensor a, Tensor b, Tensor add,
-      {Tensor? out}) async {
+  Future<TypedTensor<double>> splitMatmulTCadd(int deviceId,
+      TypedTensor<double> a, TypedTensor<double> b, TypedTensor<double> add,
+      {TypedTensor<double>? out}) async {
     final inp1Size2D = a.size.to2D();
     final inp2Size2D = b.size.to2D().t;
     if (inp1Size2D.cols != inp2Size2D.rows) {
@@ -250,7 +254,7 @@ extension CudaSplitExtension on Cuda {
     final ctx = Context();
     try {
       final stream = CudaStream(deviceId, context: ctx);
-      final addCuda = CudaList.copy(add.as1d, stream: stream, context: ctx);
+      final addCuda = F64CuOnesor.copy(add.as1d, stream: stream, context: ctx);
       if (out == null) {
         out = Tensor.sized(outSize, name: '${a.name} * ${b.name}');
         ctx.releaseOnErr(out);
@@ -273,18 +277,18 @@ extension CudaSplitExtension on Cuda {
         int split = min(batchSize, numMats - batchStart);
         final stream = CudaStream(deviceId, context: ctx);
         streams.add(stream);
-        final inp1 = CudaList.copy(
+        final inp1 = F64CuOnesor.copy(
             a.as1d.view(batchStart * batchSize * inp1Size2D.nel,
                 split * inp1Size2D.nel),
             stream: stream,
             context: ctx);
-        final inp2 = CudaList.copy(
+        final inp2 = F64CuOnesor.copy(
             b.as1d.view(batchStart * batchSize * inp2Size2D.nel,
                 split * inp2Size2D.nel),
             stream: stream,
             context: ctx);
         final outMat =
-            CudaList.sized(stream, split * outSize2D.nel, context: ctx);
+            F64CuOnesor.sized(stream, split * outSize2D.nel, context: ctx);
         cuda.matmulCadd(stream, outMat.ptr.cast(), inp1.ptr, inp2.ptr,
             addCuda.ptr, a.size.rows, a.size.cols, b.size.cols, split);
         outMat.copyTo(

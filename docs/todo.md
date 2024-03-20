@@ -7,6 +7,7 @@
 + ResNet
 + Fix printing tensor tables
 + Layer backwards
++ COnesor should not use context but use native finalizer
 
 # Layers
 + Group normalization
