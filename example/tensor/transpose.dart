@@ -13,7 +13,7 @@ Future<void> main() async {
 Future<void> test(Dim size) async {
   print('=====> size: $size');
   final rand = Random(size.nel);
-  final t = Tensor.generate(
+  final t = F64Tensor.generate(
       size, (s, i) => rand.nextDouble() /*size.id2D(i).toDouble()*/);
   final out = await t.t();
   final out2 = await TensonCmd().transpose2D(t);

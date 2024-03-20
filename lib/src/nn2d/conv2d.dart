@@ -2,9 +2,9 @@ import 'dart:async';
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 class Conv2D implements Layer2D<double> {
-  final Tensor kernel;
+  final F64Tensor kernel;
 
-  final Tensor? bias;
+  final F64Tensor? bias;
 
   final Dim2 kernelSize;
 
@@ -63,9 +63,9 @@ class Conv2D implements Layer2D<double> {
     Dim2 padding = const Dim2(0, 0),
   }) {
     // TODO generate random values for kernel and bias
-    final kernel = Tensor.sized(
+    final kernel = F64Tensor.sized(
         Dim([outChannels, inChannels, kernelSize.rows, kernelSize.cols]));
-    final bias = Tensor.sized(Dim([outChannels]));
+    final bias = F64Tensor.sized(Dim([outChannels]));
     return Conv2D.withWeights(
       kernel,
       bias: bias,
@@ -79,7 +79,7 @@ class Conv2D implements Layer2D<double> {
   }
 
   @override
-  Future<Tensor> forward(FutureOr<TypedTensor<double>> input) async {
+  Future<F64Tensor> forward(FutureOr<Tensor<double>> input) async {
     final inp = await input;
     if (inp.size.channels != inChannels) {
       throw ArgumentError('input channels must be $inChannels');
@@ -117,7 +117,7 @@ class Conv2D implements Layer2D<double> {
           pad,
           stride,
           dilation);
-      final outTensor = Tensor.sized(outS);
+      final outTensor = F64Tensor.sized(outS);
       ctx.releaseOnErr(outTensor);
       out.copyTo(outTensor.as1d, stream: stream);
       await stream.sync();

@@ -12,11 +12,11 @@ Future<void> test(int inFeatures, int outFeatures,
       '=====> inFeatures: $inFeatures, outFeatures: $outFeatures, batches: $batches');
   batches ??= Dim([1]);
   final rnd = MTRandom();
-  final inp = Tensor.random(Dim([...batches.asList, inFeatures]), random: rnd);
-  final weights = Tensor.random(Dim([inFeatures, outFeatures]), random: rnd);
-  Tensor? bias;
+  final inp = F64Tensor.random(Dim([...batches.asList, inFeatures]), random: rnd);
+  final weights = F64Tensor.random(Dim([inFeatures, outFeatures]), random: rnd);
+  F64Tensor? bias;
   if (withBias) {
-    bias = Tensor.random(Dim([outFeatures]), random: rnd);
+    bias = F64Tensor.random(Dim([outFeatures]), random: rnd);
   }
   final linear = Linear.withWeights(weights, bias: bias);
   final out = await linear.forward(inp);

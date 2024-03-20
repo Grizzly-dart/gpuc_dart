@@ -10,7 +10,7 @@ enum TensonType<T> {
   doubleData<double>('Double'),
   stringData<String>('String'),
   dimData<Dim>('Dim'),
-  tensorData<Tensor>('Tensor'),
+  tensorData<F64Tensor>('Tensor'),
   nullData<Null>('Null'),
   ;
 
@@ -56,9 +56,9 @@ class TensonVar<T> {
     } else if (type == TensonType.tensorData) {
       final dim = Dim.from(map['data']['size']);
       final data = (map['data']['data'] as List).cast<double>();
-      return TensonVar<Tensor>(
+      return TensonVar<F64Tensor>(
           name: map['name'],
-          data: Tensor.fromList(data, size: dim, name: map['name']));
+          data: F64Tensor.fromList(data, size: dim, name: map['name']));
     }
     throw UnsupportedError('$type not supported');
   }

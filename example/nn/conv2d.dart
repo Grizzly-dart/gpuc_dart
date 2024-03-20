@@ -54,7 +54,7 @@ Future<void> main() async {
   }
    */
 
-  for(final padMode in PadMode.values) {
+  for (final padMode in PadMode.values) {
     await testConv2D(
       inputSize: Dim2(16, 16),
       padding: Dim2(2, 2),
@@ -89,11 +89,11 @@ Future<void> testConv2D({
 }) async {
   print(
       '=====> Batches: $batches Input: $inChannels Output: $outChannels Groups: $groups');
-  final t1 = Tensor.fromList(
+  final t1 = F64Tensor.fromList(
       List.generate(batches * inChannels * inputSize.rows * inputSize.cols,
           (index) => (index.toDouble() + 1) * 1e-6),
       size: Dim([batches, inChannels, inputSize.rows, inputSize.cols]));
-  final kernel = Tensor.fromList(
+  final kernel = F64Tensor.fromList(
       List.generate(
           outChannels *
               inChannels ~/

@@ -7,7 +7,7 @@ export 'conv2d.dart';
 
 abstract class Layer2D<I extends num> implements Layer<I> {
   @override
-  Future<Tensor> forward(FutureOr<TypedTensor<I>> input);
+  Future<F64Tensor> forward(FutureOr<Tensor<I>> input);
 
   // TODO load wandb
 

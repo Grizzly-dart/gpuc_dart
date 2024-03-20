@@ -2,7 +2,7 @@ import 'package:gpuc_dart/gpuc_dart.dart';
 
 void main() async {
   initializeNativeTensorLibrary();
-  final t1 = Tensor.fromList(List.generate(16, (i) => i.toDouble()),
+  final t1 = F64Tensor.fromList(List.generate(16, (i) => i.toDouble()),
       size: Dim([4, 4]));
   print(t1[0]);
   print(t1[1]);

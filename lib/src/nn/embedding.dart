@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 class Embedding implements Layer<int> {
-  final Tensor weight;
+  final F64Tensor weight;
 
   // TODO padding index
   // TODO max norm
@@ -11,13 +11,13 @@ class Embedding implements Layer<int> {
   Embedding.withWeights(this.weight);
 
   factory Embedding(int numEmbeddings, int embeddingDim) {
-    final weights = Tensor.sized(Dim2(numEmbeddings, embeddingDim));
+    final weights = F64Tensor.sized(Dim2(numEmbeddings, embeddingDim));
     // TODO fill with random normal
     return Embedding.withWeights(weights);
   }
 
   @override
-  Future<Tensor> forward(FutureOr<TypedTensor<int>> input) {
+  Future<F64Tensor> forward(FutureOr<Tensor<int>> input) {
     // TODO
     throw UnimplementedError();
   }

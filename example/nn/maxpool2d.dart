@@ -14,7 +14,7 @@ Future<void> test(
     Dim2? stride,
     Dim2 padding = const Dim2(0, 0)}) async {
   final rand = MTRandom();
-  final input = Tensor.fromList(
+  final input = F64Tensor.fromList(
       List.generate(16 * 16, (index) => rand.nextDouble()),
       size: Dim([1, 1, 16, 16]));
   // input.printTextTable();

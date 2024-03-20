@@ -21,7 +21,7 @@ class MaxPool2D implements Layer2D<double> {
   }
 
   @override
-  Future<Tensor> forward(FutureOr<TypedTensor<double>> input) async {
+  Future<F64Tensor> forward(FutureOr<Tensor<double>> input) async {
     final inp = await input;
     // TODO validate
 
@@ -41,7 +41,7 @@ class MaxPool2D implements Layer2D<double> {
           dilation: dilation,
           padding: padding,
           matrices: inp.size.asList.take(inp.size.dims - 2).prod);
-      final outTensor = Tensor.sized(outS);
+      final outTensor = F64Tensor.sized(outS);
       ctx.releaseOnErr(outTensor);
       out.copyTo(outTensor.as1d, stream: stream);
       await stream.sync();

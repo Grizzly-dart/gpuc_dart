@@ -4,9 +4,9 @@ import 'dart:math';
 import 'package:gpuc_dart/gpuc_dart.dart';
 import 'package:gpuc_dart/src/native/cuda/cuda_extension_split.dart';
 
-mixin Tensor2dMixin implements Tensor {
+mixin F64Tensor2dMixin implements F64Tensor {
   @override
-  Future<Tensor> sumRows({int colDims = 1}) async {
+  Future<F64Tensor> sumRows({int colDims = 1}) async {
     if (size.dims < 2) {
       throw StateError('Must be at least a 2D tensor');
     }
@@ -21,7 +21,7 @@ mixin Tensor2dMixin implements Tensor {
       final inp = F64CuOnesor.copy(as1d, stream: stream, context: ctx);
       final out = F64CuOnesor.sized(stream, outSize.nel, context: ctx);
       cuda.sum2D(stream, out.ptr.cast(), inp.ptr.cast(), inpSize.to2D());
-      final outTensor = Tensor.sized(outSize, name: 'sum2D($name)');
+      final outTensor = F64Tensor.sized(outSize, name: 'sum2D($name)');
       ctx.releaseOnErr(outTensor);
       out.copyTo(outTensor.as1d, stream: stream);
       // await stream.sync();
@@ -35,7 +35,7 @@ mixin Tensor2dMixin implements Tensor {
   }
 
   @override
-  Future<TypedTensor<double>> t({TypedTensor<double>? out}) async {
+  Future<Tensor<double>> t({Tensor<double>? out}) async {
     if (size.dims < 2) {
       throw StateError('Must be at least a 2D tensor');
     }
@@ -47,7 +47,7 @@ mixin Tensor2dMixin implements Tensor {
     try {
       int deviceId = 0; // TODO implement device selection
       if (out == null) {
-        out = Tensor.sized(outSize, name: 'transpose2D($name)');
+        out = F64Tensor.sized(outSize, name: 'transpose2D($name)');
         ctx.releaseOnErr(out);
       } else {
         if (out.nel != size.nel) {
@@ -74,8 +74,8 @@ mixin Tensor2dMixin implements Tensor {
   }
 
   @override
-  Future<TypedTensor<double>> matmul(FutureOr<TypedTensor<double>> other,
-      {TypedTensor<double>? out}) async {
+  Future<Tensor<double>> matmul(FutureOr<Tensor<double>> other,
+      {Tensor<double>? out}) async {
     if (cuda.exists()) {
       int deviceId = 0; // TODO implement device selection
       return await cuda.matmulSplit(deviceId, this, await other, out: out);
@@ -86,8 +86,8 @@ mixin Tensor2dMixin implements Tensor {
   }
 
   @override
-  Future<TypedTensor<double>> matmulT(FutureOr<TypedTensor<double>> other,
-      {TypedTensor<double>? out}) async {
+  Future<Tensor<double>> matmulT(FutureOr<Tensor<double>> other,
+      {Tensor<double>? out}) async {
     if (cuda.exists()) {
       int deviceId = 0; // TODO implement device selection
       return await cuda.matmulSplit(deviceId, this, await other, out: out);
@@ -98,9 +98,9 @@ mixin Tensor2dMixin implements Tensor {
   }
 
   @override
-  Future<TypedTensor<double>> matmulCadd(
-      FutureOr<TypedTensor<double>> other, FutureOr<TypedTensor<double>> c,
-      {TypedTensor<double>? out}) async {
+  Future<Tensor<double>> matmulCadd(
+      FutureOr<Tensor<double>> other, FutureOr<Tensor<double>> c,
+      {Tensor<double>? out}) async {
     if (cuda.exists()) {
       int deviceId = 0; // TODO implement device selection
       return cuda.splitMatmulCadd(deviceId, this, await other, await c,
@@ -112,9 +112,9 @@ mixin Tensor2dMixin implements Tensor {
   }
 
   @override
-  Future<TypedTensor<double>> matmulCaddT(
-      FutureOr<TypedTensor<double>> other, FutureOr<TypedTensor<double>> c,
-      {TypedTensor<double>? out}) async {
+  Future<Tensor<double>> matmulCaddT(
+      FutureOr<Tensor<double>> other, FutureOr<Tensor<double>> c,
+      {Tensor<double>? out}) async {
     if (cuda.exists()) {
       int deviceId = 0; // TODO implement device selection
       return cuda.splitMatmulTCadd(deviceId, this, await other, await c,

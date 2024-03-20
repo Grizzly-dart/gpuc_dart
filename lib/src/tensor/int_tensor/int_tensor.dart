@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:gpuc_dart/gpuc_dart.dart';
 import 'package:text_table/text_table.dart';
 
-abstract class TypedTensor<T extends num> implements Resource {
+abstract class Tensor<T extends num> implements Resource {
   String get name;
 
   set name(String name);
@@ -26,34 +26,34 @@ abstract class TypedTensor<T extends num> implements Resource {
 
   void squeeze(int dims);
 
-  set set(TypedTensor<T> other);
+  set set(Tensor<T> other);
 
   Matrix<T> matrix(int index);
 
-  TypedTensor<T> slice(/* Dim | int | Iterable<int> */ index,
+  Tensor<T> slice(/* Dim | int | Iterable<int> */ index,
       {Context? context});
 
-  bool isEqual(TypedTensor<T> other, {double epsilon = 1e-8});
+  bool isEqual(Tensor<T> other, {double epsilon = 1e-8});
 
-  void assertEqual(TypedTensor<T> other, {double eps = 1e-8});
+  void assertEqual(Tensor<T> other, {double eps = 1e-8});
 
   Matrix<T> as2d({int colDims = 1});
 
-  Future<TypedTensor<T>> t({TypedTensor<T>? out});
+  Future<Tensor<T>> t({Tensor<T>? out});
 
-  Future<TypedTensor<T>> matmul(FutureOr<TypedTensor<T>> other,
-      {TypedTensor<T>? out});
+  Future<Tensor<T>> matmul(FutureOr<Tensor<T>> other,
+      {Tensor<T>? out});
 
-  Future<TypedTensor<T>> matmulT(FutureOr<TypedTensor<T>> other,
-      {TypedTensor<T>? out});
+  Future<Tensor<T>> matmulT(FutureOr<Tensor<T>> other,
+      {Tensor<T>? out});
 
-  Future<TypedTensor<T>> matmulCadd(
-      FutureOr<TypedTensor<T>> other, FutureOr<TypedTensor<T>> c,
-      {TypedTensor<T>? out});
+  Future<Tensor<T>> matmulCadd(
+      FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
+      {Tensor<T>? out});
 
-  Future<TypedTensor<T>> matmulCaddT(
-      FutureOr<TypedTensor<T>> other, FutureOr<TypedTensor<T>> c,
-      {TypedTensor<T>? out});
+  Future<Tensor<T>> matmulCaddT(
+      FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
+      {Tensor<T>? out});
 
   void printTextTable(
       {int precision = 4 /* TODO , int? tableWidth, int? maxChars*/
@@ -62,7 +62,7 @@ abstract class TypedTensor<T extends num> implements Resource {
   Map<String, dynamic> toJson();
 }
 
-mixin TypedTensorMixin<T extends num> implements TypedTensor<T> {
+mixin TypedTensorMixin<T extends num> implements Tensor<T> {
   @override
   DeviceType get deviceType => as1d.deviceType;
 
@@ -82,7 +82,7 @@ mixin TypedTensorMixin<T extends num> implements TypedTensor<T> {
   void squeeze(int dims) => size = size.squeeze(dims);
 
   @override
-  set set(TypedTensor<T> other) {
+  set set(Tensor<T> other) {
     // TODO allow partial setting
     if (other.nel != nel) {
       throw ArgumentError('Size mismatch');
@@ -101,7 +101,7 @@ mixin TypedTensorMixin<T extends num> implements TypedTensor<T> {
 
   // TODO accelerate this on GPU
   @override
-  bool isEqual(TypedTensor<T> other, {double epsilon = 1e-8}) {
+  bool isEqual(Tensor<T> other, {double epsilon = 1e-8}) {
     int nel = size.nel;
     if (nel > other.size.nel) {
       nel = other.size.nel;
@@ -116,7 +116,7 @@ mixin TypedTensorMixin<T extends num> implements TypedTensor<T> {
 
   // TODO accelerate this on GPU
   @override
-  void assertEqual(TypedTensor<T> other, {double eps = 1e-8}) {
+  void assertEqual(Tensor<T> other, {double eps = 1e-8}) {
     int nel = size.nel;
     if (nel > other.size.nel) {
       nel = other.size.nel;
@@ -153,7 +153,7 @@ mixin TypedTensorMixin<T extends num> implements TypedTensor<T> {
   }
 }
 
-mixin IntTensorMixin implements TypedTensor<int> {
+mixin IntTensorMixin implements Tensor<int> {
   @override
   IntTensor slice(/* Dim | int | Iterable<int> */ index, {Context? context}) {
     if (index is! Dim) index = Dim.from(index);
@@ -167,40 +167,40 @@ mixin IntTensorMixin implements TypedTensor<int> {
   }
 
   @override
-  Future<TypedTensor<int>> t({TypedTensor<int>? out}) {
+  Future<Tensor<int>> t({Tensor<int>? out}) {
     throw UnimplementedError();
   }
 
   @override
-  Future<TypedTensor<int>> matmul(FutureOr<TypedTensor<int>> other,
-      {TypedTensor<int>? out}) {
+  Future<Tensor<int>> matmul(FutureOr<Tensor<int>> other,
+      {Tensor<int>? out}) {
     throw UnimplementedError();
   }
 
   @override
-  Future<TypedTensor<int>> matmulT(FutureOr<TypedTensor<int>> other,
-      {TypedTensor<int>? out}) {
+  Future<Tensor<int>> matmulT(FutureOr<Tensor<int>> other,
+      {Tensor<int>? out}) {
     throw UnimplementedError();
   }
 
   @override
-  Future<TypedTensor<int>> matmulCadd(
-      FutureOr<TypedTensor<int>> other, FutureOr<TypedTensor<int>> c,
-      {TypedTensor<int>? out}) {
+  Future<Tensor<int>> matmulCadd(
+      FutureOr<Tensor<int>> other, FutureOr<Tensor<int>> c,
+      {Tensor<int>? out}) {
     throw UnimplementedError();
   }
 
   @override
-  Future<TypedTensor<int>> matmulCaddT(
-      FutureOr<TypedTensor<int>> other, FutureOr<TypedTensor<int>> c,
-      {TypedTensor<int>? out}) {
+  Future<Tensor<int>> matmulCaddT(
+      FutureOr<Tensor<int>> other, FutureOr<Tensor<int>> c,
+      {Tensor<int>? out}) {
     throw UnimplementedError();
   }
 }
 
 class IntTensor
     with IntTensorMixin, TypedTensorMixin<int>
-    implements TypedTensor<int> {
+    implements Tensor<int> {
   @override
   String name = 'unnamed';
 
@@ -240,11 +240,11 @@ class IntTensor
 
 class OffsetTypedTensorView<T extends num>
     with TypedTensorMixin<T>
-    implements TypedTensor<T> {
+    implements Tensor<T> {
   @override
   String name = 'unnamed';
 
-  final TypedTensor<T> _inner;
+  final Tensor<T> _inner;
 
   final Dim offset;
 
@@ -276,44 +276,44 @@ class OffsetTypedTensorView<T extends num>
   void release() {}
 
   @override
-  TypedTensor<T> slice(/* Dim | int | Iterable<int> */ index,
+  Tensor<T> slice(/* Dim | int | Iterable<int> */ index,
       {Context? context}) {
     // TODO
     throw UnimplementedError();
   }
 
   @override
-  Future<TypedTensor<T>> matmul(FutureOr<TypedTensor<T>> other,
-      {TypedTensor<T>? out}) {
+  Future<Tensor<T>> matmul(FutureOr<Tensor<T>> other,
+      {Tensor<T>? out}) {
     // TODO: implement matmul
     throw UnimplementedError();
   }
 
   @override
-  Future<TypedTensor<T>> matmulCadd(
-      FutureOr<TypedTensor<T>> other, FutureOr<TypedTensor<T>> c,
-      {TypedTensor<T>? out}) {
+  Future<Tensor<T>> matmulCadd(
+      FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
+      {Tensor<T>? out}) {
     // TODO: implement matmulCadd
     throw UnimplementedError();
   }
 
   @override
-  Future<TypedTensor<T>> matmulCaddT(
-      FutureOr<TypedTensor<T>> other, FutureOr<TypedTensor<T>> c,
-      {TypedTensor<T>? out}) {
+  Future<Tensor<T>> matmulCaddT(
+      FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
+      {Tensor<T>? out}) {
     // TODO: implement matmulCaddT
     throw UnimplementedError();
   }
 
   @override
-  Future<TypedTensor<T>> matmulT(FutureOr<TypedTensor<T>> other,
-      {TypedTensor<T>? out}) {
+  Future<Tensor<T>> matmulT(FutureOr<Tensor<T>> other,
+      {Tensor<T>? out}) {
     // TODO: implement matmulT
     throw UnimplementedError();
   }
 
   @override
-  Future<TypedTensor<T>> t({TypedTensor<T>? out}) {
+  Future<Tensor<T>> t({Tensor<T>? out}) {
     // TODO: implement t
     throw UnimplementedError();
   }

@@ -32,9 +32,9 @@ Future<void> main() async {
 Future<void> test({int batches = 1, int m = 2, int n = 2, int k = 2}) async {
   final rand = MTRandom(seed: batches * m * n * k);
   print('=====> batches: $batches, m: $m, n: $n, k: $k');
-  final a = Tensor.generate(
+  final a = F64Tensor.generate(
       Dim2(m, n), (s, i) => /* s.ravel(i) + 1 */ rand.nextDouble());
-  final b = Tensor.generate(
+  final b = F64Tensor.generate(
       Dim2(n, k), (s, i) => /* s.ravel(i) + 7 */ rand.nextDouble());
   final bT = await b.t();
   // a.printTextTable();

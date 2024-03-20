@@ -2,13 +2,13 @@ import 'package:gpuc_dart/gpuc_dart.dart';
 import 'package:gpuc_dart/src/tensor/int_tensor/int_tensor.dart';
 import 'package:gpuc_dart/src/tensor/tensor_mixin.dart';
 
-class OffsetTensorView
-    with TensorMixin, Tensor2dMixin, TypedTensorMixin<double>
-    implements Tensor {
+class OffsetF64TensorView
+    with F64TensorMixin, F64Tensor2dMixin, TypedTensorMixin<double>
+    implements F64Tensor {
   @override
   String name = 'unnamed';
 
-  final Tensor _inner;
+  final F64Tensor _inner;
 
   final Dim offset;
 
@@ -18,7 +18,7 @@ class OffsetTensorView
 
   late Dim _size = Dim(size.asList.skip(offset.dims));
 
-  OffsetTensorView(this._inner, this.offset, {this.name = 'unnamed'}) {
+  OffsetF64TensorView(this._inner, this.offset, {this.name = 'unnamed'}) {
     // TODO validate
     if (as1d.length != size.nel) {
       throw ArgumentError('Size does not match');

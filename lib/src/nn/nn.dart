@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 abstract class Layer<I extends num> {
-  Future<TypedTensor<double>> forward(FutureOr<TypedTensor<I>> input);
+  Future<Tensor<double>> forward(FutureOr<Tensor<I>> input);
 }
 
 // TODO error messages should be more technical and domain specific
 class Linear extends Layer<double> {
-  late Tensor weight;
-  late Tensor? bias;
+  late F64Tensor weight;
+  late F64Tensor? bias;
 
   Linear.withWeights(this.weight, {this.bias}) {
     if (weight.size.dims != 2) {
@@ -27,16 +27,16 @@ class Linear extends Layer<double> {
 
   Linear(int inFeatures, int outFeatures, {bool bias = true}) {
     // TODO fill with random normal
-    weight = Tensor.generate(Dim2(inFeatures, outFeatures), (_, _1) => 0);
+    weight = F64Tensor.generate(Dim2(inFeatures, outFeatures), (_, _1) => 0);
     if (bias) {
-      this.bias = Tensor.sized(Dim([outFeatures]));
+      this.bias = F64Tensor.sized(Dim([outFeatures]));
     } else {
       this.bias = null;
     }
   }
 
   @override
-  Future<TypedTensor<double>> forward(FutureOr<TypedTensor<double>> input) async {
+  Future<Tensor<double>> forward(FutureOr<Tensor<double>> input) async {
     final inp = await input;
     if (inp.size.cols != weight.size.rows) {
       throw ArgumentError('input columns must be equal to weight rows');
@@ -63,11 +63,11 @@ class Sequential extends Layer {
   }
 
   @override
-  Future<TypedTensor<double>> forward(FutureOr<TypedTensor> input) async {
+  Future<Tensor<double>> forward(FutureOr<Tensor> input) async {
     var out = await input;
     for (final layer in layers) {
       out = await layer.forward(out);
     }
-    return out as TypedTensor<double>;
+    return out as Tensor<double>;
   }
 }

@@ -4,33 +4,33 @@ import 'package:gpuc_dart/gpuc_dart.dart';
 import 'package:gpuc_dart/src/tensor/int_tensor/int_tensor.dart';
 import 'package:text_table/text_table.dart';
 
-mixin TensorMixin implements Tensor {
+mixin F64TensorMixin implements F64Tensor {
   // TODO start and length
   @override
-  Tensor slice(/* Dim | int | Iterable<int> */ index, {Context? context}) {
+  F64Tensor slice(/* Dim | int | Iterable<int> */ index, {Context? context}) {
     if (index is! Dim) index = Dim.from(index);
     if (size.isIndex(index)) {
       throw ArgumentError('Index out of range');
     }
 
     final outSize = Dim(size.asList.skip(index.dims));
-    return Tensor(as1d.slice(index.nel * outSize.nel, outSize.nel), outSize,
+    return F64Tensor(as1d.slice(index.nel * outSize.nel, outSize.nel), outSize,
         context: context);
   }
 
   @override
-  Tensor operator [](dynamic /* Dim | int | Iterable<int> */ index) {
+  F64Tensor operator [](dynamic /* Dim | int | Iterable<int> */ index) {
     if (index is! Dim) index = Dim.from(index);
     if (!size.isIndex(index)) {
       throw ArgumentError('Index out of range');
     }
 
-    return OffsetTensorView(this, index);
+    return OffsetF64TensorView(this, index);
   }
 
   @override
   void operator []=(
-      dynamic /* Dim | int | Iterable<int> */ index, Tensor value) {
+      dynamic /* Dim | int | Iterable<int> */ index, F64Tensor value) {
     if (index is! Dim) index = Dim.from(index);
     if (!size.isIndex(index)) {
       throw ArgumentError('Index out of range');
@@ -57,8 +57,8 @@ mixin TensorMixin implements Tensor {
   }
 
   @override
-  Future<Tensor> operator +(covariant FutureOr<Tensor> other) async {
-    Tensor b = await other;
+  Future<F64Tensor> operator +(covariant FutureOr<F64Tensor> other) async {
+    F64Tensor b = await other;
     if (b.nel != nel) {
       throw ArgumentError('Size mismatch');
     }
@@ -72,7 +72,7 @@ mixin TensorMixin implements Tensor {
       final out = F64CuOnesor.sized(stream, nel, context: ctx);
       cuda.addition(
           stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
-      final outTensor = Tensor.sized(size, name: '$name + ${b.name}');
+      final outTensor = F64Tensor.sized(size, name: '$name + ${b.name}');
       ctx.releaseOnErr(outTensor);
       out.copyTo(outTensor.as1d, stream: stream);
       await stream.sync();
@@ -86,8 +86,8 @@ mixin TensorMixin implements Tensor {
   }
 
   @override
-  Future<Tensor> operator -(covariant FutureOr<Tensor> other) async {
-    Tensor b = await other;
+  Future<F64Tensor> operator -(covariant FutureOr<F64Tensor> other) async {
+    F64Tensor b = await other;
     if (b.nel != nel) {
       throw ArgumentError('Size mismatch');
     }
@@ -101,7 +101,7 @@ mixin TensorMixin implements Tensor {
       final out = F64CuOnesor.sized(stream, nel, context: ctx);
       cuda.subtract(
           stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
-      final outTensor = Tensor.sized(size, name: '$name + ${b.name}');
+      final outTensor = F64Tensor.sized(size, name: '$name + ${b.name}');
       ctx.releaseOnErr(outTensor);
       out.copyTo(outTensor.as1d, stream: stream);
       await stream.sync();
@@ -115,8 +115,8 @@ mixin TensorMixin implements Tensor {
   }
 
   @override
-  Future<Tensor> operator *(covariant FutureOr<Tensor> other) async {
-    Tensor b = await other;
+  Future<F64Tensor> operator *(covariant FutureOr<F64Tensor> other) async {
+    F64Tensor b = await other;
     if (b.nel != nel) {
       throw ArgumentError('Size mismatch');
     }
@@ -130,7 +130,7 @@ mixin TensorMixin implements Tensor {
       final out = F64CuOnesor.sized(stream, nel, context: ctx);
       cuda.multiply(
           stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
-      final outTensor = Tensor.sized(size, name: '$name + ${b.name}');
+      final outTensor = F64Tensor.sized(size, name: '$name + ${b.name}');
       ctx.releaseOnErr(outTensor);
       out.copyTo(outTensor.as1d, stream: stream);
       await stream.sync();
@@ -144,8 +144,8 @@ mixin TensorMixin implements Tensor {
   }
 
   @override
-  Future<Tensor> operator /(covariant FutureOr<Tensor> other) async {
-    Tensor b = await other;
+  Future<F64Tensor> operator /(covariant FutureOr<F64Tensor> other) async {
+    F64Tensor b = await other;
     if (b.nel != nel) {
       throw ArgumentError('Size mismatch');
     }
@@ -159,7 +159,7 @@ mixin TensorMixin implements Tensor {
       final out = F64CuOnesor.sized(stream, nel, context: ctx);
       cuda.divide(
           stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
-      final outTensor = Tensor.sized(size, name: '$name + ${b.name}');
+      final outTensor = F64Tensor.sized(size, name: '$name + ${b.name}');
       ctx.releaseOnErr(outTensor);
       out.copyTo(outTensor.as1d, stream: stream);
       await stream.sync();

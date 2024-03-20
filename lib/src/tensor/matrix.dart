@@ -5,7 +5,7 @@ import 'package:gpuc_dart/src/onesor/dart/dartonesor.dart';
 import 'package:gpuc_dart/src/tensor/int_tensor/int_tensor.dart';
 
 class Matrix<T extends num> with ListMixin<List<T>> implements List<List<T>> {
-  final TypedTensor<T> tensor;
+  final Tensor<T> tensor;
 
   final int colDims;
 

@@ -4,15 +4,15 @@ import 'dart:io';
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 class TensonCmd {
-  Future<TypedTensor<T>> transpose2D<T extends num>(TypedTensor<T> input) async {
+  Future<Tensor<T>> transpose2D<T extends num>(Tensor<T> input) async {
     final resp = await _execute('transpose2d', [
       TensonVar(name: 'input', data: input),
     ]);
     return resp['output']!.data;
   }
 
-  Future<TypedTensor> matmul(TypedTensor a, TypedTensor b,
-      {TypedTensor? c}) async {
+  Future<Tensor> matmul(Tensor a, Tensor b,
+      {Tensor? c}) async {
     final resp = await _execute('matmul', [
       TensonVar(name: 'inputA', data: a),
       TensonVar(name: 'inputB', data: b),
@@ -21,9 +21,9 @@ class TensonCmd {
     return resp['output']!.data;
   }
 
-  Future<TypedTensor> maxPool2D(
+  Future<Tensor> maxPool2D(
       {required Dim2 kernelSize,
-      required TypedTensor input,
+      required Tensor input,
       Dim2 padding = const Dim2(0, 0),
       Dim2? stride = const Dim2(1, 1),
       Dim2 dilation = const Dim2(1, 1),
@@ -39,9 +39,9 @@ class TensonCmd {
     return resp['output']!.data;
   }
 
-  Future<TypedTensor> conv2D({
-    required TypedTensor kernel,
-    required TypedTensor input,
+  Future<Tensor> conv2D({
+    required Tensor kernel,
+    required Tensor input,
     int groups = 1,
     Dim2 padding = const Dim2(0, 0),
     Dim2 stride = const Dim2(1, 1),
@@ -70,8 +70,8 @@ class TensonCmd {
     return resp['output']!.data;
   }
 
-  Future<Tensor> linear(TypedTensor<double> input, TypedTensor<double> weight,
-      TypedTensor<double>? bias) async {
+  Future<F64Tensor> linear(Tensor<double> input, Tensor<double> weight,
+      Tensor<double>? bias) async {
     final resp = await _execute('linear', [
       TensonVar(name: 'input', data: input),
       TensonVar(name: 'weight', data: weight),

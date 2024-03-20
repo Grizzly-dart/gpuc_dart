@@ -5,9 +5,9 @@ import 'package:gpuc_dart/gpuc_dart.dart';
 
 extension CudaSplitExtension on Cuda {
   // TODO use tensor views instead
-  Future<TypedTensor<double>> matmulSplit(
-      int deviceId, TypedTensor<double> a, TypedTensor<double> b,
-      {TypedTensor<double>? out}) async {
+  Future<Tensor<double>> matmulSplit(
+      int deviceId, Tensor<double> a, Tensor<double> b,
+      {Tensor<double>? out}) async {
     if (a.size.cols != b.size.rows) {
       throw ArgumentError('Columns of A must match rows of B');
     }
@@ -25,7 +25,7 @@ extension CudaSplitExtension on Cuda {
     final ctx = Context();
     try {
       if (out == null) {
-        out = Tensor.sized(outSize, name: '${a.name} * ${b.name}');
+        out = F64Tensor.sized(outSize, name: '${a.name} * ${b.name}');
         ctx.releaseOnErr(out);
       } else {
         if (out.size != outSize) {
@@ -79,9 +79,9 @@ extension CudaSplitExtension on Cuda {
     }
   }
 
-  Future<TypedTensor<double>> matmulTSplit(
-      int deviceId, TypedTensor<double> a, TypedTensor<double> b,
-      {TypedTensor<double>? out}) async {
+  Future<Tensor<double>> matmulTSplit(
+      int deviceId, Tensor<double> a, Tensor<double> b,
+      {Tensor<double>? out}) async {
     final inp1Size2D = a.size.to2D();
     final inp2Size2D = b.size.to2D().t;
     if (inp1Size2D.cols != inp2Size2D.rows) {
@@ -97,7 +97,7 @@ extension CudaSplitExtension on Cuda {
     final ctx = Context();
     try {
       if (out == null) {
-        out = Tensor.sized(outSize, name: '${a.name} * ${b.name}');
+        out = F64Tensor.sized(outSize, name: '${a.name} * ${b.name}');
         ctx.releaseOnErr(out);
       } else {
         if (out.size != outSize) {
@@ -151,9 +151,9 @@ extension CudaSplitExtension on Cuda {
     }
   }
 
-  Future<TypedTensor<double>> splitMatmulCadd(int deviceId,
-      TypedTensor<double> a, TypedTensor<double> b, TypedTensor<double> add,
-      {TypedTensor<double>? out}) async {
+  Future<Tensor<double>> splitMatmulCadd(int deviceId,
+      Tensor<double> a, Tensor<double> b, Tensor<double> add,
+      {Tensor<double>? out}) async {
     if (a.size.cols != b.size.rows) {
       throw ArgumentError('Columns of A must match rows of B');
     }
@@ -177,7 +177,7 @@ extension CudaSplitExtension on Cuda {
       final stream = CudaStream(deviceId, context: ctx);
       final addCuda = F64CuOnesor.copy(add.as1d, stream: stream, context: ctx);
       if (out == null) {
-        out = Tensor.sized(outSize, name: '${a.name} * ${b.name}');
+        out = F64Tensor.sized(outSize, name: '${a.name} * ${b.name}');
         ctx.releaseOnErr(out);
       } else {
         if (out.size != outSize) {
@@ -231,9 +231,9 @@ extension CudaSplitExtension on Cuda {
     }
   }
 
-  Future<TypedTensor<double>> splitMatmulTCadd(int deviceId,
-      TypedTensor<double> a, TypedTensor<double> b, TypedTensor<double> add,
-      {TypedTensor<double>? out}) async {
+  Future<Tensor<double>> splitMatmulTCadd(int deviceId,
+      Tensor<double> a, Tensor<double> b, Tensor<double> add,
+      {Tensor<double>? out}) async {
     final inp1Size2D = a.size.to2D();
     final inp2Size2D = b.size.to2D().t;
     if (inp1Size2D.cols != inp2Size2D.rows) {
@@ -256,7 +256,7 @@ extension CudaSplitExtension on Cuda {
       final stream = CudaStream(deviceId, context: ctx);
       final addCuda = F64CuOnesor.copy(add.as1d, stream: stream, context: ctx);
       if (out == null) {
-        out = Tensor.sized(outSize, name: '${a.name} * ${b.name}');
+        out = F64Tensor.sized(outSize, name: '${a.name} * ${b.name}');
         ctx.releaseOnErr(out);
       } else {
         if (out.size != outSize) {
