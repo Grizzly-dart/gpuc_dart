@@ -6,6 +6,7 @@
 + Activation functions
 + ResNet
 + Fix printing tensor tables
++ Layer backwards
 
 # Layers
 + Group normalization
