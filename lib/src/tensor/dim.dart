@@ -46,6 +46,8 @@ abstract class Dim {
 
   int get numMatrices;
 
+  Dim get numMatricesDim;
+
   bool isIndex(Dim other);
 
   Dim get strides;
@@ -61,6 +63,10 @@ abstract class Dim {
   Dim extend(Iterable<int> sizes);
 
   Dim extend2D(Iterable<int> sizes);
+
+  Dim withNumMatrices(Dim other);
+
+  Dim withMatrix(int rows, int cols);
 
   Dim2 squeeze2D({int colDims = 1});
 
@@ -101,7 +107,7 @@ mixin DimMixin implements Dim {
 
   @override
   int ravel(Dim index) {
-    if(index.dims > dims) {
+    if (index.dims > dims) {
       throw ArgumentError('Invalid index');
     }
     if (dims == 1) {
@@ -133,6 +139,11 @@ mixin DimMixin implements Dim {
 
   @override
   Dim extend2D(Iterable<int> sizes) => Dim([...sizes, rows, cols]);
+
+  Dim withNumMatrices(Dim other) => Dim([...numMatricesDim.asList, rows, cols]);
+
+  Dim withMatrix(int rows, int cols) =>
+      Dim([...numMatricesDim.asList, rows, cols]);
 
   @override
   Dim2 squeeze2D({int colDims = 1}) {
@@ -256,7 +267,7 @@ class _DimImpl with DimMixin implements Dim {
   int operator [](int index) {
     if (index < 0) {
       throw RangeError('Negative index');
-    } else if(index > dims) {
+    } else if (index > dims) {
       return 0;
     }
     return _sizes[index];
@@ -306,6 +317,14 @@ class _DimImpl with DimMixin implements Dim {
   }
 
   @override
+  Dim get numMatricesDim {
+    if (dims < 2) {
+      return Dim([]);
+    }
+    return Dim(asList.take(dims - 2));
+  }
+
+  @override
   late final Dim strides = () {
     final strides = List<int>.filled(dims, 1);
     for (int i = dims - 2; i >= 0; i--) {
@@ -322,7 +341,7 @@ class _DimImpl with DimMixin implements Dim {
     if (dims < 2) {
       throw StateError('Not enough dimensions');
     }
-    return Dim([...asList.take(dims - 2), _sizes[dims - 1], _sizes[dims - 2]]);
+    return Dim([...numMatricesDim.asList, _sizes[dims - 1], _sizes[dims - 2]]);
   }
 
   @override
@@ -408,6 +427,9 @@ class Dim2 with DimMixin implements Dim {
 
   @override
   int get numMatrices => 1;
+
+  @override
+  Dim get numMatricesDim => Dim([]);
 
   @override
   Dim2 reversed() => Dim2(cols, rows);
@@ -506,6 +528,9 @@ class Dim3 with DimMixin implements Dim {
 
   @override
   int get numMatrices => channels;
+
+  @override
+  Dim get numMatricesDim => Dim([channels]);
 
   @override
   Dim get strides => Dim([rows * cols, cols, 1]);

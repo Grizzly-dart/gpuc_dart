@@ -4,18 +4,16 @@
 
 # Milestone 2
 
-+ MaxPool2D, Conv2D
-+ Linear, Sequential
 + RELU
 + Optimizer
 + LossFunction
 + Initialize
++ Embedding
 
 # Milestone 3
 
 + Attention
 + ResnetBlock2D
-+ Embedding
 
 # Milestone 4
 
