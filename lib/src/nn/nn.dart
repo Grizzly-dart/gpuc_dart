@@ -16,11 +16,11 @@ class Linear extends Layer {
       throw ArgumentError('weight must be 2D');
     }
     if (bias != null) {
-      if (bias!.size.dims != 1) {
-        throw ArgumentError('bias must be 1D');
-      }
       if (bias!.size.cols != weight.size.cols) {
         throw ArgumentError('bias columns must be equal to weight columns');
+      }
+      if(bias!.nel != weight.size.cols) {
+        throw ArgumentError('bias nel must be equal to weight columns');
       }
     }
   }
@@ -45,7 +45,7 @@ class Linear extends Layer {
     if (bias == null) {
       return inp.matmul(weight);
     } else {
-      throw UnimplementedError();
+      return inp.matmulCadd(weight, bias!);
     }
   }
 
@@ -56,7 +56,11 @@ class Linear extends Layer {
 class Sequential extends Layer {
   final List<Layer> layers;
 
-  Sequential(this.layers);
+  Sequential(this.layers) {
+    if (layers.isEmpty) {
+      throw ArgumentError('layers must not be empty');
+    }
+  }
 
   @override
   Future<Tensor> forward(FutureOr<Tensor> input) async {

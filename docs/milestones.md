@@ -6,6 +6,10 @@
 
 + MaxPool2D, Conv2D
 + Linear, Sequential
++ RELU
++ Optimizer
++ LossFunction
++ Initialize
 
 # Milestone 3
 

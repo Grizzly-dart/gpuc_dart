@@ -35,7 +35,7 @@ mixin Tensor2dMixin implements Tensor {
   }
 
   @override
-  Future<Tensor> transpose2D({Tensor? out}) async {
+  Future<Tensor> t({Tensor? out}) async {
     if (size.dims < 2) {
       throw StateError('Must be at least a 2D tensor');
     }

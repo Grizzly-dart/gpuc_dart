@@ -1,6 +1,5 @@
 import 'dart:async';
-
-import 'package:gpuc_dart/src/nn2d/nn2d.dart';
+import 'package:gpuc_dart/gpuc_dart.dart';
 
 class MaxPool2D implements Layer2D {
   final Dim2 kernelSize;

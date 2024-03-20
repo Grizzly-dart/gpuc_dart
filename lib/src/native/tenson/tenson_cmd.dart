@@ -69,6 +69,15 @@ class TensonCmd {
     return resp['output']!.data as Tensor;
   }
 
+  Future<Tensor> linear(Tensor input, Tensor weight, Tensor? bias) async {
+    final resp = await _execute('linear', [
+      TensonVar(name: 'input', data: input),
+      TensonVar(name: 'weight', data: weight),
+      if (bias != null) TensonVar(name: 'bias', data: bias),
+    ]);
+    return resp['output']!.data as Tensor;
+  }
+
   String mapPadMode(PadMode padMode) {
     switch (padMode) {
       case PadMode.constant:

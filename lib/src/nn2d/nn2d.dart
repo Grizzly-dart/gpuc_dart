@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-export 'package:gpuc_dart/gpuc_dart.dart';
 export 'groupnorm2d.dart';
 export 'conv2d.dart';
 

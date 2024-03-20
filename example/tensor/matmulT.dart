@@ -36,7 +36,7 @@ Future<void> test({int batches = 1, int m = 2, int n = 2, int k = 2}) async {
       Dim2(m, n), (s, i) => /* s.ravel(i) + 1 */ rand.nextDouble());
   final b = Tensor.generate(
       Dim2(n, k), (s, i) => /* s.ravel(i) + 7 */ rand.nextDouble());
-  final bT = await b.transpose2D();
+  final bT = await b.t();
   // a.printTextTable();
   // bT.printTextTable();
   final watch = Stopwatch()..start();

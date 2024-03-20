@@ -133,7 +133,7 @@ abstract class Tensor implements Resource {
 
   Matrix matrix(index);
 
-  Future<Tensor> transpose2D({Tensor? out});
+  Future<Tensor> t({Tensor? out});
 
   Future<Tensor> matmul(FutureOr<Tensor> other, {Tensor? out});
 
