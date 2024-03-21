@@ -12,6 +12,13 @@
 
 # Milestone 3
 
++ GroupNorm
++ BatchNorm
++ InstanceNorm
++ LayerNorm
+
+# Milestone 3
+
 + Attention
 + ResnetBlock2D
 

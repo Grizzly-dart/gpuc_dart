@@ -10,7 +10,15 @@ export 'tensor_future.dart';
 export 'tensor2d_mixin.dart';
 export 'tensor_view.dart';
 export 'f64/f64tensor.dart';
+export 'f32/f32tensor.dart';
+export 'i64/i64tensor.dart';
 export 'u64/u64tensor.dart';
+export 'i32/i32tensor.dart';
+export 'u32/u32tensor.dart';
+export 'i16/i16tensor.dart';
+export 'u16/u16tensor.dart';
+export 'i8/i8tensor.dart';
+export 'u8/u8tensor.dart';
 
 abstract mixin class Tensor<T extends num> implements Resource {
   String get name;
@@ -44,8 +52,6 @@ abstract mixin class Tensor<T extends num> implements Resource {
     }
     as1d.copyFrom(other.as1d);
   }
-
-  Tensor<T> slice(/* Dim | int | Iterable<int> */ index, {Context? context});
 
   Matrix<T> as2d({int colDims = 1}) => Matrix(this, colDims: colDims);
 
@@ -189,12 +195,6 @@ class OffsetTypedTensorView<T extends num> with Tensor<T> implements Tensor<T> {
 
   @override
   void release() {}
-
-  @override
-  Tensor<T> slice(/* Dim | int | Iterable<int> */ index, {Context? context}) {
-    // TODO
-    throw UnimplementedError();
-  }
 
   @override
   Future<Tensor<T>> matmul(FutureOr<Tensor<T>> other, {Tensor<T>? out}) {

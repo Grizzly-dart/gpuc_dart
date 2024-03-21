@@ -3,6 +3,15 @@ import 'dart:ffi' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 export 'f64conesor.dart';
+export 'f32conesor.dart';
+export 'i64conesor.dart';
+export 'u64conesor.dart';
+export 'i32conesor.dart';
+export 'u32conesor.dart';
+export 'i16conesor.dart';
+export 'u16conesor.dart';
+export 'i8conesor.dart';
+export 'u8conesor.dart';
 
 abstract mixin class COnesor<T extends num> implements Onesor<T> {
   @override

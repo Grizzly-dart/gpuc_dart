@@ -3,15 +3,15 @@ import 'dart:math';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-abstract mixin class U64Tensor implements Tensor<int> {
+abstract mixin class I32Tensor implements Tensor<int> {
   @override
-  U64Onesor get as1d;
+  I32Onesor get as1d;
 
-  factory U64Tensor(U64Onesor as1d, Dim size,
+  factory I32Tensor(I32Onesor as1d, Dim size,
       {String name = '', Context? context}) =>
-      _U64Tensor(as1d, size, name: name, context: context);
+      _I32Tensor(as1d, size, name: name, context: context);
 
-  factory U64Tensor.fromList(List<int> list,
+  factory I32Tensor.fromList(List<int> list,
       {String name = '', Context? context, Dim? size}) {
     if (size != null) {
       if (list.length != size.nel) {
@@ -21,37 +21,37 @@ abstract mixin class U64Tensor implements Tensor<int> {
       size = Dim([list.length]);
     }
     // TODO check if C/Dart
-    final data = U64COnesor.fromList(list, context: context);
-    return U64Tensor(data, size, name: name, context: context);
+    final data = I32COnesor.fromList(list, context: context);
+    return I32Tensor(data, size, name: name, context: context);
   }
 
-  factory U64Tensor.sized(/* Dim | Iterable<int> | int */ size,
+  factory I32Tensor.sized(/* Dim | Iterable<int> | int */ size,
       {String name = '', Context? context}) {
     if (size is! Dim) size = Dim.from(size);
-    return U64Tensor(U64COnesor.sized(size.nel, context: context), size,
+    return I32Tensor(I32COnesor.sized(size.nel, context: context), size,
         name: name, context: context);
   }
 
-  factory U64Tensor.generate(/* Dim | Iterable<int> | int */ size,
+  factory I32Tensor.generate(/* Dim | Iterable<int> | int */ size,
       int Function(Dim size, Dim index) generator,
       {String name = '', Context? context}) {
     if (size is! Dim) size = Dim.from(size);
-    final data = U64COnesor.sized(size.nel, context: context);
+    final data = I32COnesor.sized(size.nel, context: context);
     for (var i = 0; i < size.nel; i++) {
       data[i] = generator(size, size.unravel(i));
     }
-    return U64Tensor(data, size, name: name, context: context);
+    return I32Tensor(data, size, name: name, context: context);
   }
 
-  factory U64Tensor.random(/* Dim | Iterable<int> | int */ size,
+  factory I32Tensor.random(/* Dim | Iterable<int> | int */ size,
       {Random? random, String name = '', Context? context}) {
     if (size is! Dim) size = Dim.from(size);
     random ??= Random();
-    final data = U64COnesor.sized(size.nel, context: context);
+    final data = I32COnesor.sized(size.nel, context: context);
     for (var i = 0; i < size.nel; i++) {
-      data[i] = random.nextInt(u64.maxVal);
+      data[i] = random.nextInt(i32.maxVal);
     }
-    return U64Tensor(data, size, name: name, context: context);
+    return I32Tensor(data, size, name: name, context: context);
   }
 
   @override
@@ -84,16 +84,16 @@ abstract mixin class U64Tensor implements Tensor<int> {
   }
 }
 
-class _U64Tensor with Tensor<int>, U64Tensor implements U64Tensor, Tensor<int> {
+class _I32Tensor with Tensor<int>, I32Tensor implements I32Tensor, Tensor<int> {
   @override
   String name;
 
   @override
-  final U64Onesor as1d;
+  final I32Onesor as1d;
 
   Dim _size;
 
-  _U64Tensor(this.as1d, this._size, {this.name = 'unnamed', Context? context}) {
+  _I32Tensor(this.as1d, this._size, {this.name = 'unnamed', Context? context}) {
     context?.add(as1d);
     _finalizer.attach(this, as1d);
     if (as1d.length != _size.nel) {

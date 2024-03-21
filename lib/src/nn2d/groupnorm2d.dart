@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-class GroupNorm2D extends Layer2D<double> {
+class GroupNorm extends Layer2D<double> {
   final int numGroups;
   final int numChannels;
-  final bool affine;
   double eps;
+  final bool affine;
 
-  GroupNorm2D(this.numGroups, this.numChannels,
+  GroupNorm(this.numGroups, this.numChannels,
       {this.eps = 1e-5, this.affine = true}) {
     // TODO initialize weights and biases
   }

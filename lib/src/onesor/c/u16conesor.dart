@@ -4,22 +4,22 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-abstract mixin class U64COnesor implements COnesor<int>, U64Onesor {
+abstract mixin class U16COnesor implements COnesor<int>, U16Onesor {
   @override
-  ffi.Pointer<ffi.Uint64> get ptr;
+  ffi.Pointer<ffi.Uint16> get ptr;
 
-  factory U64COnesor(ffi.Pointer<ffi.Uint64> ptr, int length,
+  factory U16COnesor(ffi.Pointer<ffi.Uint16> ptr, int length,
           {Context? context}) =>
-      _U64COnesor(ptr, length, context: context);
+      _U16COnesor(ptr, length, context: context);
 
-  static U64COnesor copy(Onesor<int> other, {Context? context}) =>
-      _U64COnesor.copy(other, context: context);
+  static U16COnesor copy(Onesor<int> other, {Context? context}) =>
+      _U16COnesor.copy(other, context: context);
 
-  static U64COnesor fromList(List<int> list, {Context? context}) =>
-      _U64COnesor.fromList(list, context: context);
+  static U16COnesor fromList(List<int> list, {Context? context}) =>
+      _U16COnesor.fromList(list, context: context);
 
-  static U64COnesor sized(int length, {Context? context}) =>
-      _U64COnesor.sized(length, context: context);
+  static U16COnesor sized(int length, {Context? context}) =>
+      _U16COnesor.sized(length, context: context);
 
   @override
   List<int> asTypedList(int length) => ptr.asTypedList(length);
@@ -31,27 +31,27 @@ abstract mixin class U64COnesor implements COnesor<int>, U64Onesor {
   void operator []=(int index, int value) => ptr[index] = value;
 
   @override
-  U64COnesor slice(int start, int length, {Context? context}) {
+  U16COnesor slice(int start, int length, {Context? context}) {
     if (start > this.length) {
       throw ArgumentError('Start index out of range');
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    final ret = U64COnesor.sized(length, context: context);
+    final ret = U16COnesor.sized(length, context: context);
     CFFI.memcpy(ret.ptr.cast(), (ptr + start * ret.bytesPerItem).cast(),
         length * ret.bytesPerItem);
     return ret;
   }
 
   @override
-  U64COnesor read({Context? context}) {
-    final ret = U64COnesor.sized(length, context: context);
+  U16COnesor read({Context? context}) {
+    final ret = U16COnesor.sized(length, context: context);
     CFFI.memcpy(ret.ptr.cast(), ptr.cast(), lengthBytes);
     return ret;
   }
 
   @override
-  U64COnesorView view(int start, int length) {
+  U16COnesorView view(int start, int length) {
     if (start > this.length) {
       throw ArgumentError('Start index out of range');
     } else if (start + length > this.length) {
@@ -60,41 +60,41 @@ abstract mixin class U64COnesor implements COnesor<int>, U64Onesor {
     if (this is COnesorView<int>) {
       start += (this as COnesorView<int>).offset;
     }
-    return U64COnesorView(this, start, length);
+    return U16COnesorView(this, start, length);
   }
 }
 
-class _U64COnesor
-    with Onesor<int>, U64Onesor, ListMixin<int>, COnesor<int>, U64COnesor
-    implements U64COnesor {
-  ffi.Pointer<ffi.Uint64> _ptr;
+class _U16COnesor
+    with Onesor<int>, U16Onesor, ListMixin<int>, COnesor<int>, U16COnesor
+    implements U16COnesor {
+  ffi.Pointer<ffi.Uint16> _ptr;
 
   int _length;
 
-  _U64COnesor(this._ptr, this._length, {Context? context}) {
+  _U16COnesor(this._ptr, this._length, {Context? context}) {
     assert(_ptr != ffi.nullptr);
     context?.add(this);
   }
 
-  static _U64COnesor copy(Onesor<int> other, {Context? context}) {
-    final clist = _U64COnesor.sized(other.length, context: context);
+  static _U16COnesor copy(Onesor<int> other, {Context? context}) {
+    final clist = _U16COnesor.sized(other.length, context: context);
     clist.copyFrom(other);
     return clist;
   }
 
-  static _U64COnesor fromList(List<int> list, {Context? context}) {
-    final ret = _U64COnesor.sized(list.length, context: context);
+  static _U16COnesor fromList(List<int> list, {Context? context}) {
+    final ret = _U16COnesor.sized(list.length, context: context);
     ret.ptr.asTypedList(list.length).setAll(0, list);
     return ret;
   }
 
-  static _U64COnesor sized(int length, {Context? context}) {
-    final ptr = ffi.calloc<ffi.Uint64>(length * Uint64List.bytesPerElement);
-    return _U64COnesor(ptr, length, context: context);
+  static _U16COnesor sized(int length, {Context? context}) {
+    final ptr = ffi.calloc<ffi.Uint16>(length * Uint16List.bytesPerElement);
+    return _U16COnesor(ptr, length, context: context);
   }
 
   @override
-  ffi.Pointer<ffi.Uint64> get ptr => _ptr;
+  ffi.Pointer<ffi.Uint16> get ptr => _ptr;
 
   @override
   int get length => _length;
@@ -117,10 +117,10 @@ class _U64COnesor
   }
 }
 
-class U64COnesorView
-    with Onesor<int>, U64Onesor, ListMixin<int>, COnesor<int>, U64COnesor
-    implements U64COnesor, COnesorView<int> {
-  final U64COnesor _list;
+class U16COnesorView
+    with Onesor<int>, U16Onesor, ListMixin<int>, COnesor<int>, U16COnesor
+    implements U16COnesor, COnesorView<int> {
+  final U16COnesor _list;
 
   @override
   final int offset;
@@ -128,10 +128,10 @@ class U64COnesorView
   @override
   final int length;
 
-  U64COnesorView(this._list, this.offset, this.length);
+  U16COnesorView(this._list, this.offset, this.length);
 
   @override
-  late final ffi.Pointer<ffi.Uint64> ptr = _list.ptr + offset;
+  late final ffi.Pointer<ffi.Uint16> ptr = _list.ptr + offset;
 
   @override
   void release() {}

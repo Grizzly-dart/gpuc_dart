@@ -8,7 +8,7 @@ abstract mixin class CuOnesor<T extends num> implements Onesor<T> {
   factory CuOnesor.copy(Onesor<T> other,
       {CudaStream? stream, Context? context}) {
     final type = other.numType;
-    if (type == NumType.f64) {
+    if (type == f64) {
       return F64CuOnesor.copy(stream, other as Onesor<double>, context: context)
           as CuOnesor<T>;
     }
@@ -28,7 +28,7 @@ abstract mixin class CuOnesor<T extends num> implements Onesor<T> {
 
   factory CuOnesor.sized(CudaStream stream, NumType<T> type, int length,
       {Context? context}) {
-    if (type == NumType.f64) {
+    if (type == f64) {
       return F64CuOnesor.sized(stream, length, context: context) as CuOnesor<T>;
     }
     // TODO
