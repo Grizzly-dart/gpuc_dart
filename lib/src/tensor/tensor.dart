@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
-import 'package:gpuc_dart/src/onesor/onesor.dart';
 import 'package:text_table/text_table.dart';
 
 export 'dim.dart';
