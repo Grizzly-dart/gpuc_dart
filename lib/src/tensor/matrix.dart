@@ -24,7 +24,7 @@ class Matrix<T extends num> with ListMixin<List<T>> implements List<List<T>> {
 
   @override
   void operator []=(int index, List<T> value) {
-    tensor.as1d.view(index * size.cols, size.cols).copyFrom(DartOnesor(value));
+    tensor.as1d.view(index * size.cols, size.cols).copyFromList(value);
   }
 
   @override

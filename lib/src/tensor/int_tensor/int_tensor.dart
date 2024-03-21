@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:gpuc_dart/gpuc_dart.dart';
 import 'package:text_table/text_table.dart';
 
-abstract class Tensor<T extends num> implements Resource {
+abstract mixin class Tensor<T extends num> implements Resource {
   String get name;
 
   set name(String name);
@@ -14,78 +14,18 @@ abstract class Tensor<T extends num> implements Resource {
 
   set size(Dim size);
 
-  int get nel;
-
-  DeviceType get deviceType;
-
-  int get deviceId;
-
-  Device get device;
-
-  T scalar([int index = 0]);
-
-  void squeeze(int dims);
-
-  set set(Tensor<T> other);
-
-  Matrix<T> matrix(int index);
-
-  Tensor<T> slice(/* Dim | int | Iterable<int> */ index,
-      {Context? context});
-
-  bool isEqual(Tensor<T> other, {double epsilon = 1e-8});
-
-  void assertEqual(Tensor<T> other, {double eps = 1e-8});
-
-  Matrix<T> as2d({int colDims = 1});
-
-  Future<Tensor<T>> pickRows(FutureOr<Tensor<int>> indices);
-
-  Future<Tensor<T>> t({Tensor<T>? out});
-
-  Future<Tensor<T>> matmul(FutureOr<Tensor<T>> other,
-      {Tensor<T>? out});
-
-  Future<Tensor<T>> matmulT(FutureOr<Tensor<T>> other,
-      {Tensor<T>? out});
-
-  Future<Tensor<T>> matmulCadd(
-      FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
-      {Tensor<T>? out});
-
-  Future<Tensor<T>> matmulCaddT(
-      FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
-      {Tensor<T>? out});
-
-  void printTextTable(
-      {int precision = 4 /* TODO , int? tableWidth, int? maxChars*/
-      });
-
-  Map<String, dynamic> toJson();
-
-
-}
-
-mixin TypedTensorMixin<T extends num> implements Tensor<T> {
-  @override
-  DeviceType get deviceType => as1d.deviceType;
-
-  @override
-  int get deviceId => as1d.deviceId;
-
-  @override
-  Device get device => as1d.device;
-
-  @override
   int get nel => size.nel;
 
-  @override
+  DeviceType get deviceType => as1d.deviceType;
+
+  int get deviceId => as1d.deviceId;
+
+  Device get device => as1d.device;
+
   T scalar([int index = 0]) => as1d[index];
 
-  @override
   void squeeze(int dims) => size = size.squeeze(dims);
 
-  @override
   set set(Tensor<T> other) {
     // TODO allow partial setting
     if (other.nel != nel) {
@@ -94,7 +34,10 @@ mixin TypedTensorMixin<T extends num> implements Tensor<T> {
     as1d.copyFrom(other.as1d);
   }
 
-  @override
+  Tensor<T> slice(/* Dim | int | Iterable<int> */ index, {Context? context});
+
+  Matrix<T> as2d({int colDims = 1}) => Matrix(this, colDims: colDims);
+
   Matrix<T> matrix(int index) {
     if (index < 0 || index >= size.numMatrices) {
       throw ArgumentError('Index out of range');
@@ -103,8 +46,27 @@ mixin TypedTensorMixin<T extends num> implements Tensor<T> {
         OffsetTypedTensorView(this, size.numMatricesDim.unravel(index)));
   }
 
-  @override
-  Future<Tensor<T>> pickRows(FutureOr<Tensor<int>> indices, {Tensor<T>? out}) async {
+  Future<Tensor<T>> t({Tensor<T>? out});
+
+  Future<Tensor<T>> matmul(FutureOr<Tensor<T>> other, {Tensor<T>? out});
+
+  Future<Tensor<T>> matmulT(FutureOr<Tensor<T>> other, {Tensor<T>? out});
+
+  Future<Tensor<T>> matmulCadd(FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
+      {Tensor<T>? out});
+
+  Future<Tensor<T>> matmulCaddT(
+      FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
+      {Tensor<T>? out});
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'size': size.toList(),
+        'data': as1d.toList(),
+      };
+
+  Future<Tensor<T>> pickRows(FutureOr<Tensor<int>> indices,
+      {Tensor<T>? out}) async {
     final b = await indices;
     final ctx = Context();
     // TODO check if input is small enough to be
@@ -114,10 +76,11 @@ mixin TypedTensorMixin<T extends num> implements Tensor<T> {
         final outSize = Dim([...b.size.asList, size.cols]);
         final stream = CudaStream(deviceId, context: ctx);
 
-        final inpBuf = ;
-        final indicesBuf = ;
-        final outBuf = ;
-        cuda.pickRows(stream, outBuf, inpBuf, indicesBuf, outSize.squeeze2D());
+        final inpBuf = CuOnesor.copy(as1d, stream: stream, context: ctx);
+        final indicesBuf = CuOnesor.copy(b.as1d, stream: stream, context: ctx);
+        final outBuf = CuOnesor.sized(stream, outSize.nel, context: ctx);
+        cuda.pickRows(stream, outBuf.ptr, inpBuf.ptr, indicesBuf.ptr,
+            outSize.squeeze2D());
         out ??= Tensor<T>(outBuf, outSize, context: ctx);
         return out;
       }
@@ -130,7 +93,6 @@ mixin TypedTensorMixin<T extends num> implements Tensor<T> {
   }
 
   // TODO accelerate this on GPU
-  @override
   bool isEqual(Tensor<T> other, {double epsilon = 1e-8}) {
     int nel = size.nel;
     if (nel > other.size.nel) {
@@ -145,7 +107,6 @@ mixin TypedTensorMixin<T extends num> implements Tensor<T> {
   }
 
   // TODO accelerate this on GPU
-  @override
   void assertEqual(Tensor<T> other, {double eps = 1e-8}) {
     int nel = size.nel;
     if (nel > other.size.nel) {
@@ -163,19 +124,9 @@ mixin TypedTensorMixin<T extends num> implements Tensor<T> {
   }
 
   @override
-  Matrix<T> as2d({int colDims = 1}) => Matrix(this, colDims: colDims);
-
-  @override
-  Map<String, dynamic> toJson() => {
-        'name': name,
-        'size': size.toList(),
-        'data': as1d.toList(),
-      };
-
-  @override
   String toString() => '$as1d';
 
-  @override
+  /* TODO , int? tableWidth, int? maxChars*/
   void printTextTable({int precision = 4}) {
     for (int i = 0; i < size.numMatrices; i++) {
       print(TableRenderer().render(matrix(i)));
@@ -202,14 +153,12 @@ mixin IntTensorMixin implements Tensor<int> {
   }
 
   @override
-  Future<Tensor<int>> matmul(FutureOr<Tensor<int>> other,
-      {Tensor<int>? out}) {
+  Future<Tensor<int>> matmul(FutureOr<Tensor<int>> other, {Tensor<int>? out}) {
     throw UnimplementedError();
   }
 
   @override
-  Future<Tensor<int>> matmulT(FutureOr<Tensor<int>> other,
-      {Tensor<int>? out}) {
+  Future<Tensor<int>> matmulT(FutureOr<Tensor<int>> other, {Tensor<int>? out}) {
     throw UnimplementedError();
   }
 
@@ -228,9 +177,7 @@ mixin IntTensorMixin implements Tensor<int> {
   }
 }
 
-class IntTensor
-    with IntTensorMixin, TypedTensorMixin<int>
-    implements Tensor<int> {
+class IntTensor with Tensor<int>, IntTensorMixin implements Tensor<int> {
   @override
   String name = 'unnamed';
 
@@ -268,9 +215,7 @@ class IntTensor
   });
 }
 
-class OffsetTypedTensorView<T extends num>
-    with TypedTensorMixin<T>
-    implements Tensor<T> {
+class OffsetTypedTensorView<T extends num> with Tensor<T> implements Tensor<T> {
   @override
   String name = 'unnamed';
 
@@ -306,22 +251,19 @@ class OffsetTypedTensorView<T extends num>
   void release() {}
 
   @override
-  Tensor<T> slice(/* Dim | int | Iterable<int> */ index,
-      {Context? context}) {
+  Tensor<T> slice(/* Dim | int | Iterable<int> */ index, {Context? context}) {
     // TODO
     throw UnimplementedError();
   }
 
   @override
-  Future<Tensor<T>> matmul(FutureOr<Tensor<T>> other,
-      {Tensor<T>? out}) {
+  Future<Tensor<T>> matmul(FutureOr<Tensor<T>> other, {Tensor<T>? out}) {
     // TODO: implement matmul
     throw UnimplementedError();
   }
 
   @override
-  Future<Tensor<T>> matmulCadd(
-      FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
+  Future<Tensor<T>> matmulCadd(FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
       {Tensor<T>? out}) {
     // TODO: implement matmulCadd
     throw UnimplementedError();
@@ -336,8 +278,7 @@ class OffsetTypedTensorView<T extends num>
   }
 
   @override
-  Future<Tensor<T>> matmulT(FutureOr<Tensor<T>> other,
-      {Tensor<T>? out}) {
+  Future<Tensor<T>> matmulT(FutureOr<Tensor<T>> other, {Tensor<T>? out}) {
     // TODO: implement matmulT
     throw UnimplementedError();
   }

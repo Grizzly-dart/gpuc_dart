@@ -11,7 +11,7 @@ export 'tensor_view.dart';
 export 'int_tensor/int_tensor.dart';
 
 class _F64Tensor
-    with F64TensorMixin, F64Tensor2dMixin, TypedTensorMixin<double>
+    with Tensor<double>, F64TensorMixin, F64Tensor2dMixin
     implements F64Tensor {
   @override
   String name;

@@ -3,33 +3,10 @@ import 'dart:ffi' as ffi;
 
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-abstract class DartOnesor<T extends num> implements Onesor<T> {
-  factory DartOnesor(List<T> list) => _DartOnesor(list);
+export 'f64dartonesor.dart';
 
-  factory DartOnesor.sized(int length, {bool growable = false}) =>
-      _DartOnesor.sized(length, growable: growable);
-
-  factory DartOnesor.copy(Onesor<T> other) => _DartOnesor.copy<T>(other);
-
-  @override
-  DartOnesor<T> slice(int start, int length, {Context? context});
-
-  @override
-  DartOnesorView<T> view(int start, int length);
-}
-
-class _DartOnesor<T extends num>
-    with DartOnesorMixin<T>, ListMixin<T>
-    implements DartOnesor<T> {
-  final List<T> _list;
-
-  _DartOnesor(this._list);
-
-  _DartOnesor.sized(int length, {bool growable = false})
-      : _list = List.filled(length, (T == int ? 0 : 0.0) as T, growable: false);
-
-  static _DartOnesor<T> copy<T extends num>(Onesor<T> other) =>
-      _DartOnesor(other.toList());
+abstract mixin class DartOnesor<T extends num> implements Onesor<T> {
+  List<T> get list;
 
   @override
   DeviceType get deviceType => DeviceType.dart;
@@ -38,60 +15,14 @@ class _DartOnesor<T extends num>
   int get deviceId => 0;
 
   @override
-  int get length => _list.length;
+  int get length => list.length;
 
   @override
-  int get lengthBytes => length * 8;
+  T operator [](int index) => list[index];
 
   @override
-  T operator [](int index) => _list[index];
+  void operator []=(int index, T value) => list[index] = value;
 
-  @override
-  void operator []=(int index, T value) => _list[index] = value;
-
-  @override
-  void release() {}
-
-  @override
-  set length(int newLength) => _list.length = newLength;
-}
-
-class DartOnesorView<T extends num>
-    with DartOnesorMixin<T>, ListMixin<T>
-    implements DartOnesor<T>, OnesorView<T> {
-  final DartOnesor<T> _list;
-  @override
-  final int offset;
-  @override
-  final int length;
-
-  DartOnesorView(this._list, this.offset, this.length);
-
-  @override
-  T operator [](int index) => _list[offset + index];
-
-  @override
-  void operator []=(int index, T value) => _list[offset + index] = value;
-
-  @override
-  final int deviceId = 0;
-
-  @override
-  final DeviceType deviceType = DeviceType.dart;
-
-  @override
-  late final int lengthBytes = length * 8;
-
-  @override
-  void release() {}
-
-  @override
-  set length(int newLength) {
-    throw UnsupportedError('Cannot change length of a view');
-  }
-}
-
-mixin DartOnesorMixin<T extends num> implements Onesor<T> {
   @override
   void copyFrom(Onesor<T> src) {
     if (lengthBytes != src.lengthBytes) {
@@ -133,62 +64,34 @@ mixin DartOnesorMixin<T extends num> implements Onesor<T> {
   }
 
   @override
-  COnesor<T> read({Context? context}) {
-    final ret = COnesor<T>.sized(length, context: context);
-    ret.asTypedList(length).setAll(0, this);
-    return ret;
-  }
+  void release() {}
 
   @override
-  DartOnesor<T> slice(int start, int length, {Context? context}) {
-    if (start > this.length) {
-      throw ArgumentError('Start index out of range');
-    } else if (start + length > this.length) {
-      throw ArgumentError('Length out of range');
-    }
-    return DartOnesor<T>(sublist(start, start + length));
-  }
-
-  @override
-  DartOnesorView<T> view(int start, int length) {
-    if (start > this.length) {
-      throw ArgumentError('Start index out of range');
-    } else if (start + length > this.length) {
-      throw ArgumentError('Length out of range');
-    }
-    if (this is DartOnesorView<T>) {
-      start += (this as DartOnesorView<T>).offset;
-    }
-    return DartOnesorView(this as DartOnesor<T>, start, length);
-  }
-
-  @override
-  NumType<T> get numType {
-    if (T == int) {
-      return NumType.i64 as NumType<T>;
-    } else if (T == double || T == num) {
-      return NumType.f64 as NumType<T>;
-    }
-    throw UnsupportedError('Unsupported type');
-  }
-
-  @override
-  T get defaultValue {
-    if (T == int) {
-      return 0 as T;
-    } else if (T == double || T == num) {
-      return 0.0 as T;
-    }
-    throw UnsupportedError('Unsupported type');
-  }
-
-  @override
-  int get bytesPerItem {
-    if (T == int) {
-      return 4;
-    } else if (T == double || T == num) {
-      return 8;
-    }
-    throw UnsupportedError('Unsupported type');
+  set length(int newLength) {
+    throw UnsupportedError('Cannot change length');
   }
 }
+
+abstract class DartOnesorView<T extends num>
+    implements DartOnesor<T>, OnesorView<T> {}
+
+/*
+abstract class DartOnesor<T extends num> implements Onesor<T> {
+  factory DartOnesor(List<T> list) => _DartOnesor(list);
+
+  factory DartOnesor.sized(int length, {bool growable = false}) =>
+      _DartOnesor.sized(length, growable: growable);
+
+  factory DartOnesor.copy(Onesor<T> other) => _DartOnesor.copy<T>(other);
+
+  @override
+  DartOnesor<T> slice(int start, int length, {Context? context});
+
+  @override
+  DartOnesorView<T> view(int start, int length);
+}
+
+
+
+
+}*/

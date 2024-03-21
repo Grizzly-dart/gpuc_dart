@@ -1,9 +1,8 @@
 import 'package:gpuc_dart/gpuc_dart.dart';
-import 'package:gpuc_dart/src/tensor/int_tensor/int_tensor.dart';
 import 'package:gpuc_dart/src/tensor/tensor_mixin.dart';
 
 class OffsetF64TensorView
-    with F64TensorMixin, F64Tensor2dMixin, TypedTensorMixin<double>
+    with Tensor<double>, F64TensorMixin, F64Tensor2dMixin
     implements F64Tensor {
   @override
   String name = 'unnamed';

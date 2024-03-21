@@ -4,25 +4,43 @@ import 'package:gpuc_dart/gpuc_dart.dart';
 
 export 'f64cuonesor.dart';
 
-abstract class CuOnesor<T extends num> implements Onesor<T> {
+abstract mixin class CuOnesor<T extends num> implements Onesor<T> {
   factory CuOnesor.copy(Onesor<T> other,
       {CudaStream? stream, Context? context}) {
-    if(other is F64Onesor) {
-      // TODO
+    final type = other.numType;
+    if (type == NumType.f64) {
+      return F64CuOnesor.copy(other as Onesor<double>,
+          stream: stream, context: context) as CuOnesor<T>;
+    } /* else if (type == NumType.f32) {
+      return F32CuOnesor.copy(other as Onesor<double>,
+          stream: stream, context: context) as CuOnesor<T>;
+    } else if (type == NumType.i32) {
+      return I32CuOnesor.copy(other as Onesor<int>,
+          stream: stream, context: context) as CuOnesor<T>;
+    } else if (type == NumType.i64) {
+      return I64CuOnesor.copy(other as Onesor<int>,
+          stream: stream, context: context) as CuOnesor<T>;
+    }*/
+    throw UnsupportedError('Unsupported number type: $type');
+    // TODO
+  }
+
+  factory CuOnesor.sized(NumType<T> type, int length,
+      {CudaStream? stream, Context? context}) {
+    if (type == NumType.f64) {
+      return F64CuOnesor.sized(stream, length, context: context) as CuOnesor<T>;
     }
+    throw UnsupportedError('Unsupported number type: $type');
     // TODO
   }
 
   ffi.Pointer<ffi.SizedNativeType> get ptr;
 
   @override
+  DeviceType get deviceType => DeviceType.cuda;
+
+  @override
   COnesor<T> read({Context? context, CudaStream? stream});
-
-  @override
-  void copyFrom(Onesor<T> src, {CudaStream? stream});
-
-  @override
-  void copyTo(Onesor<T> dst, {CudaStream? stream});
 
   @override
   CuOnesor<T> slice(int start, int length,
@@ -30,9 +48,7 @@ abstract class CuOnesor<T extends num> implements Onesor<T> {
 
   @override
   void release({CudaStream? stream});
-}
 
-mixin CuOnesorMixin<T extends num> implements CuOnesor<T> {
   @override
   void copyFrom(Onesor<T> src, {CudaStream? stream}) {
     if (lengthBytes != src.lengthBytes) {
@@ -66,4 +82,12 @@ mixin CuOnesorMixin<T extends num> implements CuOnesor<T> {
       context.release();
     }
   }
+
+  @override
+  set length(int newLength) {
+    throw UnsupportedError('Length cannot be changed');
+  }
 }
+
+abstract class CuOnesorView<T extends num>
+    implements CuOnesor<T>, OnesorView<T> {}

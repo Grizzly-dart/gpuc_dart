@@ -7,14 +7,14 @@ export 'cuda/cuonesor.dart';
 export 'c/conesor.dart';
 
 // TODO complex onesor?
-abstract class Onesor<T extends num> implements Resource, List<T> {
+abstract mixin class Onesor<T extends num> implements Resource, List<T> {
   DeviceType get deviceType;
 
   int get deviceId;
 
   NumType<T> get numType;
 
-  int get lengthBytes;
+  int get lengthBytes => length * bytesPerItem;
 
   int get bytesPerItem;
 
@@ -22,6 +22,13 @@ abstract class Onesor<T extends num> implements Resource, List<T> {
 
   // TODO implement partial write
   void copyFrom(Onesor<T> src);
+
+  void copyFromList(List<T> src) {
+    if (length != src.length) {
+      throw ArgumentError('Length mismatch');
+    }
+    setAll(0, src);
+  }
 
   // TODO implement partial read
   void copyTo(Onesor<T> dst);
@@ -35,13 +42,6 @@ abstract class Onesor<T extends num> implements Resource, List<T> {
   T get defaultValue;
 
   @override
-  List<T> toList({bool growable = true}) {
-    final list = List<T>.filled(length, defaultValue, growable: growable);
-    copyTo(DartOnesor<T>(list));
-    return list;
-  }
-
-  @override
   void release();
 }
 
@@ -51,11 +51,6 @@ abstract class OnesorView<T extends num> extends Onesor<T> {
 
 extension OnesorExtension<T extends num> on Onesor<T> {
   Device get device => Device(deviceType, deviceId);
-}
-
-abstract mixin class OnesorMixin<T extends num> implements Onesor<T> {
-  @override
-  int get lengthBytes => length * bytesPerItem;
 }
 
 abstract mixin class F64Onesor implements Onesor<double> {
@@ -69,7 +64,7 @@ abstract mixin class F64Onesor implements Onesor<double> {
   int get bytesPerItem => 8;
 }
 
-abstract class F32Onesor implements Onesor<double> {
+abstract mixin class F32Onesor implements Onesor<double> {
   @override
   NumType<double> get numType => NumType.f32;
 
@@ -83,7 +78,7 @@ abstract class F32Onesor implements Onesor<double> {
   int get bytesPerItem => 4;
 }
 
-abstract class I64Onesor implements Onesor<int> {
+abstract mixin class I64Onesor implements Onesor<int> {
   @override
   NumType<int> get numType => NumType.i64;
 
@@ -94,7 +89,7 @@ abstract class I64Onesor implements Onesor<int> {
   int get bytesPerItem => 8;
 }
 
-abstract class U64Onesor implements Onesor<int> {
+abstract mixin class U64Onesor implements Onesor<int> {
   @override
   NumType<int> get numType => NumType.u64;
 
@@ -105,7 +100,7 @@ abstract class U64Onesor implements Onesor<int> {
   int get bytesPerItem => 8;
 }
 
-abstract class I32Onesor implements Onesor<int> {
+abstract mixin class I32Onesor implements Onesor<int> {
   @override
   NumType<int> get numType => NumType.i32;
 
@@ -116,7 +111,7 @@ abstract class I32Onesor implements Onesor<int> {
   int get bytesPerItem => 4;
 }
 
-abstract class U32Onesor implements Onesor<int> {
+abstract mixin class U32Onesor implements Onesor<int> {
   @override
   NumType<int> get numType => NumType.u32;
 
@@ -127,7 +122,7 @@ abstract class U32Onesor implements Onesor<int> {
   int get bytesPerItem => 4;
 }
 
-abstract class I16Onesor implements Onesor<int> {
+abstract mixin class I16Onesor implements Onesor<int> {
   @override
   NumType<int> get numType => NumType.i16;
 
@@ -138,7 +133,7 @@ abstract class I16Onesor implements Onesor<int> {
   int get bytesPerItem => 2;
 }
 
-abstract class U16Onesor implements Onesor<int> {
+abstract mixin class U16Onesor implements Onesor<int> {
   @override
   NumType<int> get numType => NumType.u16;
 
@@ -149,7 +144,7 @@ abstract class U16Onesor implements Onesor<int> {
   int get bytesPerItem => 2;
 }
 
-abstract class I8Onesor implements Onesor<int> {
+abstract mixin class I8Onesor implements Onesor<int> {
   @override
   NumType<int> get numType => NumType.i8;
 
@@ -160,7 +155,7 @@ abstract class I8Onesor implements Onesor<int> {
   int get bytesPerItem => 1;
 }
 
-abstract class U8Onesor implements Onesor<int> {
+abstract mixin class U8Onesor implements Onesor<int> {
   @override
   NumType<int> get numType => NumType.u8;
 

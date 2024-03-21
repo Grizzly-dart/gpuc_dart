@@ -1,14 +1,12 @@
 import 'dart:collection';
 import 'dart:ffi' as ffi;
+import 'dart:typed_data';
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-abstract class F64COnesor implements COnesor<double>, F64Onesor {
+abstract mixin class F64COnesor implements COnesor<double>, F64Onesor {
   @override
   ffi.Pointer<ffi.Double> get ptr;
-
-  @override
-  List<double> asTypedList(int length);
 
   factory F64COnesor(ffi.Pointer<ffi.Double> ptr, int length,
           {Context? context}) =>
@@ -23,16 +21,56 @@ abstract class F64COnesor implements COnesor<double>, F64Onesor {
   static F64COnesor sized(int length, {Context? context}) =>
       _F64COnesor.sized(length, context: context);
 
-  static const sizeOfItem = 8;
+  @override
+  List<double> asTypedList(int length) => ptr.asTypedList(length);
+
+  @override
+  double operator [](int index) => ptr[index];
+
+  @override
+  void operator []=(int index, double value) => ptr[index] = value;
+
+  @override
+  F64COnesor slice(int start, int length, {Context? context}) {
+    if (start > this.length) {
+      throw ArgumentError('Start index out of range');
+    } else if (start + length > this.length) {
+      throw ArgumentError('Length out of range');
+    }
+    final ret = F64COnesor.sized(length, context: context);
+    CFFI.memcpy(ret.ptr.cast(), (ptr + start * ret.bytesPerItem).cast(),
+        length * ret.bytesPerItem);
+    return ret;
+  }
+
+  @override
+  F64COnesor read({Context? context}) {
+    final ret = F64COnesor.sized(length, context: context);
+    CFFI.memcpy(ret.ptr.cast(), ptr.cast(), lengthBytes);
+    return ret;
+  }
+
+  @override
+  F64COnesorView view(int start, int length) {
+    if (start > this.length) {
+      throw ArgumentError('Start index out of range');
+    } else if (start + length > this.length) {
+      throw ArgumentError('Length out of range');
+    }
+    if (this is COnesorView<double>) {
+      start += (this as COnesorView<double>).offset;
+    }
+    return F64COnesorView(this, start, length);
+  }
 }
 
 class _F64COnesor
     with
+        Onesor<double>,
         F64Onesor,
-        COnesorMixin<double>,
-        F64COnesorMixin,
         ListMixin<double>,
-        OnesorMixin<double>
+        COnesor<double>,
+        F64COnesor
     implements F64COnesor {
   ffi.Pointer<ffi.Double> _ptr;
 
@@ -56,7 +94,7 @@ class _F64COnesor
   }
 
   static _F64COnesor sized(int length, {Context? context}) {
-    final ptr = ffi.calloc<ffi.Double>(length * F64COnesor.sizeOfItem);
+    final ptr = ffi.calloc<ffi.Double>(length * Float64List.bytesPerElement);
     return _F64COnesor(ptr, length, context: context);
   }
 
@@ -75,7 +113,7 @@ class _F64COnesor
 
   @override
   set length(int newLength) {
-    final newPtr = CFFI.realloc(_ptr.cast(), newLength * F64COnesor.sizeOfItem);
+    final newPtr = CFFI.realloc(_ptr.cast(), newLength * bytesPerItem);
     if (newPtr == ffi.nullptr) {
       throw Exception('Failed to allocate memory');
     }
@@ -86,11 +124,11 @@ class _F64COnesor
 
 class F64COnesorView
     with
+        Onesor<double>,
         F64Onesor,
-        COnesorMixin<double>,
-        F64COnesorMixin,
         ListMixin<double>,
-        OnesorMixin<double>
+        COnesor<double>,
+        F64COnesor
     implements F64COnesor, COnesorView<double> {
   final COnesor<double> _list;
 
@@ -112,58 +150,5 @@ class F64COnesorView
   @override
   set length(int newLength) {
     throw UnsupportedError('Cannot change length of view');
-  }
-}
-
-mixin F64COnesorMixin implements COnesorMixin<double> {
-  @override
-  ffi.Pointer<ffi.Double> get ptr;
-
-  @override
-  List<double> asTypedList(int length) => ptr.asTypedList(length);
-
-  @override
-  double operator [](int index) => ptr[index];
-
-  @override
-  void operator []=(int index, double value) => ptr[index] = value;
-
-  @override
-  DeviceType get deviceType => DeviceType.c;
-
-  @override
-  int get deviceId => 0;
-
-  @override
-  F64COnesor slice(int start, int length, {Context? context}) {
-    if (start > this.length) {
-      throw ArgumentError('Start index out of range');
-    } else if (start + length > this.length) {
-      throw ArgumentError('Length out of range');
-    }
-    final ret = F64COnesor.sized(length, context: context);
-    CFFI.memcpy(ret.ptr.cast(), (ptr + start * F64COnesor.sizeOfItem).cast(),
-        length * F64COnesor.sizeOfItem);
-    return ret;
-  }
-
-  @override
-  F64COnesor read({Context? context}) {
-    final ret = F64COnesor.sized(length, context: context);
-    CFFI.memcpy(ret.ptr.cast(), ptr.cast(), lengthBytes);
-    return ret;
-  }
-
-  @override
-  F64COnesorView view(int start, int length) {
-    if (start > this.length) {
-      throw ArgumentError('Start index out of range');
-    } else if (start + length > this.length) {
-      throw ArgumentError('Length out of range');
-    }
-    if (this is COnesorView<double>) {
-      start += (this as COnesorView<double>).offset;
-    }
-    return F64COnesorView(this, start, length);
   }
 }

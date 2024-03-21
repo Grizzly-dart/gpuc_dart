@@ -4,7 +4,13 @@ import 'package:gpuc_dart/gpuc_dart.dart';
 
 export 'f64conesor.dart';
 
-abstract class COnesor<T extends num> extends Onesor<T> {
+abstract mixin class COnesor<T extends num> implements Onesor<T> {
+  @override
+  DeviceType get deviceType => DeviceType.c;
+
+  @override
+  int get deviceId => 0;
+
   ffi.Pointer<ffi.SizedNativeType> get ptr;
 
   List<T> asTypedList(int length);
@@ -15,14 +21,6 @@ abstract class COnesor<T extends num> extends Onesor<T> {
     }
     throw UnimplementedError('Type $T not implemented');
   }
-}
-
-abstract class COnesorView<T extends num>
-    implements COnesor<T>, OnesorView<T> {}
-
-mixin COnesorMixin<T extends num> implements COnesor<T> {
-  @override
-  ffi.Pointer<ffi.SizedNativeType> get ptr;
 
   @override
   void copyFrom(Onesor<T> src) {
@@ -52,3 +50,6 @@ mixin COnesorMixin<T extends num> implements COnesor<T> {
     dst.copyFrom(this);
   }
 }
+
+abstract class COnesorView<T extends num>
+    implements COnesor<T>, OnesorView<T> {}
