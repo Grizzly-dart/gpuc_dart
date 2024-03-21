@@ -47,14 +47,14 @@ extension CudaSplitExtension on Cuda {
         final stream = CudaStream(deviceId, context: ctx);
         streams.add(stream);
         final inp1 = F64CuOnesor.copy(
+            stream,
             a.as1d.view(batchStart * batchSize * inp1Size2D.nel,
                 split * inp1Size2D.nel),
-            stream: stream,
             context: ctx);
         final inp2 = F64CuOnesor.copy(
+            stream,
             b.as1d.view(batchStart * batchSize * inp2Size2D.nel,
                 split * inp2Size2D.nel),
-            stream: stream,
             context: ctx);
         final outMat =
             F64CuOnesor.sized(stream, split * outSize2D.nel, context: ctx);
@@ -119,14 +119,14 @@ extension CudaSplitExtension on Cuda {
         final stream = CudaStream(deviceId, context: ctx);
         streams.add(stream);
         final inp1 = F64CuOnesor.copy(
+            stream,
             a.as1d.view(batchStart * batchSize * inp1Size2D.nel,
                 split * inp1Size2D.nel),
-            stream: stream,
             context: ctx);
         final inp2 = F64CuOnesor.copy(
+            stream,
             b.as1d.view(batchStart * batchSize * inp2Size2D.nel,
                 split * inp2Size2D.nel),
-            stream: stream,
             context: ctx);
         final outMat =
             F64CuOnesor.sized(stream, split * outSize2D.nel, context: ctx);
@@ -151,8 +151,8 @@ extension CudaSplitExtension on Cuda {
     }
   }
 
-  Future<Tensor<double>> splitMatmulCadd(int deviceId,
-      Tensor<double> a, Tensor<double> b, Tensor<double> add,
+  Future<Tensor<double>> splitMatmulCadd(
+      int deviceId, Tensor<double> a, Tensor<double> b, Tensor<double> add,
       {Tensor<double>? out}) async {
     if (a.size.cols != b.size.rows) {
       throw ArgumentError('Columns of A must match rows of B');
@@ -175,7 +175,7 @@ extension CudaSplitExtension on Cuda {
     final ctx = Context();
     try {
       final stream = CudaStream(deviceId, context: ctx);
-      final addCuda = F64CuOnesor.copy(add.as1d, stream: stream, context: ctx);
+      final addCuda = F64CuOnesor.copy(stream, add.as1d, context: ctx);
       if (out == null) {
         out = F64Tensor.sized(outSize, name: '${a.name} * ${b.name}');
         ctx.releaseOnErr(out);
@@ -199,14 +199,14 @@ extension CudaSplitExtension on Cuda {
         final stream = CudaStream(deviceId, context: ctx);
         streams.add(stream);
         final inp1 = F64CuOnesor.copy(
+            stream,
             a.as1d.view(batchStart * batchSize * inp1Size2D.nel,
                 split * inp1Size2D.nel),
-            stream: stream,
             context: ctx);
         final inp2 = F64CuOnesor.copy(
+            stream,
             b.as1d.view(batchStart * batchSize * inp2Size2D.nel,
                 split * inp2Size2D.nel),
-            stream: stream,
             context: ctx);
         final outMat =
             F64CuOnesor.sized(stream, split * outSize2D.nel, context: ctx);
@@ -231,8 +231,8 @@ extension CudaSplitExtension on Cuda {
     }
   }
 
-  Future<Tensor<double>> splitMatmulTCadd(int deviceId,
-      Tensor<double> a, Tensor<double> b, Tensor<double> add,
+  Future<Tensor<double>> splitMatmulTCadd(
+      int deviceId, Tensor<double> a, Tensor<double> b, Tensor<double> add,
       {Tensor<double>? out}) async {
     final inp1Size2D = a.size.to2D();
     final inp2Size2D = b.size.to2D().t;
@@ -254,7 +254,7 @@ extension CudaSplitExtension on Cuda {
     final ctx = Context();
     try {
       final stream = CudaStream(deviceId, context: ctx);
-      final addCuda = F64CuOnesor.copy(add.as1d, stream: stream, context: ctx);
+      final addCuda = F64CuOnesor.copy(stream, add.as1d, context: ctx);
       if (out == null) {
         out = F64Tensor.sized(outSize, name: '${a.name} * ${b.name}');
         ctx.releaseOnErr(out);
@@ -278,14 +278,14 @@ extension CudaSplitExtension on Cuda {
         final stream = CudaStream(deviceId, context: ctx);
         streams.add(stream);
         final inp1 = F64CuOnesor.copy(
+            stream,
             a.as1d.view(batchStart * batchSize * inp1Size2D.nel,
                 split * inp1Size2D.nel),
-            stream: stream,
             context: ctx);
         final inp2 = F64CuOnesor.copy(
+            stream,
             b.as1d.view(batchStart * batchSize * inp2Size2D.nel,
                 split * inp2Size2D.nel),
-            stream: stream,
             context: ctx);
         final outMat =
             F64CuOnesor.sized(stream, split * outSize2D.nel, context: ctx);

@@ -47,9 +47,9 @@ abstract mixin class F64DartOnesor implements DartOnesor<double>, F64Onesor {
 
 class _F64DartOnesor
     with
+        Onesor<double>,
         F64Onesor,
         ListMixin<double>,
-        Onesor<double>,
         DartOnesor<double>,
         F64DartOnesor
     implements F64DartOnesor {

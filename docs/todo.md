@@ -8,6 +8,7 @@
 + Fix printing tensor tables
 + Layer backwards
 + COnesor should not use context but use native finalizer
++ Implement null CudaStream all the way to native
 
 # Layers
 + Group normalization
