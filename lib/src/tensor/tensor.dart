@@ -13,10 +13,6 @@ export 'f64/f64tensor.dart';
 export 'u64/u64tensor.dart';
 
 abstract mixin class Tensor<T extends num> implements Resource {
-  static Tensor<T> ccopy<T extends num>(Onesor<T> other, ) {
-    // TODO
-  }
-
   String get name;
 
   set name(String name);
