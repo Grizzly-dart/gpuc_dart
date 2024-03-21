@@ -9,9 +9,10 @@ abstract mixin class CuOnesor<T extends num> implements Onesor<T> {
       {CudaStream? stream, Context? context}) {
     final type = other.numType;
     if (type == NumType.f64) {
-      return F64CuOnesor.copy(other as Onesor<double>,
-          stream: stream, context: context) as CuOnesor<T>;
-    } /* else if (type == NumType.f32) {
+      return F64CuOnesor.copy(stream, other as Onesor<double>, context: context)
+          as CuOnesor<T>;
+    }
+    /* else if (type == NumType.f32) {
       return F32CuOnesor.copy(other as Onesor<double>,
           stream: stream, context: context) as CuOnesor<T>;
     } else if (type == NumType.i32) {
@@ -25,13 +26,13 @@ abstract mixin class CuOnesor<T extends num> implements Onesor<T> {
     // TODO
   }
 
-  factory CuOnesor.sized(NumType<T> type, int length,
-      {CudaStream? stream, Context? context}) {
+  factory CuOnesor.sized(CudaStream stream, NumType<T> type, int length,
+      {Context? context}) {
     if (type == NumType.f64) {
       return F64CuOnesor.sized(stream, length, context: context) as CuOnesor<T>;
     }
-    throw UnsupportedError('Unsupported number type: $type');
     // TODO
+    throw UnsupportedError('Unsupported number type: $type');
   }
 
   ffi.Pointer<ffi.SizedNativeType> get ptr;

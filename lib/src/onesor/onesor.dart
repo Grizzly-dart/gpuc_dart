@@ -41,6 +41,8 @@ abstract mixin class Onesor<T extends num> implements Resource, List<T> {
 
   T get defaultValue;
 
+  Tensor<T> toTensor(Dim size, {Context? context});
+
   @override
   void release();
 }
@@ -62,6 +64,10 @@ abstract mixin class F64Onesor implements Onesor<double> {
 
   @override
   int get bytesPerItem => 8;
+
+  @override
+  F64Tensor toTensor(Dim size, {Context? context}) =>
+      F64Tensor(this, size, context: context);
 }
 
 abstract mixin class F32Onesor implements Onesor<double> {
@@ -76,6 +82,8 @@ abstract mixin class F32Onesor implements Onesor<double> {
 
   @override
   int get bytesPerItem => 4;
+
+
 }
 
 abstract mixin class I64Onesor implements Onesor<int> {

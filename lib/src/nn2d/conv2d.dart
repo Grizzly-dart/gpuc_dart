@@ -100,8 +100,8 @@ class Conv2D implements Layer2D<double> {
       final stream = CudaStream(0, context: ctx);
       final outS = Dim([batches, outChannels] + out2DS.toList());
       final out = F64CuOnesor.sized(stream, outS.nel, context: ctx);
-      final inpL = F64CuOnesor.copy(inp.as1d, stream: stream, context: ctx);
-      final kernL = F64CuOnesor.copy(kernel.as1d, stream: stream, context: ctx);
+      final inpL = F64CuOnesor.copy(stream, inp.as1d, context: ctx);
+      final kernL = F64CuOnesor.copy(stream, kernel.as1d, context: ctx);
       cuda.conv2D(
           stream,
           out.ptr,
@@ -141,10 +141,10 @@ class Conv2D implements Layer2D<double> {
       padding = padSameSize2D(inSize.to2D());
     }
     return (inSize.to2D() +
-        (padding * 2) -
-        (dilation * (kernelSize - 1)) -
-        Dim2(1, 1)) ~/
-        stride +
+                (padding * 2) -
+                (dilation * (kernelSize - 1)) -
+                Dim2(1, 1)) ~/
+            stride +
         Dim2(1, 1);
   }
 

@@ -1,8 +1,9 @@
 import 'dart:async';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
-import 'package:gpuc_dart/src/tensor/int_tensor/int_tensor.dart';
 import 'package:text_table/text_table.dart';
+
+export 'tensor_mixin.dart';
 
 mixin F64TensorMixin implements F64Tensor {
   // TODO start and length
@@ -67,8 +68,8 @@ mixin F64TensorMixin implements F64Tensor {
       int deviceId = 0; // TODO implement device selection
       final stream = CudaStream(deviceId, context: ctx);
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1 = F64CuOnesor.copy(as1d, stream: stream, context: ctx);
-      final inp2 = F64CuOnesor.copy(b.as1d, stream: stream, context: ctx);
+      final inp1 = F64CuOnesor.copy(stream, as1d, context: ctx);
+      final inp2 = F64CuOnesor.copy(stream, b.as1d, context: ctx);
       final out = F64CuOnesor.sized(stream, nel, context: ctx);
       cuda.addition(
           stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
@@ -96,8 +97,8 @@ mixin F64TensorMixin implements F64Tensor {
       int deviceId = 0; // TODO implement device selection
       final stream = CudaStream(deviceId, context: ctx);
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1 = F64CuOnesor.copy(as1d, stream: stream, context: ctx);
-      final inp2 = F64CuOnesor.copy(b.as1d, stream: stream, context: ctx);
+      final inp1 = F64CuOnesor.copy(stream, as1d, context: ctx);
+      final inp2 = F64CuOnesor.copy(stream, b.as1d, context: ctx);
       final out = F64CuOnesor.sized(stream, nel, context: ctx);
       cuda.subtract(
           stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
@@ -125,8 +126,8 @@ mixin F64TensorMixin implements F64Tensor {
       int deviceId = 0; // TODO implement device selection
       final stream = CudaStream(deviceId, context: ctx);
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1 = F64CuOnesor.copy(as1d, stream: stream, context: ctx);
-      final inp2 = F64CuOnesor.copy(b.as1d, stream: stream, context: ctx);
+      final inp1 = F64CuOnesor.copy(stream, as1d, context: ctx);
+      final inp2 = F64CuOnesor.copy(stream, b.as1d, context: ctx);
       final out = F64CuOnesor.sized(stream, nel, context: ctx);
       cuda.multiply(
           stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
@@ -154,8 +155,8 @@ mixin F64TensorMixin implements F64Tensor {
       int deviceId = 0; // TODO implement device selection
       final stream = CudaStream(deviceId, context: ctx);
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1 = F64CuOnesor.copy(as1d, stream: stream, context: ctx);
-      final inp2 = F64CuOnesor.copy(b.as1d, stream: stream, context: ctx);
+      final inp1 = F64CuOnesor.copy(stream, as1d, context: ctx);
+      final inp2 = F64CuOnesor.copy(stream, b.as1d, context: ctx);
       final out = F64CuOnesor.sized(stream, nel, context: ctx);
       cuda.divide(
           stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);

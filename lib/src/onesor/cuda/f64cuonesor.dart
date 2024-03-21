@@ -18,8 +18,8 @@ abstract mixin class F64CuOnesor implements CuOnesor<double>, F64Onesor {
           {Context? context}) =>
       _F64CuOnesor.fromList(stream, list, context: context);
 
-  static F64CuOnesor copy(Onesor<double> other,
-          {CudaStream? stream, Context? context}) =>
+  static F64CuOnesor copy(CudaStream? stream, Onesor<double> other,
+          {Context? context}) =>
       _F64CuOnesor.copy(other, stream: stream, context: context);
 
   @override
@@ -40,12 +40,12 @@ abstract mixin class F64CuOnesor implements CuOnesor<double>, F64Onesor {
 
   @override
   COnesor<double> read({Context? context, CudaStream? stream}) {
-    final clist = F64COnesor.sized(length, context: context);
+    final ret = F64COnesor.sized(length, context: context);
     final lContext = Context();
     try {
       stream = stream ?? CudaStream(deviceId, context: lContext);
-      cuda.memcpy(stream, clist.ptr.cast(), ptr.cast(), clist.lengthBytes);
-      return clist;
+      cuda.memcpy(stream, ret.ptr.cast(), ptr.cast(), ret.lengthBytes);
+      return ret;
     } finally {
       lContext.release();
     }

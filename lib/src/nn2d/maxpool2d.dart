@@ -31,7 +31,7 @@ class MaxPool2D implements Layer2D<double> {
     try {
       final stream = CudaStream(0, context: ctx);
       final outS = outSize2D(inp.size);
-      final inpL = F64CuOnesor.copy(inp.as1d, stream: stream, context: ctx);
+      final inpL = F64CuOnesor.copy(stream, inp.as1d, context: ctx);
       final out = F64CuOnesor.sized(stream, outS.nel, context: ctx);
       cuda.maxPool2D(stream, out.ptr, inpL.ptr,
           kernSize: kernelSize,
@@ -55,7 +55,8 @@ class MaxPool2D implements Layer2D<double> {
   }
 
   Dim2 outSize2D(Dim inSize) =>
-      (inSize.to2D() + (padding * 2) - (dilation * (kernelSize - 1))) ~/ stride +
+      (inSize.to2D() + (padding * 2) - (dilation * (kernelSize - 1))) ~/
+          stride +
       Dim2(1, 1);
 
   Dim outSize(Dim inSize) {

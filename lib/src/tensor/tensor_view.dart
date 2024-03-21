@@ -1,5 +1,5 @@
 import 'package:gpuc_dart/gpuc_dart.dart';
-import 'package:gpuc_dart/src/tensor/tensor_mixin.dart';
+import 'package:gpuc_dart/src/tensor/f64/tensor_mixin.dart';
 
 class OffsetF64TensorView
     with Tensor<double>, F64TensorMixin, F64Tensor2dMixin

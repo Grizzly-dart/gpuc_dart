@@ -18,7 +18,7 @@ mixin F64Tensor2dMixin implements F64Tensor {
       // TODO implement C summing for non-web
       int deviceId = 0; // TODO implement device selection
       final stream = CudaStream(deviceId, context: ctx);
-      final inp = F64CuOnesor.copy(as1d, stream: stream, context: ctx);
+      final inp = F64CuOnesor.copy(stream, as1d, context: ctx);
       final out = F64CuOnesor.sized(stream, outSize.nel, context: ctx);
       cuda.sum2D(stream, out.ptr.cast(), inp.ptr.cast(), inpSize.to2D());
       final outTensor = F64Tensor.sized(outSize, name: 'sum2D($name)');
@@ -56,7 +56,7 @@ mixin F64Tensor2dMixin implements F64Tensor {
       }
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
       final stream = CudaStream(deviceId, context: ctx);
-      final inp = F64CuOnesor.copy(as1d, context: ctx);
+      final inp = F64CuOnesor.copy(stream, as1d, context: ctx);
       final outData = F64CuOnesor.sized(stream, outSize.nel, context: ctx);
       cuda.transpose2D(stream, outData.ptr.cast(), inp.ptr.cast(),
           Dim3(size.numMatrices, size.rows, size.cols));
