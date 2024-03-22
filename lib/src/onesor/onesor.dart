@@ -12,7 +12,7 @@ abstract mixin class Onesor<T extends num> implements Resource, List<T> {
 
   int get deviceId;
 
-  NumType<T> get numType;
+  NumType<T> get type;
 
   int get lengthBytes => length * bytesPerItem;
 
@@ -57,7 +57,7 @@ extension OnesorExtension<T extends num> on Onesor<T> {
 
 abstract mixin class F64Onesor implements Onesor<double> {
   @override
-  NumType<double> get numType => f64;
+  NumType<double> get type => f64;
 
   @override
   double get defaultValue => 0.0;
@@ -72,7 +72,7 @@ abstract mixin class F64Onesor implements Onesor<double> {
 
 abstract mixin class F32Onesor implements Onesor<double> {
   @override
-  NumType<double> get numType => f32;
+  NumType<double> get type => f32;
 
   @override
   int get lengthBytes => length * bytesPerItem;
@@ -90,7 +90,7 @@ abstract mixin class F32Onesor implements Onesor<double> {
 
 abstract mixin class U64Onesor implements Onesor<int> {
   @override
-  NumType<int> get numType => u64;
+  NumType<int> get type => u64;
 
   @override
   int get defaultValue => 0;
@@ -108,7 +108,7 @@ abstract mixin class U64Onesor implements Onesor<int> {
 
 abstract mixin class I64Onesor implements Onesor<int> {
   @override
-  NumType<int> get numType => i64;
+  NumType<int> get type => i64;
 
   @override
   int get defaultValue => 0;
@@ -123,7 +123,7 @@ abstract mixin class I64Onesor implements Onesor<int> {
 
 abstract mixin class I32Onesor implements Onesor<int> {
   @override
-  NumType<int> get numType => i32;
+  NumType<int> get type => i32;
 
   @override
   int get defaultValue => 0;
@@ -138,7 +138,7 @@ abstract mixin class I32Onesor implements Onesor<int> {
 
 abstract mixin class U32Onesor implements Onesor<int> {
   @override
-  NumType<int> get numType => u32;
+  NumType<int> get type => u32;
 
   @override
   int get defaultValue => 0;
@@ -153,7 +153,7 @@ abstract mixin class U32Onesor implements Onesor<int> {
 
 abstract mixin class I16Onesor implements Onesor<int> {
   @override
-  NumType<int> get numType => i16;
+  NumType<int> get type => i16;
 
   @override
   int get defaultValue => 0;
@@ -168,7 +168,7 @@ abstract mixin class I16Onesor implements Onesor<int> {
 
 abstract mixin class U16Onesor implements Onesor<int> {
   @override
-  NumType<int> get numType => u16;
+  NumType<int> get type => u16;
 
   @override
   int get defaultValue => 0;
@@ -183,7 +183,7 @@ abstract mixin class U16Onesor implements Onesor<int> {
 
 abstract mixin class I8Onesor implements Onesor<int> {
   @override
-  NumType<int> get numType => i8;
+  NumType<int> get type => i8;
 
   @override
   int get defaultValue => 0;
@@ -198,7 +198,7 @@ abstract mixin class I8Onesor implements Onesor<int> {
 
 abstract mixin class U8Onesor implements Onesor<int> {
   @override
-  NumType<int> get numType => u8;
+  NumType<int> get type => u8;
 
   @override
   int get defaultValue => 0;
@@ -296,7 +296,7 @@ class NumType<T> {
     } else if (ptr is ffi.Uint64) {
       return u64;
     } else {
-      throw Exception('Unknown type');
+      throw Exception('Unknown type ${ptr.runtimeType}');
     }
   }
 }

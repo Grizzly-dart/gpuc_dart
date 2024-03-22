@@ -4,10 +4,10 @@ import 'package:gpuc_dart/gpuc_dart.dart';
 
 export 'f64cuonesor.dart';
 
-abstract mixin class CuOnesor<T extends num> implements Onesor<T> {
+abstract mixin class CuOnesor<T extends num> implements Onesor<T>, NumPtr {
   factory CuOnesor.copy(CudaStream stream, Onesor<T> other,
       {Context? context}) {
-    final type = other.numType;
+    final type = other.type;
     if (type == f64) {
       return F64CuOnesor.copy(stream, other as Onesor<double>, context: context)
           as CuOnesor<T>;

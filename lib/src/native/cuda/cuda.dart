@@ -141,8 +141,8 @@ class Cuda {
 
   void pickRows(CudaStream stream, ffi.Pointer out, ffi.Pointer inp,
       ffi.Pointer indices, Dim2 size) {
-    final type = NumType.typeOf(out);
-    final iType = NumType.typeOf(indices);
+    final type = NumType.typeOf(out); // TODO fix this
+    final iType = NumType.typeOf(indices); // TODO fix this
 
     final sizePtr = CDim2.from(size);
     final err = cuda.pickRows(stream.ptr, out.cast(), inp.cast(),
@@ -152,38 +152,35 @@ class Cuda {
     }
   }
 
-  void addition(CudaStream stream, ffi.Pointer out, ffi.Pointer inp1,
-      ffi.Pointer inp2, int size) {
-    final key =
-        '${NumType.typeOf(out).short}_${NumType.typeOf(inp1).short}_${NumType.typeOf(inp2).short}';
-    final err = cuda.additions[key]!(stream.ptr, out, inp1, inp2, size);
+  void addition(
+      CudaStream stream, NumPtr out, NumPtr inp1, NumPtr inp2, int size) {
+    final key = '${out.type.short}_${inp1.type.short}_${inp2.type.short}';
+    final err =
+        cuda.additions[key]!(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, size);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
   }
 
-  void subtract(CudaStream stream, Ptr out, Ptr inp1, Ptr inp2, int size) {
-    final key =
-        '${NumType.typeOf(out).short}_${NumType.typeOf(inp1).short}_${NumType.typeOf(inp2).short}';
-    final err = cuda.subs[key]!(stream.ptr, out, inp1, inp2, size);
+  void sub(CudaStream stream, NumPtr out, NumPtr inp1, NumPtr inp2, int size) {
+    final key = '${out.type.short}_${inp1.type.short}_${inp2.type.short}';
+    final err = cuda.subs[key]!(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, size);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
   }
 
-  void multiply(CudaStream stream, Ptr out, Ptr inp1, Ptr inp2, int size) {
-    final key =
-        '${NumType.typeOf(out).short}_${NumType.typeOf(inp1).short}_${NumType.typeOf(inp2).short}';
-    final err = cuda.muls[key]!(stream.ptr, out, inp1, inp2, size);
+  void mul(CudaStream stream, NumPtr out, NumPtr inp1, NumPtr inp2, int size) {
+    final key = '${out.type.short}_${inp1.type.short}_${inp2.type.short}';
+    final err = cuda.muls[key]!(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, size);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
   }
 
-  void divide(CudaStream stream, Ptr out, Ptr inp1, Ptr inp2, int size) {
-    final key =
-        '${NumType.typeOf(out).short}_${NumType.typeOf(inp1).short}_${NumType.typeOf(inp2).short}';
-    final err = cuda.divs[key]!(stream.ptr, out, inp1, inp2, size);
+  void div(CudaStream stream, NumPtr out, NumPtr inp1, NumPtr inp2, int size) {
+    final key = '${out.type.short}_${inp1.type.short}_${inp2.type.short}';
+    final err = cuda.divs[key]!(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, size);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }

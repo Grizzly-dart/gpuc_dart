@@ -42,6 +42,13 @@ typedef VoidPtr = ffi.Pointer<ffi.Void>;
 typedef StrPtr = ffi.Pointer<ffi.Utf8>;
 typedef F64Ptr = ffi.Pointer<ffi.Double>;
 
+class NumPtr {
+  final Ptr ptr;
+  final NumType type;
+
+  NumPtr(this.ptr, this.type);
+}
+
 final class CDim2 extends ffi.Struct {
   @ffi.Uint32()
   external int r;

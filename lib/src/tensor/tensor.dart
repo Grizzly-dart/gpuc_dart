@@ -26,7 +26,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
 
   Onesor<T> get as1d;
 
-  NumType<T> get numType => as1d.numType;
+  NumType<T> get numType => as1d.type;
 
   Dim get size;
 
@@ -76,7 +76,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
       final inp2Buf = CuOnesor.copy(stream, b.as1d, context: ctx);
       final outType = numType.bytes > b.numType.bytes ? numType : b.numType;
       final outBuf = CuOnesor.sized(stream, outType, nel, context: ctx);
-      cuda.addition(stream, outBuf.ptr, inp1Buf.ptr, inp2Buf.ptr, nel);
+      cuda.addition(stream, outBuf, inp1Buf, inp2Buf, nel);
       final out = outBuf.read(stream: stream);
       ctx.releaseOnErr(out);
       final outTensor = out.toTensor(size, name: '$name + ${b.name}');
@@ -104,7 +104,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
       final inp2Buf = CuOnesor.copy(stream, b.as1d, context: ctx);
       final outType = numType.bytes > b.numType.bytes ? numType : b.numType;
       final outBuf = CuOnesor.sized(stream, outType, nel, context: ctx);
-      cuda.subtract(stream, outBuf.ptr, inp1Buf.ptr, inp2Buf.ptr, nel);
+      cuda.sub(stream, outBuf, inp1Buf, inp2Buf, nel);
       final out = outBuf.read(stream: stream);
       ctx.releaseOnErr(out);
       final outTensor = out.toTensor(size, name: '$name - ${b.name}');
@@ -132,7 +132,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
       final inp2Buf = CuOnesor.copy(stream, b.as1d, context: ctx);
       final outType = numType.bytes > b.numType.bytes ? numType : b.numType;
       final outBuf = CuOnesor.sized(stream, outType, nel, context: ctx);
-      cuda.multiply(stream, outBuf.ptr, inp1Buf.ptr, inp2Buf.ptr, nel);
+      cuda.mul(stream, outBuf, inp1Buf, inp2Buf, nel);
       final out = outBuf.read(stream: stream);
       ctx.releaseOnErr(out);
       final outTensor = out.toTensor(size, name: '$name * ${b.name}');
@@ -160,7 +160,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
       final inp2Buf = CuOnesor.copy(stream, b.as1d, context: ctx);
       final outType = numType.bytes > b.numType.bytes ? numType : b.numType;
       final outBuf = CuOnesor.sized(stream, outType, nel, context: ctx);
-      cuda.divide(stream, outBuf.ptr, inp1Buf.ptr, inp2Buf.ptr, nel);
+      cuda.div(stream, outBuf, inp1Buf, inp2Buf, nel);
       final out = outBuf.read(stream: stream);
       ctx.releaseOnErr(out);
       final outTensor = out.toTensor(size, name: '$name / ${b.name}');

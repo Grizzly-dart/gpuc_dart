@@ -13,7 +13,7 @@ export 'u16conesor.dart';
 export 'i8conesor.dart';
 export 'u8conesor.dart';
 
-abstract mixin class COnesor<T extends num> implements Onesor<T> {
+abstract mixin class COnesor<T extends num> implements Onesor<T>, NumPtr {
   @override
   DeviceType get deviceType => DeviceType.c;
 
