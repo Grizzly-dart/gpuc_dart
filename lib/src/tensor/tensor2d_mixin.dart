@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
 import 'package:gpuc_dart/src/native/cuda/cuda_extension_split.dart';

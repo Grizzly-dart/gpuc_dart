@@ -2,7 +2,6 @@ export 'c.dart';
 export 'cuda/cuda.dart';
 export 'tenson/tenson.dart';
 
-import 'dart:ffi' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 void initializeNativeTensorLibrary(

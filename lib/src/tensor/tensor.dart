@@ -62,6 +62,118 @@ abstract mixin class Tensor<T extends num> implements Resource {
         OffsetTypedTensorView(this, size.numMatricesDim.unravel(index)));
   }
 
+  Future<Tensor> operator +(covariant FutureOr<Tensor> other) async {
+    final b = await other;
+    if (b.nel != nel) {
+      throw ArgumentError('Size mismatch');
+    }
+    final ctx = Context();
+    try {
+      int deviceId = 0; // TODO implement device selection
+      final stream = CudaStream(deviceId, context: ctx);
+      // TODO implement split processing if not all data fits into memory or to maximize parallelism
+      final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
+      final inp2Buf = CuOnesor.copy(stream, b.as1d, context: ctx);
+      final outType = numType.bytes > b.numType.bytes ? numType : b.numType;
+      final outBuf = CuOnesor.sized(stream, outType, nel, context: ctx);
+      cuda.addition(stream, outBuf.ptr, inp1Buf.ptr, inp2Buf.ptr, nel);
+      final out = outBuf.read(stream: stream);
+      ctx.releaseOnErr(out);
+      final outTensor = out.toTensor(size, name: '$name + ${b.name}');
+      await stream.sync();
+      return outTensor;
+    } catch (e) {
+      ctx.release(isError: true);
+      rethrow;
+    } finally {
+      ctx.release();
+    }
+  }
+
+  Future<Tensor> operator -(covariant FutureOr<Tensor> other) async {
+    final b = await other;
+    if (b.nel != nel) {
+      throw ArgumentError('Size mismatch');
+    }
+    final ctx = Context();
+    try {
+      int deviceId = 0; // TODO implement device selection
+      final stream = CudaStream(deviceId, context: ctx);
+      // TODO implement split processing if not all data fits into memory or to maximize parallelism
+      final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
+      final inp2Buf = CuOnesor.copy(stream, b.as1d, context: ctx);
+      final outType = numType.bytes > b.numType.bytes ? numType : b.numType;
+      final outBuf = CuOnesor.sized(stream, outType, nel, context: ctx);
+      cuda.subtract(stream, outBuf.ptr, inp1Buf.ptr, inp2Buf.ptr, nel);
+      final out = outBuf.read(stream: stream);
+      ctx.releaseOnErr(out);
+      final outTensor = out.toTensor(size, name: '$name - ${b.name}');
+      await stream.sync();
+      return outTensor;
+    } catch (e) {
+      ctx.release(isError: true);
+      rethrow;
+    } finally {
+      ctx.release();
+    }
+  }
+
+  Future<Tensor> operator *(covariant FutureOr<Tensor> other) async {
+    final b = await other;
+    if (b.nel != nel) {
+      throw ArgumentError('Size mismatch');
+    }
+    final ctx = Context();
+    try {
+      int deviceId = 0; // TODO implement device selection
+      final stream = CudaStream(deviceId, context: ctx);
+      // TODO implement split processing if not all data fits into memory or to maximize parallelism
+      final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
+      final inp2Buf = CuOnesor.copy(stream, b.as1d, context: ctx);
+      final outType = numType.bytes > b.numType.bytes ? numType : b.numType;
+      final outBuf = CuOnesor.sized(stream, outType, nel, context: ctx);
+      cuda.multiply(stream, outBuf.ptr, inp1Buf.ptr, inp2Buf.ptr, nel);
+      final out = outBuf.read(stream: stream);
+      ctx.releaseOnErr(out);
+      final outTensor = out.toTensor(size, name: '$name * ${b.name}');
+      await stream.sync();
+      return outTensor;
+    } catch (e) {
+      ctx.release(isError: true);
+      rethrow;
+    } finally {
+      ctx.release();
+    }
+  }
+
+  Future<Tensor> operator /(covariant FutureOr<Tensor> other) async {
+    final b = await other;
+    if (b.nel != nel) {
+      throw ArgumentError('Size mismatch');
+    }
+    final ctx = Context();
+    try {
+      int deviceId = 0; // TODO implement device selection
+      final stream = CudaStream(deviceId, context: ctx);
+      // TODO implement split processing if not all data fits into memory or to maximize parallelism
+      final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
+      final inp2Buf = CuOnesor.copy(stream, b.as1d, context: ctx);
+      final outType = numType.bytes > b.numType.bytes ? numType : b.numType;
+      final outBuf = CuOnesor.sized(stream, outType, nel, context: ctx);
+      cuda.divide(stream, outBuf.ptr, inp1Buf.ptr, inp2Buf.ptr, nel);
+      final out = outBuf.read(stream: stream);
+      ctx.releaseOnErr(out);
+      final outTensor = out.toTensor(size, name: '$name / ${b.name}');
+      await stream.sync();
+      return outTensor;
+    } catch (e) {
+      ctx.release(isError: true);
+      rethrow;
+    } finally {
+      ctx.release();
+    }
+  }
+
   Future<Tensor<T>> t({Tensor<T>? out});
 
   Future<Tensor<T>> matmul(FutureOr<Tensor<T>> other, {Tensor<T>? out});
@@ -92,19 +204,20 @@ abstract mixin class Tensor<T extends num> implements Resource {
         final outSize = Dim([...b.size.asList, size.cols]);
         final stream = CudaStream(deviceId, context: ctx);
 
-        final inpBuf = CuOnesor.copy(as1d, stream: stream, context: ctx);
-        final indicesBuf = CuOnesor.copy(b.as1d, stream: stream, context: ctx);
+        final inpBuf = CuOnesor.copy(stream, as1d, context: ctx);
+        final indicesBuf = CuOnesor.copy(stream, b.as1d, context: ctx);
         final outBuf =
             CuOnesor.sized(stream, numType, outSize.nel, context: ctx);
         cuda.pickRows(stream, outBuf.ptr, inpBuf.ptr, indicesBuf.ptr,
             outSize.squeeze2D());
-        if(out != null) {
+        if (out != null) {
           outBuf.copyTo(out.as1d, stream: stream);
         } else {
           final outOnesor = outBuf.read(stream: stream);
           ctx.releaseOnErr(outOnesor);
           out = outOnesor.toTensor(outSize);
         }
+        await stream.sync();
         return out;
       }
 

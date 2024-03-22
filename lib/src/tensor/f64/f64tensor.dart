@@ -90,9 +90,6 @@ abstract class F64Tensor implements Tensor<double> {
     return F64Tensor(data, size, name: name, context: context);
   }
 
-  @override
-  F64Tensor slice(/* Dim | int | Iterable<int> */ index, {Context? context});
-
   F64Tensor operator [](dynamic /* Dim | int | Iterable<int> */ index);
 
   void operator []=(
@@ -121,14 +118,6 @@ abstract class F64Tensor implements Tensor<double> {
   Future<Tensor<double>> matmulCaddT(
       FutureOr<Tensor<double>> other, FutureOr<Tensor<double>> c,
       {Tensor<double>? out});
-
-  Future<F64Tensor> operator +(covariant FutureOr<F64Tensor> other);
-
-  Future<F64Tensor> operator -(covariant FutureOr<F64Tensor> other);
-
-  Future<F64Tensor> operator *(covariant FutureOr<F64Tensor> other);
-
-  Future<F64Tensor> operator /(covariant FutureOr<F64Tensor> other);
 
   Future<F64Tensor> sumRows({int colDims = 1});
 

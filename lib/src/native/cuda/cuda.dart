@@ -152,33 +152,38 @@ class Cuda {
     }
   }
 
-  void addition(CudaStream stream, ffi.Pointer<ffi.Void> out,
-      ffi.Pointer<ffi.Void> inp1, ffi.Pointer<ffi.Void> inp2, int size) {
-    final err = cuda.addition(stream.ptr, out, inp1, inp2, size);
+  void addition(CudaStream stream, ffi.Pointer out, ffi.Pointer inp1,
+      ffi.Pointer inp2, int size) {
+    final key =
+        '${NumType.typeOf(out).short}_${NumType.typeOf(inp1).short}_${NumType.typeOf(inp2).short}';
+    final err = cuda.additions[key]!(stream.ptr, out, inp1, inp2, size);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
   }
 
-  void subtract(CudaStream stream, ffi.Pointer<ffi.Void> out,
-      ffi.Pointer<ffi.Void> inp1, ffi.Pointer<ffi.Void> inp2, int size) {
-    final err = cuda.subtract(stream.ptr, out, inp1, inp2, size);
+  void subtract(CudaStream stream, Ptr out, Ptr inp1, Ptr inp2, int size) {
+    final key =
+        '${NumType.typeOf(out).short}_${NumType.typeOf(inp1).short}_${NumType.typeOf(inp2).short}';
+    final err = cuda.subs[key]!(stream.ptr, out, inp1, inp2, size);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
   }
 
-  void multiply(CudaStream stream, ffi.Pointer<ffi.Void> out,
-      ffi.Pointer<ffi.Void> inp1, ffi.Pointer<ffi.Void> inp2, int size) {
-    final err = cuda.multiply(stream.ptr, out, inp1, inp2, size);
+  void multiply(CudaStream stream, Ptr out, Ptr inp1, Ptr inp2, int size) {
+    final key =
+        '${NumType.typeOf(out).short}_${NumType.typeOf(inp1).short}_${NumType.typeOf(inp2).short}';
+    final err = cuda.muls[key]!(stream.ptr, out, inp1, inp2, size);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
   }
 
-  void divide(CudaStream stream, ffi.Pointer<ffi.Void> out,
-      ffi.Pointer<ffi.Void> inp1, ffi.Pointer<ffi.Void> inp2, int size) {
-    final err = cuda.divide(stream.ptr, out, inp1, inp2, size);
+  void divide(CudaStream stream, Ptr out, Ptr inp1, Ptr inp2, int size) {
+    final key =
+        '${NumType.typeOf(out).short}_${NumType.typeOf(inp1).short}_${NumType.typeOf(inp2).short}';
+    final err = cuda.divs[key]!(stream.ptr, out, inp1, inp2, size);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }

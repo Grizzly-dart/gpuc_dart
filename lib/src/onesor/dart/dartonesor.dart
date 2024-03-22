@@ -1,6 +1,3 @@
-import 'dart:collection';
-import 'dart:ffi' as ffi;
-
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 export 'f64dartonesor.dart';

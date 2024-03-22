@@ -20,10 +20,12 @@ class CudaFFI {
   final StrPtr Function(ffi.Pointer<CCudaStream>,
       ffi.Pointer<ffi.NativeFunction<ffi.Void Function(StrPtr)>>) syncStream;
 
-  final Op1D2Inp addition;
-  final Op1D2Inp subtract;
-  final Op1D2Inp multiply;
-  final Op1D2Inp divide;
+  final Map<String, Op1D2Inp> additions;
+  final Map<String, Op1D2Inp> subs;
+  final Map<String, Op1D2Inp> muls;
+  final Map<String, Op1D2Inp> divs;
+  final Map<String, OpE> casts;
+
   final Op2D sum2D;
 
   final StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, CDim3)
@@ -57,10 +59,11 @@ class CudaFFI {
     required this.createStream,
     required this.destroyStream,
     required this.syncStream,
-    required this.addition,
-    required this.subtract,
-    required this.multiply,
-    required this.divide,
+    required this.additions,
+    required this.subs,
+    required this.muls,
+    required this.divs,
+    required this.casts,
     required this.sum2D,
     required this.transpose2D,
     required this.pickRows,
@@ -123,14 +126,31 @@ class CudaFFI {
                 ffi.Pointer<ffi.NativeFunction<ffi.Void Function(StrPtr)>>)>(
         'libtcCudaSyncStream');
 
-    final addition =
-        dylib.lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaAdd2');
-    final subtract =
-        dylib.lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaSubtract2');
-    final multiply =
-        dylib.lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaMultiply2');
-    final divide =
-        dylib.lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaDivide2');
+    final additions = <String, Op1D2Inp>{};
+    final subs = <String, Op1D2Inp>{};
+    final muls = <String, Op1D2Inp>{};
+    final divs = <String, Op1D2Inp>{};
+    final casts = <String, OpE>{};
+    for (final o in NumType.values) {
+      for (final inp1 in NumType.values) {
+        for (final inp2 in NumType.values) {
+          final key = '${o.short}_${inp1.short}_${inp2.short}';
+          additions[key] = dylib
+              .lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaAdd2_$key');
+          subs[key] = dylib
+              .lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaSub2_$key');
+          muls[key] = dylib
+              .lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaMul2_$key');
+          divs[key] = dylib
+              .lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaDiv2_$key');
+        }
+        if(o != inp1) {
+          final key = '${o.short}_${inp1.short}';
+          casts[key] = dylib.lookupFunction<OpENative, OpE>('libtcCudaCast_$key');
+        }
+      }
+    }
+
     final sum2D = dylib.lookupFunction<Op2DNative, Op2D>('libtcCudaSum2D');
 
     final transpose2D = dylib.lookupFunction<
@@ -179,10 +199,11 @@ class CudaFFI {
       createStream: createStream,
       destroyStream: destroyStream,
       syncStream: syncStream,
-      addition: addition,
-      subtract: subtract,
-      multiply: multiply,
-      divide: divide,
+      additions: additions,
+      subs: subs,
+      muls: muls,
+      divs: divs,
+      casts: casts,
       sum2D: sum2D,
       transpose2D: transpose2D,
       pickRows: pickRows,
@@ -196,10 +217,14 @@ class CudaFFI {
   }
 }
 
-typedef Op1D2Inp = StrPtr Function(ffi.Pointer<CCudaStream> stream, VoidPtr out,
-    VoidPtr inp1, VoidPtr inp2, int size);
+typedef Op1D2Inp = StrPtr Function(
+    ffi.Pointer<CCudaStream> stream, Ptr out, Ptr inp1, Ptr inp2, int size);
 typedef Op1D2InpNative = StrPtr Function(ffi.Pointer<CCudaStream> stream,
-    VoidPtr out, VoidPtr inp1, VoidPtr inp2, ffi.Uint32 size);
+    Ptr out, Ptr inp1, Ptr inp2, ffi.Uint64 size);
+typedef OpE = StrPtr Function(
+    ffi.Pointer<CCudaStream> stream, Ptr out, Ptr inp1, int size);
+typedef OpENative = StrPtr Function(
+    ffi.Pointer<CCudaStream> stream, Ptr out, Ptr inp1, ffi.Uint64 size);
 
 typedef Op2D = StrPtr Function(
     ffi.Pointer<CCudaStream> stream, VoidPtr out, VoidPtr inp1, CDim2);

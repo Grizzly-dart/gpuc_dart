@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:gpuc_dart/gpuc_dart.dart';
 import 'package:text_table/text_table.dart';
 
@@ -7,8 +5,7 @@ export 'tensor_mixin.dart';
 
 mixin F64TensorMixin implements F64Tensor {
   // TODO start and length
-  @override
-  F64Tensor slice(/* Dim | int | Iterable<int> */ index, {Context? context}) {
+  /*F64Tensor slice(/* Dim | int | Iterable<int> */ index, {Context? context}) {
     if (index is! Dim) index = Dim.from(index);
     if (size.isIndex(index)) {
       throw ArgumentError('Index out of range');
@@ -17,7 +14,7 @@ mixin F64TensorMixin implements F64Tensor {
     final outSize = Dim(size.asList.skip(index.dims));
     return F64Tensor(as1d.slice(index.nel * outSize.nel, outSize.nel), outSize,
         context: context);
-  }
+  }*/
 
   @override
   F64Tensor operator [](dynamic /* Dim | int | Iterable<int> */ index) {
@@ -55,122 +52,6 @@ mixin F64TensorMixin implements F64Tensor {
       throw ArgumentError('Index out of range');
     }
     return as1d.view(index * size2d.cols, size2d.cols);
-  }
-
-  @override
-  Future<F64Tensor> operator +(covariant FutureOr<F64Tensor> other) async {
-    F64Tensor b = await other;
-    if (b.nel != nel) {
-      throw ArgumentError('Size mismatch');
-    }
-    final ctx = Context();
-    try {
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1 = F64CuOnesor.copy(stream, as1d, context: ctx);
-      final inp2 = F64CuOnesor.copy(stream, b.as1d, context: ctx);
-      final out = F64CuOnesor.sized(stream, nel, context: ctx);
-      cuda.addition(
-          stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
-      final outTensor = F64Tensor.sized(size, name: '$name + ${b.name}');
-      ctx.releaseOnErr(outTensor);
-      out.copyTo(outTensor.as1d, stream: stream);
-      await stream.sync();
-      return outTensor;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
-    }
-  }
-
-  @override
-  Future<F64Tensor> operator -(covariant FutureOr<F64Tensor> other) async {
-    F64Tensor b = await other;
-    if (b.nel != nel) {
-      throw ArgumentError('Size mismatch');
-    }
-    final ctx = Context();
-    try {
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1 = F64CuOnesor.copy(stream, as1d, context: ctx);
-      final inp2 = F64CuOnesor.copy(stream, b.as1d, context: ctx);
-      final out = F64CuOnesor.sized(stream, nel, context: ctx);
-      cuda.subtract(
-          stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
-      final outTensor = F64Tensor.sized(size, name: '$name + ${b.name}');
-      ctx.releaseOnErr(outTensor);
-      out.copyTo(outTensor.as1d, stream: stream);
-      await stream.sync();
-      return outTensor;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
-    }
-  }
-
-  @override
-  Future<F64Tensor> operator *(covariant FutureOr<F64Tensor> other) async {
-    F64Tensor b = await other;
-    if (b.nel != nel) {
-      throw ArgumentError('Size mismatch');
-    }
-    final ctx = Context();
-    try {
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1 = F64CuOnesor.copy(stream, as1d, context: ctx);
-      final inp2 = F64CuOnesor.copy(stream, b.as1d, context: ctx);
-      final out = F64CuOnesor.sized(stream, nel, context: ctx);
-      cuda.multiply(
-          stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
-      final outTensor = F64Tensor.sized(size, name: '$name + ${b.name}');
-      ctx.releaseOnErr(outTensor);
-      out.copyTo(outTensor.as1d, stream: stream);
-      await stream.sync();
-      return outTensor;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
-    }
-  }
-
-  @override
-  Future<F64Tensor> operator /(covariant FutureOr<F64Tensor> other) async {
-    F64Tensor b = await other;
-    if (b.nel != nel) {
-      throw ArgumentError('Size mismatch');
-    }
-    final ctx = Context();
-    try {
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1 = F64CuOnesor.copy(stream, as1d, context: ctx);
-      final inp2 = F64CuOnesor.copy(stream, b.as1d, context: ctx);
-      final out = F64CuOnesor.sized(stream, nel, context: ctx);
-      cuda.divide(
-          stream, out.ptr.cast(), inp1.ptr.cast(), inp2.ptr.cast(), nel);
-      final outTensor = F64Tensor.sized(size, name: '$name + ${b.name}');
-      ctx.releaseOnErr(outTensor);
-      out.copyTo(outTensor.as1d, stream: stream);
-      await stream.sync();
-      return outTensor;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
-    }
   }
 
   /*

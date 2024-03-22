@@ -27,7 +27,7 @@ class Linear extends Layer<double> {
 
   Linear(int inFeatures, int outFeatures, {bool bias = true}) {
     // TODO fill with random normal
-    weight = F64Tensor.generate(Dim2(inFeatures, outFeatures), (_, _1) => 0);
+    weight = F64Tensor.generate(Dim2(inFeatures, outFeatures), (_, v) => 0);
     if (bias) {
       this.bias = F64Tensor.sized(Dim([outFeatures]));
     } else {

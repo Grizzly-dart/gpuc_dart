@@ -1,5 +1,4 @@
 import 'package:gpuc_dart/gpuc_dart.dart';
-import 'package:gpuc_dart/src/nn2d/nn2d.dart';
 
 Future<void> main() async {
   initializeNativeTensorLibrary();

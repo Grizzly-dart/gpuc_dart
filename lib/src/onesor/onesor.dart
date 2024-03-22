@@ -41,7 +41,7 @@ abstract mixin class Onesor<T extends num> implements Resource, List<T> {
 
   T get defaultValue;
 
-  Tensor<T> toTensor(Dim size, {Context? context});
+  Tensor<T> toTensor(Dim size, {String name = '', Context? context});
 
   @override
   void release();
@@ -66,8 +66,8 @@ abstract mixin class F64Onesor implements Onesor<double> {
   int get bytesPerItem => 8;
 
   @override
-  F64Tensor toTensor(Dim size, {Context? context}) =>
-      F64Tensor(this, size, context: context);
+  F64Tensor toTensor(Dim size, {String name = '', Context? context}) =>
+      F64Tensor(this, size, name: name, context: context);
 }
 
 abstract mixin class F32Onesor implements Onesor<double> {
@@ -84,8 +84,8 @@ abstract mixin class F32Onesor implements Onesor<double> {
   int get bytesPerItem => 4;
 
   @override
-  F32Tensor toTensor(Dim size, {Context? context}) =>
-      F32Tensor(this, size, context: context);
+  F32Tensor toTensor(Dim size, {String name = '', Context? context}) =>
+      F32Tensor(this, size, name: name, context: context);
 }
 
 abstract mixin class U64Onesor implements Onesor<int> {
@@ -102,8 +102,8 @@ abstract mixin class U64Onesor implements Onesor<int> {
   U64Onesor slice(int start, int length, {Context? context});
 
   @override
-  U64Tensor toTensor(Dim size, {Context? context}) =>
-      U64Tensor(this, size, context: context);
+  U64Tensor toTensor(Dim size, {String name = '', Context? context}) =>
+      U64Tensor(this, size, name: name, context: context);
 }
 
 abstract mixin class I64Onesor implements Onesor<int> {
@@ -117,8 +117,8 @@ abstract mixin class I64Onesor implements Onesor<int> {
   int get bytesPerItem => 8;
 
   @override
-  I64Tensor toTensor(Dim size, {Context? context}) =>
-      I64Tensor(this, size, context: context);
+  I64Tensor toTensor(Dim size, {String name = '', Context? context}) =>
+      I64Tensor(this, size, name: name, context: context);
 }
 
 abstract mixin class I32Onesor implements Onesor<int> {
@@ -132,8 +132,8 @@ abstract mixin class I32Onesor implements Onesor<int> {
   int get bytesPerItem => 4;
 
   @override
-  I32Tensor toTensor(Dim size, {Context? context}) =>
-      I32Tensor(this, size, context: context);
+  I32Tensor toTensor(Dim size, {String name = '', Context? context}) =>
+      I32Tensor(this, size, name: name, context: context);
 }
 
 abstract mixin class U32Onesor implements Onesor<int> {
@@ -147,8 +147,8 @@ abstract mixin class U32Onesor implements Onesor<int> {
   int get bytesPerItem => 4;
 
   @override
-  U32Tensor toTensor(Dim size, {Context? context}) =>
-      U32Tensor(this, size, context: context);
+  U32Tensor toTensor(Dim size, {String name = '', Context? context}) =>
+      U32Tensor(this, size, name: name, context: context);
 }
 
 abstract mixin class I16Onesor implements Onesor<int> {
@@ -162,8 +162,8 @@ abstract mixin class I16Onesor implements Onesor<int> {
   int get bytesPerItem => 2;
 
   @override
-  I16Tensor toTensor(Dim size, {Context? context}) =>
-      I16Tensor(this, size, context: context);
+  I16Tensor toTensor(Dim size, {String name = '', Context? context}) =>
+      I16Tensor(this, size, name: name, context: context);
 }
 
 abstract mixin class U16Onesor implements Onesor<int> {
@@ -177,8 +177,8 @@ abstract mixin class U16Onesor implements Onesor<int> {
   int get bytesPerItem => 2;
 
   @override
-  U16Tensor toTensor(Dim size, {Context? context}) =>
-      U16Tensor(this, size, context: context);
+  U16Tensor toTensor(Dim size, {String name = '', Context? context}) =>
+      U16Tensor(this, size, name: name, context: context);
 }
 
 abstract mixin class I8Onesor implements Onesor<int> {
@@ -192,8 +192,8 @@ abstract mixin class I8Onesor implements Onesor<int> {
   int get bytesPerItem => 1;
 
   @override
-  I8Tensor toTensor(Dim size, {Context? context}) =>
-      I8Tensor(this, size, context: context);
+  I8Tensor toTensor(Dim size, {String name = '', Context? context}) =>
+      I8Tensor(this, size, name: name, context: context);
 }
 
 abstract mixin class U8Onesor implements Onesor<int> {
@@ -207,8 +207,8 @@ abstract mixin class U8Onesor implements Onesor<int> {
   int get bytesPerItem => 1;
 
   @override
-  U8Tensor toTensor(Dim size, {Context? context}) =>
-      U8Tensor(this, size, context: context);
+  U8Tensor toTensor(Dim size, {String name = '', Context? context}) =>
+      U8Tensor(this, size, name: name, context: context);
 }
 
 enum DeviceType { c, dart, cuda, rocm, sycl }
@@ -235,14 +235,15 @@ class Device {
 class NumType<T> {
   final int id;
   final String name;
+  final String short;
   final ffi.SizedNativeType ffiType;
   final T defaultVal;
   final T minVal;
   final T maxVal;
-  final T bytesPerItem;
+  final T bytes;
 
-  const NumType._(this.name, this.id, this.ffiType, this.defaultVal,
-      this.minVal, this.maxVal, this.bytesPerItem);
+  const NumType._(this.name, this.id, this.short, this.ffiType, this.defaultVal,
+      this.minVal, this.maxVal, this.bytes);
 
   bool get isSInt =>
       ffiType is ffi.Int8 ||
@@ -259,6 +260,19 @@ class NumType<T> {
   bool get isXInt => isSInt || isUInt;
 
   bool get isFloat => ffiType is ffi.Float || ffiType is ffi.Double;
+
+  static const List<NumType> values = [
+    i8,
+    i16,
+    i32,
+    i64,
+    u8,
+    u16,
+    u32,
+    u64,
+    f32,
+    f64,
+  ];
 
   static NumType typeOf(ffi.Pointer ptr) {
     if (ptr is ffi.Float) {
@@ -287,22 +301,23 @@ class NumType<T> {
   }
 }
 
-const NumType<int> i8 = NumType._('int8', 0, ffi.Int8(), 0, -128, 127, 1);
+const NumType<int> i8 = NumType._('int8', 0, 'i8', ffi.Int8(), 0, -128, 127, 1);
 const NumType<int> i16 =
-    NumType._('int16', 1, ffi.Int16(), 0, -32768, 32767, 2);
+    NumType._('int16', 1, 'i16', ffi.Int16(), 0, -32768, 32767, 2);
 const NumType<int> i32 =
-    NumType._('int32', 2, ffi.Int32(), 0, -2147483648, 2147483647, 4);
-const NumType<int> i64 = NumType._(
-    'int64', 3, ffi.Int64(), 0, -9223372036854775808, 9223372036854775807, 8);
+    NumType._('int32', 2, 'i32', ffi.Int32(), 0, -2147483648, 2147483647, 4);
+const NumType<int> i64 = NumType._('int64', 3, 'i64', ffi.Int64(), 0,
+    -9223372036854775808, 9223372036854775807, 8);
 
-const NumType<int> u8 = NumType._('uint8', 10, ffi.Uint8(), 0, 0, 255, 1);
-const NumType<int> u16 = NumType._('uint16', 11, ffi.Uint16(), 0, 0, 65535, 2);
+const NumType<int> u8 = NumType._('uint8', 10, 'u8', ffi.Uint8(), 0, 0, 255, 1);
+const NumType<int> u16 =
+    NumType._('uint16', 11, 'u16', ffi.Uint16(), 0, 0, 65535, 2);
 const NumType<int> u32 =
-    NumType._('uint32', 12, ffi.Uint32(), 0, 0, 4294967295, 4);
+    NumType._('uint32', 12, 'u32', ffi.Uint32(), 0, 0, 4294967295, 4);
 const NumType<int> u64 =
-    NumType._('uint64', 13, ffi.Uint64(), 0, 0, 9223372036854775807, 8);
+    NumType._('uint64', 13, 'u64', ffi.Uint64(), 0, 0, 9223372036854775807, 8);
 
-const NumType<double> f32 = NumType._('float32', 22, ffi.Float(), 0.0,
+const NumType<double> f32 = NumType._('float32', 22, 'f32', ffi.Float(), 0.0,
     double.negativeInfinity, double.infinity, 4);
-const NumType<double> f64 = NumType._('float64', 23, ffi.Double(), 0.0,
+const NumType<double> f64 = NumType._('float64', 23, 'f64', ffi.Double(), 0.0,
     double.negativeInfinity, double.infinity, 8);

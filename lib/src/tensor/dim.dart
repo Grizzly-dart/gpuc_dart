@@ -140,8 +140,10 @@ mixin DimMixin implements Dim {
   @override
   Dim extend2D(Iterable<int> sizes) => Dim([...sizes, rows, cols]);
 
+  @override
   Dim withNumMatrices(Dim other) => Dim([...numMatricesDim.asList, rows, cols]);
 
+  @override
   Dim withMatrix(int rows, int cols) =>
       Dim([...numMatricesDim.asList, rows, cols]);
 
