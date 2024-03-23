@@ -208,6 +208,146 @@ abstract mixin class Tensor<T extends num> implements Resource {
     }
   }
 
+  Future<Tensor<double>> meanRows(
+      {int colDims = 1, Tensor<double>? out}) async {
+    if (size.dims < 2) {
+      throw StateError('Must be at least a 2D tensor');
+    }
+    Dim inpSize = size.squeeze2D(colDims: colDims);
+    Dim outSize = Dim2(inpSize.rows, 1);
+    final ctx = Context();
+    try {
+      // TODO implement Dart summing for web
+      // TODO implement C summing for non-web
+      int deviceId = 0; // TODO implement device selection
+      final stream = CudaStream(deviceId, context: ctx);
+      final inp = CuOnesor.copy(stream, as1d, context: ctx);
+      final outCuda = F64CuOnesor.sized(stream, outSize.nel, context: ctx);
+      cuda.mean2d(stream, outCuda, inp, inpSize.to2D());
+      if (out == null) {
+        out = F64Tensor.sized(outSize, name: 'sum2D($name)');
+        ctx.releaseOnErr(out);
+      } else {
+        if (out.nel != outSize.nel) {
+          throw ArgumentError('Output size mismatch');
+        }
+      }
+      outCuda.copyTo(out.as1d, stream: stream);
+      await stream.sync();
+      return out;
+    } catch (e) {
+      ctx.release(isError: true);
+      rethrow;
+    } finally {
+      ctx.release();
+    }
+  }
+
+  Future<Tensor<double>> varianceRows(
+      {int colDims = 1, Tensor<double>? out, int correction = 0}) async {
+    if (size.dims < 2) {
+      throw StateError('Must be at least a 2D tensor');
+    }
+    Dim inpSize = size.squeeze2D(colDims: colDims);
+    Dim outSize = Dim2(inpSize.rows, 1);
+    final ctx = Context();
+    try {
+      // TODO implement Dart summing for web
+      // TODO implement C summing for non-web
+      int deviceId = 0; // TODO implement device selection
+      final stream = CudaStream(deviceId, context: ctx);
+      final inp = CuOnesor.copy(stream, as1d, context: ctx);
+      final outCuda = F64CuOnesor.sized(stream, outSize.nel, context: ctx);
+      cuda.variance2d(stream, outCuda, inp, inpSize.to2D(), correction);
+      if (out == null) {
+        out = F64Tensor.sized(outSize, name: 'sum2D($name)');
+        ctx.releaseOnErr(out);
+      } else {
+        if (out.nel != outSize.nel) {
+          throw ArgumentError('Output size mismatch');
+        }
+      }
+      outCuda.copyTo(out.as1d, stream: stream);
+      await stream.sync();
+      return out;
+    } catch (e) {
+      ctx.release(isError: true);
+      rethrow;
+    } finally {
+      ctx.release();
+    }
+  }
+
+  Future<Tensor<double>> stdRows(
+      {int colDims = 1, Tensor<double>? out, int correction = 0}) async {
+    if (size.dims < 2) {
+      throw StateError('Must be at least a 2D tensor');
+    }
+    Dim inpSize = size.squeeze2D(colDims: colDims);
+    Dim outSize = Dim2(inpSize.rows, 1);
+    final ctx = Context();
+    try {
+      // TODO implement Dart summing for web
+      // TODO implement C summing for non-web
+      int deviceId = 0; // TODO implement device selection
+      final stream = CudaStream(deviceId, context: ctx);
+      final inp = CuOnesor.copy(stream, as1d, context: ctx);
+      final outCuda = F64CuOnesor.sized(stream, outSize.nel, context: ctx);
+      cuda.std2d(stream, outCuda, inp, inpSize.to2D(), correction);
+      if (out == null) {
+        out = F64Tensor.sized(outSize, name: 'sum2D($name)');
+        ctx.releaseOnErr(out);
+      } else {
+        if (out.nel != outSize.nel) {
+          throw ArgumentError('Output size mismatch');
+        }
+      }
+      outCuda.copyTo(out.as1d, stream: stream);
+      await stream.sync();
+      return out;
+    } catch (e) {
+      ctx.release(isError: true);
+      rethrow;
+    } finally {
+      ctx.release();
+    }
+  }
+
+  Future<Tensor<double>> normalizeRows(
+      {int colDims = 1, Tensor<double>? out, double epsilon = 1e-5}) async {
+    if (size.dims < 2) {
+      throw StateError('Must be at least a 2D tensor');
+    }
+    Dim inpSize = size.squeeze2D(colDims: colDims);
+    Dim outSize = Dim2(inpSize.rows, 1);
+    final ctx = Context();
+    try {
+      // TODO implement Dart summing for web
+      // TODO implement C summing for non-web
+      int deviceId = 0; // TODO implement device selection
+      final stream = CudaStream(deviceId, context: ctx);
+      final inp = CuOnesor.copy(stream, as1d, context: ctx);
+      final outCuda = F64CuOnesor.sized(stream, outSize.nel, context: ctx);
+      cuda.normalize2d(stream, outCuda, inp, inpSize.to2D(), epsilon);
+      if (out == null) {
+        out = F64Tensor.sized(outSize, name: 'sum2D($name)');
+        ctx.releaseOnErr(out);
+      } else {
+        if (out.nel != outSize.nel) {
+          throw ArgumentError('Output size mismatch');
+        }
+      }
+      outCuda.copyTo(out.as1d, stream: stream);
+      await stream.sync();
+      return out;
+    } catch (e) {
+      ctx.release(isError: true);
+      rethrow;
+    } finally {
+      ctx.release();
+    }
+  }
+
   Future<Tensor<T>> t({Tensor<T>? out});
 
   Future<Tensor<T>> matmul(FutureOr<Tensor<T>> other, {Tensor<T>? out});
