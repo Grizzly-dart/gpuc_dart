@@ -26,10 +26,13 @@ class CudaFFI {
   final Map<String, Op1D2Inp> divs;
   final Map<String, OpE> casts;
 
-  final Op2D sum2D;
+  final Op2d sum2d;
+  final Op2d mean2d;
+  final Variance2d variance2d;
+  final Normalize2d normalize2d;
 
   final StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, CDim3)
-      transpose2D;
+      transpose2d;
 
   final StrPtr Function(
           ffi.Pointer<CCudaStream>, VoidPtr, VoidPtr, VoidPtr, CDim2, int, int)
@@ -64,8 +67,11 @@ class CudaFFI {
     required this.muls,
     required this.divs,
     required this.casts,
-    required this.sum2D,
-    required this.transpose2D,
+    required this.sum2d,
+    required this.mean2d,
+    required this.variance2d,
+    required this.normalize2d,
+    required this.transpose2d,
     required this.pickRows,
     required this.matmul,
     required this.matmulT,
@@ -144,16 +150,22 @@ class CudaFFI {
           divs[key] = dylib
               .lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaDiv2_$key');
         }
-        if(o != inp1) {
+        if (o != inp1) {
           final key = '${o.short}_${inp1.short}';
-          casts[key] = dylib.lookupFunction<OpENative, OpE>('libtcCudaCast_$key');
+          casts[key] =
+              dylib.lookupFunction<OpENative, OpE>('libtcCudaCast_$key');
         }
       }
     }
 
-    final sum2D = dylib.lookupFunction<Op2DNative, Op2D>('libtcCudaSum2D');
+    final sum2d = dylib.lookupFunction<Op2DNative, Op2d>('libtcCudaSum2d');
+    final mean2d = dylib.lookupFunction<Op2DNative, Op2d>('libtcCudaMean2d');
+    final variance2d =
+        dylib.lookupFunction<Variance2DNative, Variance2d>('libtcCudaVariance2d');
+    final normalize2d = dylib.lookupFunction<Normalize2DNative, Normalize2d>(
+        'libtcCudaNormalize2d');
 
-    final transpose2D = dylib.lookupFunction<
+    final transpose2d = dylib.lookupFunction<
         StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, CDim3),
         StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr,
             CDim3)>('libtcCudaTranspose2d');
@@ -186,9 +198,9 @@ class CudaFFI {
             F64Ptr, int, int, int, int)>('libtcCudaMatMulTCadd');
 
     final maxPool2D =
-        dylib.lookupFunction<MaxPool2DNative, MaxPool2D>('libtcCudaMaxPool2D');
+        dylib.lookupFunction<MaxPool2DNative, MaxPool2D>('libtcCudaMaxPool2d');
     final conv2D =
-        dylib.lookupFunction<Conv2DNative, Conv2D>('libtcCudaConv2D');
+        dylib.lookupFunction<Conv2DNative, Conv2D>('libtcCudaConv2d');
 
     return CudaFFI(
       getDeviceProps: getDeviceProps,
@@ -204,8 +216,11 @@ class CudaFFI {
       muls: muls,
       divs: divs,
       casts: casts,
-      sum2D: sum2D,
-      transpose2D: transpose2D,
+      sum2d: sum2d,
+      mean2d: mean2d,
+      variance2d: variance2d,
+      normalize2d: normalize2d,
+      transpose2d: transpose2d,
       pickRows: pickRows,
       matmul: matmul,
       matmulT: matmulT,
@@ -226,10 +241,20 @@ typedef OpE = StrPtr Function(
 typedef OpENative = StrPtr Function(
     ffi.Pointer<CCudaStream> stream, Ptr out, Ptr inp1, ffi.Uint64 size);
 
-typedef Op2D = StrPtr Function(
-    ffi.Pointer<CCudaStream> stream, VoidPtr out, VoidPtr inp1, CDim2);
-typedef Op2DNative = StrPtr Function(
-    ffi.Pointer<CCudaStream> stream, VoidPtr out, VoidPtr inp1, CDim2);
+typedef Op2d = StrPtr Function(ffi.Pointer<CCudaStream> stream, Ptr out,
+    Ptr inp, CDim2, int outType, int inpType);
+typedef Op2DNative = StrPtr Function(ffi.Pointer<CCudaStream> stream, Ptr out,
+    Ptr inp, CDim2, ffi.Uint8, ffi.Uint8);
+
+typedef Variance2d = StrPtr Function(ffi.Pointer<CCudaStream> stream, Ptr out,
+    Ptr inp, CDim2, int correction, int calcStd, int outType, int inpType);
+typedef Variance2DNative = StrPtr Function(ffi.Pointer<CCudaStream> stream,
+    Ptr out, Ptr inp, CDim2, ffi.Uint64, ffi.Uint8, ffi.Uint8, ffi.Uint8);
+
+typedef Normalize2d = StrPtr Function(ffi.Pointer<CCudaStream> stream, Ptr out,
+    Ptr inp, CDim2, double epsilon, int outType, int inpType);
+typedef Normalize2DNative = StrPtr Function(ffi.Pointer<CCudaStream> stream,
+    Ptr out, Ptr inp, CDim2, ffi.Double, ffi.Uint8, ffi.Uint8);
 
 typedef MaxPool2D = ffi.Pointer<ffi.Utf8> Function(
   ffi.Pointer<CCudaStream>,

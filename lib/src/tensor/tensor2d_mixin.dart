@@ -5,35 +5,6 @@ import 'package:gpuc_dart/src/native/cuda/cuda_extension_split.dart';
 
 mixin F64Tensor2dMixin implements F64Tensor {
   @override
-  Future<F64Tensor> sumRows({int colDims = 1}) async {
-    if (size.dims < 2) {
-      throw StateError('Must be at least a 2D tensor');
-    }
-    Dim inpSize = size.squeeze2D(colDims: colDims);
-    Dim outSize = Dim2(inpSize.rows, 1);
-    final ctx = Context();
-    try {
-      // TODO implement Dart summing for web
-      // TODO implement C summing for non-web
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      final inp = F64CuOnesor.copy(stream, as1d, context: ctx);
-      final out = F64CuOnesor.sized(stream, outSize.nel, context: ctx);
-      cuda.sum2D(stream, out.ptr.cast(), inp.ptr.cast(), inpSize.to2D());
-      final outTensor = F64Tensor.sized(outSize, name: 'sum2D($name)');
-      ctx.releaseOnErr(outTensor);
-      out.copyTo(outTensor.as1d, stream: stream);
-      // await stream.sync();
-      return outTensor;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
-    }
-  }
-
-  @override
   Future<Tensor<double>> t({Tensor<double>? out}) async {
     if (size.dims < 2) {
       throw StateError('Must be at least a 2D tensor');

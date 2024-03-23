@@ -119,7 +119,5 @@ abstract class F64Tensor implements Tensor<double> {
       FutureOr<Tensor<double>> other, FutureOr<Tensor<double>> c,
       {Tensor<double>? out});
 
-  Future<F64Tensor> sumRows({int colDims = 1});
-
 // TODO Tensor rearrange(List<int> order, {DeviceType? forceDeviceType});
 }

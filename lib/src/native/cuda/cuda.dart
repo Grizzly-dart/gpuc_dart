@@ -130,7 +130,7 @@ class Cuda {
     final ctx = Context();
     try {
       final sizePtr = CDim3.from(size);
-      final err = cuda.transpose2D(stream.ptr, out, inp, sizePtr.ptr.ref);
+      final err = cuda.transpose2d(stream.ptr, out, inp, sizePtr.ptr.ref);
       if (err != ffi.nullptr) {
         throw CudaException(err.toDartString());
       }
@@ -186,12 +186,71 @@ class Cuda {
     }
   }
 
-  void sum2D(CudaStream stream, ffi.Pointer<ffi.Void> out,
-      ffi.Pointer<ffi.Void> inp, Dim2 inpS) {
+  void sum2d(CudaStream stream, NumPtr out, NumPtr inp, Dim2 inpS) {
     final ctx = Context();
     try {
       final sizePtr = CDim2.from(inpS);
-      final err = cuda.sum2D(stream.ptr, out, inp, sizePtr.ptr.ref);
+      final err = cuda.sum2d(stream.ptr, out.ptr, inp.ptr, sizePtr.ptr.ref,
+          out.type.id, inp.type.id);
+      if (err != ffi.nullptr) {
+        throw CudaException(err.toDartString());
+      }
+    } finally {
+      ctx.release();
+    }
+  }
+
+  void mean2d(CudaStream stream, NumPtr out, NumPtr inp, Dim2 inpS) {
+    final ctx = Context();
+    try {
+      final sizePtr = CDim2.from(inpS);
+      final err = cuda.mean2d(stream.ptr, out.ptr, inp.ptr, sizePtr.ptr.ref,
+          out.type.id, inp.type.id);
+      if (err != ffi.nullptr) {
+        throw CudaException(err.toDartString());
+      }
+    } finally {
+      ctx.release();
+    }
+  }
+
+  void variance2d(
+      CudaStream stream, NumPtr out, NumPtr inp, Dim2 inpS, int correction) {
+    final ctx = Context();
+    try {
+      final sizePtr = CDim2.from(inpS);
+      final err = cuda.variance2d(stream.ptr, out.ptr, inp.ptr, sizePtr.ptr.ref,
+          correction, 0, out.type.id, inp.type.id);
+      if (err != ffi.nullptr) {
+        throw CudaException(err.toDartString());
+      }
+    } finally {
+      ctx.release();
+    }
+  }
+
+  void std2d(
+      CudaStream stream, NumPtr out, NumPtr inp, Dim2 inpS, int correction) {
+    final ctx = Context();
+    try {
+      final sizePtr = CDim2.from(inpS);
+      final err = cuda.variance2d(stream.ptr, out.ptr, inp.ptr, sizePtr.ptr.ref,
+          correction, 0xFF, out.type.id, inp.type.id);
+      if (err != ffi.nullptr) {
+        throw CudaException(err.toDartString());
+      }
+    } finally {
+      ctx.release();
+    }
+  }
+
+  void normalize2d(
+      CudaStream stream, NumPtr out, NumPtr inp, Dim2 inpS, double epsilon) {
+    final ctx = Context();
+    try {
+      final sizePtr = CDim2.from(inpS);
+      final err = cuda.normalize2d(stream.ptr, out.ptr, inp.ptr,
+          sizePtr.ptr.ref, epsilon, out.type.id, inp.type.id);
       if (err != ffi.nullptr) {
         throw CudaException(err.toDartString());
       }
