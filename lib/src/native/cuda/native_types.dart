@@ -64,8 +64,15 @@ class CudaFFI {
           ffi.Pointer<CCudaStream>, Ptr out, Ptr inp, int, double, int)
       eluActivation;
 
-  final StrPtr Function(ffi.Pointer<CCudaStream>, Ptr out, Ptr inp, int, int)
-      reluActivation;
+  final Op1d1InpS sigmoidActivation;
+  final Op1d1InpS siluActivation;
+  final StrPtr Function(ffi.Pointer<CCudaStream>, Ptr out, Ptr inp, int size,
+      int beta, int threshold, int dataType) softplusActivation;
+  final Op1d1InpS softsignActivation;
+  final Op1d1InpS mishActivation;
+
+  final StrPtr Function(ffi.Pointer<CCudaStream>, Ptr out, Ptr inp,
+      Ptr threshold, Ptr value, int, int) minThreshold;
 
   CudaFFI({
     required this.getDeviceProps,
@@ -100,7 +107,12 @@ class CudaFFI {
     required this.maxPool2D,
     required this.conv2D,
     required this.eluActivation,
-    required this.reluActivation,
+    required this.sigmoidActivation,
+    required this.siluActivation,
+    required this.softsignActivation,
+    required this.softplusActivation,
+    required this.mishActivation,
+    required this.minThreshold,
   });
 
   static CudaFFI? instance;
@@ -157,9 +169,12 @@ class CudaFFI {
     final sin = dylib.lookupFunction<Op1d1InpNative, Op1d1Inp>('libtcCudaSin');
     final cos = dylib.lookupFunction<Op1d1InpNative, Op1d1Inp>('libtcCudaCos');
     final tan = dylib.lookupFunction<Op1d1InpNative, Op1d1Inp>('libtcCudaTan');
-    final sinh = dylib.lookupFunction<Op1d1InpNative, Op1d1Inp>('libtcCudaSinh');
-    final cosh = dylib.lookupFunction<Op1d1InpNative, Op1d1Inp>('libtcCudaCosh');
-    final tanh = dylib.lookupFunction<Op1d1InpNative, Op1d1Inp>('libtcCudaTanh');
+    final sinh =
+        dylib.lookupFunction<Op1d1InpNative, Op1d1Inp>('libtcCudaSinh');
+    final cosh =
+        dylib.lookupFunction<Op1d1InpNative, Op1d1Inp>('libtcCudaCosh');
+    final tanh =
+        dylib.lookupFunction<Op1d1InpNative, Op1d1Inp>('libtcCudaTanh');
 
     final additions = <String, Op1d2Inp>{};
     final subs = <String, Op1d2Inp>{};
@@ -236,11 +251,24 @@ class CudaFFI {
             ffi.Double, ffi.Uint8),
         StrPtr Function(ffi.Pointer<CCudaStream>, Ptr, Ptr, int, double,
             int)>('libtcCudaELU');
-    final reluActivation = dylib.lookupFunction<
-        StrPtr Function(
-            ffi.Pointer<CCudaStream>, Ptr, Ptr, ffi.Uint64, ffi.Uint8),
-        StrPtr Function(
-            ffi.Pointer<CCudaStream>, Ptr, Ptr, int, int)>('libtcCudaRELU');
+    final sigmoid =
+        dylib.lookupFunction<Op1d1InpSNative, Op1d1InpS>('libtcCudaSigmoid');
+    final silu =
+        dylib.lookupFunction<Op1d1InpSNative, Op1d1InpS>('libtcCudaSiLU');
+    final softplusActivation = dylib.lookupFunction<
+        StrPtr Function(ffi.Pointer<CCudaStream>, Ptr, Ptr, ffi.Uint64,
+            ffi.Uint8, ffi.Uint8, ffi.Uint8),
+        StrPtr Function(ffi.Pointer<CCudaStream>, Ptr, Ptr, int, int, int,
+            int)>('libtcCudaSoftplusActivation');
+    final softsignActivation = dylib.lookupFunction<Op1d1InpSNative, Op1d1InpS>(
+        'libtcCudaSoftsignActivation');
+    final mishActivation = dylib
+        .lookupFunction<Op1d1InpSNative, Op1d1InpS>('libtcCudaMishActivation');
+    final minThreshold = dylib.lookupFunction<
+        StrPtr Function(ffi.Pointer<CCudaStream>, Ptr, Ptr, Ptr, Ptr,
+            ffi.Uint64, ffi.Uint8),
+        StrPtr Function(ffi.Pointer<CCudaStream>, Ptr, Ptr, Ptr, Ptr, int,
+            int)>('libtcCudaMinThreshold');
 
     return CudaFFI(
       getDeviceProps: getDeviceProps,
@@ -275,13 +303,22 @@ class CudaFFI {
       maxPool2D: maxPool2D,
       conv2D: conv2D,
       eluActivation: eluActivation,
-      reluActivation: reluActivation,
+      sigmoidActivation: sigmoid,
+      siluActivation: silu,
+      softplusActivation: softplusActivation,
+      softsignActivation: softsignActivation,
+      mishActivation: mishActivation,
+      minThreshold: minThreshold,
     );
   }
 }
 
 typedef CNumType = ffi.Uint8;
 
+typedef Op1d1InpS = StrPtr Function(
+    ffi.Pointer<CCudaStream> stream, Ptr out, Ptr inp, int size, int dataType);
+typedef Op1d1InpSNative = StrPtr Function(ffi.Pointer<CCudaStream> stream,
+    Ptr out, Ptr inp, ffi.Uint64 size, CNumType dataType);
 typedef Op1d1Inp = StrPtr Function(ffi.Pointer<CCudaStream> stream, Ptr out,
     Ptr inp, int size, int outType, int inpType);
 typedef Op1d1InpNative = StrPtr Function(ffi.Pointer<CCudaStream> stream,

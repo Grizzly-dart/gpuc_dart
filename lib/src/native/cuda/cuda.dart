@@ -423,9 +423,71 @@ class Cuda {
     }
   }
 
-  void reluActivation(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+  void sigmoidActivation(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    if (inp.type != out.type) {
+      throw ArgumentError('Input and output types must be the same');
+    }
     final err =
-        cuda.reluActivation(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
+        cuda.sigmoidActivation(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void siluActivation(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    if (inp.type != out.type) {
+      throw ArgumentError('Input and output types must be the same');
+    }
+    final err =
+        cuda.siluActivation(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void softplusActivation(CudaStream stream, NumPtr out, NumPtr inp, int size,
+      int beta, int threshold) {
+    if (inp.type != out.type) {
+      throw ArgumentError('Input and output types must be the same');
+    }
+    final err = cuda.softplusActivation(
+        stream.ptr, out.ptr, inp.ptr, size, beta, threshold, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void softsignActivation(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    if (inp.type != out.type) {
+      throw ArgumentError('Input and output types must be the same');
+    }
+    final err = cuda.softsignActivation(
+        stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void mishActivation(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    if (inp.type != out.type) {
+      throw ArgumentError('Input and output types must be the same');
+    }
+    final err = cuda.mishActivation(
+        stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void minThreshold(CudaStream stream, NumPtr out, NumPtr inp, num threshold,
+      num value, int size) {
+    if (inp.type != out.type) {
+      throw ArgumentError('Input and output types must be the same');
+    }
+    final thresholdPtr = inp.type.allocateForValue(threshold);
+    final valuePtr = inp.type.allocateForValue(value);
+    final err = cuda.minThreshold(stream.ptr, out.ptr, inp.ptr,
+        thresholdPtr.ptr, valuePtr.ptr, size, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }

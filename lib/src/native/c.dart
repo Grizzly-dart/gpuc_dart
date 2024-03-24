@@ -56,8 +56,7 @@ final class CDim2 extends ffi.Struct {
   @ffi.Uint32()
   external int c;
 
-  static CPtr<CDim2> allocate() =>
-      CPtr<CDim2>.allocate(ffi.sizeOf<CDim2>());
+  static CPtr<CDim2> allocate() => CPtr<CDim2>.allocate(ffi.sizeOf<CDim2>());
 
   static CPtr<CDim2> from(Dim2 size) {
     final cptr = CDim2.allocate();
@@ -78,8 +77,7 @@ final class CDim3 extends ffi.Struct {
   @ffi.Uint32()
   external int c;
 
-  static CPtr<CDim3> allocate() =>
-      CPtr<CDim3>.allocate(ffi.sizeOf<CDim2>());
+  static CPtr<CDim3> allocate() => CPtr<CDim3>.allocate(ffi.sizeOf<CDim2>());
 
   static CPtr<CDim3> from(Dim3 size) {
     final cptr = CDim3.allocate();
@@ -101,7 +99,7 @@ class CPtr<T extends ffi.NativeType> implements Resource, ffi.Finalizable {
 
   factory CPtr.allocate(int byteSizePerItem,
           {int count = 1, Context? context}) =>
-      CPtr(ffi.malloc.allocate(byteSizePerItem * 1), context: context);
+      CPtr(ffi.malloc.allocate(byteSizePerItem * count), context: context);
 
   ffi.Pointer<T> get ptr => _mem;
 
