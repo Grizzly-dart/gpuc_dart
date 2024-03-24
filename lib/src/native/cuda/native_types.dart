@@ -20,10 +20,17 @@ class CudaFFI {
   final StrPtr Function(ffi.Pointer<CCudaStream>,
       ffi.Pointer<ffi.NativeFunction<ffi.Void Function(StrPtr)>>) syncStream;
 
-  final Map<String, Op1D2Inp> additions;
-  final Map<String, Op1D2Inp> subs;
-  final Map<String, Op1D2Inp> muls;
-  final Map<String, Op1D2Inp> divs;
+  final Op1d1Inp sin;
+  final Op1d1Inp cos;
+  final Op1d1Inp tan;
+  final Op1d1Inp sinh;
+  final Op1d1Inp cosh;
+  final Op1d1Inp tanh;
+
+  final Map<String, Op1d2Inp> additions;
+  final Map<String, Op1d2Inp> subs;
+  final Map<String, Op1d2Inp> muls;
+  final Map<String, Op1d2Inp> divs;
   final Map<String, OpE> casts;
 
   final Op2d sum2d;
@@ -53,6 +60,13 @@ class CudaFFI {
   final MaxPool2D maxPool2D;
   final Conv2D conv2D;
 
+  final StrPtr Function(
+          ffi.Pointer<CCudaStream>, Ptr out, Ptr inp, int, double, int)
+      eluActivation;
+
+  final StrPtr Function(ffi.Pointer<CCudaStream>, Ptr out, Ptr inp, int, int)
+      reluActivation;
+
   CudaFFI({
     required this.getDeviceProps,
     required this.getMemInfo,
@@ -62,6 +76,12 @@ class CudaFFI {
     required this.createStream,
     required this.destroyStream,
     required this.syncStream,
+    required this.sin,
+    required this.cos,
+    required this.tan,
+    required this.sinh,
+    required this.cosh,
+    required this.tanh,
     required this.additions,
     required this.subs,
     required this.muls,
@@ -79,6 +99,8 @@ class CudaFFI {
     required this.matmulTCadd,
     required this.maxPool2D,
     required this.conv2D,
+    required this.eluActivation,
+    required this.reluActivation,
   });
 
   static CudaFFI? instance;
@@ -132,23 +154,30 @@ class CudaFFI {
                 ffi.Pointer<ffi.NativeFunction<ffi.Void Function(StrPtr)>>)>(
         'libtcCudaSyncStream');
 
-    final additions = <String, Op1D2Inp>{};
-    final subs = <String, Op1D2Inp>{};
-    final muls = <String, Op1D2Inp>{};
-    final divs = <String, Op1D2Inp>{};
+    final sin = dylib.lookupFunction<Op1d1InpNative, Op1d1Inp>('libtcCudaSin');
+    final cos = dylib.lookupFunction<Op1d1InpNative, Op1d1Inp>('libtcCudaCos');
+    final tan = dylib.lookupFunction<Op1d1InpNative, Op1d1Inp>('libtcCudaTan');
+    final sinh = dylib.lookupFunction<Op1d1InpNative, Op1d1Inp>('libtcCudaSinh');
+    final cosh = dylib.lookupFunction<Op1d1InpNative, Op1d1Inp>('libtcCudaCosh');
+    final tanh = dylib.lookupFunction<Op1d1InpNative, Op1d1Inp>('libtcCudaTanh');
+
+    final additions = <String, Op1d2Inp>{};
+    final subs = <String, Op1d2Inp>{};
+    final muls = <String, Op1d2Inp>{};
+    final divs = <String, Op1d2Inp>{};
     final casts = <String, OpE>{};
     for (final o in NumType.values) {
       for (final inp1 in NumType.values) {
         for (final inp2 in NumType.values) {
           final key = '${o.short}_${inp1.short}_${inp2.short}';
           additions[key] = dylib
-              .lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaAdd2_$key');
+              .lookupFunction<Op1d2InpNative, Op1d2Inp>('libtcCudaAdd2_$key');
           subs[key] = dylib
-              .lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaSub2_$key');
+              .lookupFunction<Op1d2InpNative, Op1d2Inp>('libtcCudaSub2_$key');
           muls[key] = dylib
-              .lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaMul2_$key');
+              .lookupFunction<Op1d2InpNative, Op1d2Inp>('libtcCudaMul2_$key');
           divs[key] = dylib
-              .lookupFunction<Op1D2InpNative, Op1D2Inp>('libtcCudaDiv2_$key');
+              .lookupFunction<Op1d2InpNative, Op1d2Inp>('libtcCudaDiv2_$key');
         }
         if (o != inp1) {
           final key = '${o.short}_${inp1.short}';
@@ -160,10 +189,10 @@ class CudaFFI {
 
     final sum2d = dylib.lookupFunction<Op2DNative, Op2d>('libtcCudaSum2d');
     final mean2d = dylib.lookupFunction<Op2DNative, Op2d>('libtcCudaMean2d');
-    final variance2d =
-        dylib.lookupFunction<Variance2DNative, Variance2d>('libtcCudaVariance2d');
-    final normalize2d = dylib.lookupFunction<Normalize2DNative, Normalize2d>(
-        'libtcCudaNormalize2d');
+    final variance2d = dylib
+        .lookupFunction<Variance2DNative, Variance2d>('libtcCudaVariance2d');
+    final normalize2d = dylib
+        .lookupFunction<Normalize2DNative, Normalize2d>('libtcCudaNormalize2d');
 
     final transpose2d = dylib.lookupFunction<
         StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, CDim3),
@@ -202,6 +231,17 @@ class CudaFFI {
     final conv2D =
         dylib.lookupFunction<Conv2DNative, Conv2D>('libtcCudaConv2d');
 
+    final eluActivation = dylib.lookupFunction<
+        StrPtr Function(ffi.Pointer<CCudaStream>, Ptr, Ptr, ffi.Uint64,
+            ffi.Double, ffi.Uint8),
+        StrPtr Function(ffi.Pointer<CCudaStream>, Ptr, Ptr, int, double,
+            int)>('libtcCudaELU');
+    final reluActivation = dylib.lookupFunction<
+        StrPtr Function(
+            ffi.Pointer<CCudaStream>, Ptr, Ptr, ffi.Uint64, ffi.Uint8),
+        StrPtr Function(
+            ffi.Pointer<CCudaStream>, Ptr, Ptr, int, int)>('libtcCudaRELU');
+
     return CudaFFI(
       getDeviceProps: getDeviceProps,
       getMemInfo: getMemInfo,
@@ -211,6 +251,12 @@ class CudaFFI {
       createStream: createStream,
       destroyStream: destroyStream,
       syncStream: syncStream,
+      sin: sin,
+      cos: cos,
+      tan: tan,
+      sinh: sinh,
+      cosh: cosh,
+      tanh: tanh,
       additions: additions,
       subs: subs,
       muls: muls,
@@ -228,28 +274,36 @@ class CudaFFI {
       matmulTCadd: matmulTCadd,
       maxPool2D: maxPool2D,
       conv2D: conv2D,
+      eluActivation: eluActivation,
+      reluActivation: reluActivation,
     );
   }
 }
 
-typedef Op1D2Inp = StrPtr Function(
+typedef CNumType = ffi.Uint8;
+
+typedef Op1d1Inp = StrPtr Function(ffi.Pointer<CCudaStream> stream, Ptr out,
+    Ptr inp, int size, int outType, int inpType);
+typedef Op1d1InpNative = StrPtr Function(ffi.Pointer<CCudaStream> stream,
+    Ptr out, Ptr inp, ffi.Uint64 size, CNumType outType, CNumType inpType);
+typedef Op1d2Inp = StrPtr Function(
     ffi.Pointer<CCudaStream> stream, Ptr out, Ptr inp1, Ptr inp2, int size);
-typedef Op1D2InpNative = StrPtr Function(ffi.Pointer<CCudaStream> stream,
+typedef Op1d2InpNative = StrPtr Function(ffi.Pointer<CCudaStream> stream,
     Ptr out, Ptr inp1, Ptr inp2, ffi.Uint64 size);
 typedef OpE = StrPtr Function(
-    ffi.Pointer<CCudaStream> stream, Ptr out, Ptr inp1, int size);
+    ffi.Pointer<CCudaStream> stream, Ptr out, Ptr inp, int size);
 typedef OpENative = StrPtr Function(
-    ffi.Pointer<CCudaStream> stream, Ptr out, Ptr inp1, ffi.Uint64 size);
+    ffi.Pointer<CCudaStream> stream, Ptr out, Ptr inp, ffi.Uint64 size);
 
 typedef Op2d = StrPtr Function(ffi.Pointer<CCudaStream> stream, Ptr out,
     Ptr inp, CDim2, int outType, int inpType);
 typedef Op2DNative = StrPtr Function(ffi.Pointer<CCudaStream> stream, Ptr out,
-    Ptr inp, CDim2, ffi.Uint8, ffi.Uint8);
+    Ptr inp, CDim2, CNumType, CNumType);
 
 typedef Variance2d = StrPtr Function(ffi.Pointer<CCudaStream> stream, Ptr out,
     Ptr inp, CDim2, int correction, int calcStd, int outType, int inpType);
 typedef Variance2DNative = StrPtr Function(ffi.Pointer<CCudaStream> stream,
-    Ptr out, Ptr inp, CDim2, ffi.Uint64, ffi.Uint8, ffi.Uint8, ffi.Uint8);
+    Ptr out, Ptr inp, CDim2, ffi.Uint64, ffi.Uint8, CNumType, CNumType);
 
 typedef Normalize2d = StrPtr Function(ffi.Pointer<CCudaStream> stream, Ptr out,
     Ptr inp, CDim2, double epsilon, int outType, int inpType);

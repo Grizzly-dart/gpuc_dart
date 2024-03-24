@@ -126,6 +126,54 @@ class Cuda {
     }
   }
 
+  void sin(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    final err =
+        cuda.sin(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void cos(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    final err =
+        cuda.cos(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void tan(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    final err =
+        cuda.tan(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void sinh(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    final err =
+        cuda.sinh(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void cosh(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    final err =
+        cuda.cosh(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void tanh(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    final err =
+        cuda.tanh(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
   void transpose2D(CudaStream stream, F64Ptr out, F64Ptr inp, Dim3 size) {
     final ctx = Context();
     try {
@@ -361,6 +409,23 @@ class Cuda {
         pad,
         strideSC.ptr.ref,
         dilationSC.ptr.ref);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void eluActivation(
+      CudaStream stream, NumPtr out, NumPtr inp, int size, double alpha) {
+    final err = cuda.eluActivation(
+        stream.ptr, out.ptr, inp.ptr, size, alpha, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void reluActivation(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    final err =
+        cuda.reluActivation(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
