@@ -75,3 +75,13 @@ class RELU implements Layer {
     }
   }
 }
+
+class Tanh implements Layer {
+  Tanh();
+
+  @override
+  Future<Tensor<double>> forward(FutureOr<Tensor> x,
+      {Tensor<double>? out}) async {
+    return (await x).tanh(out: out);
+  }
+}

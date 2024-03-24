@@ -174,7 +174,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
     }
   }
 
-  Future<Tensor> sin({Tensor<double>? out}) async {
+  Future<Tensor<double>> sin({Tensor<double>? out}) async {
     final ctx = Context();
     try {
       int deviceId = 0; // TODO implement device selection
@@ -203,7 +203,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
     }
   }
 
-  Future<Tensor> cos({Tensor<double>? out}) async {
+  Future<Tensor<double>> cos({Tensor<double>? out}) async {
     final ctx = Context();
     try {
       int deviceId = 0; // TODO implement device selection
@@ -232,7 +232,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
     }
   }
 
-  Future<Tensor> tan({Tensor<double>? out}) async {
+  Future<Tensor<double>> tan({Tensor<double>? out}) async {
     final ctx = Context();
     try {
       int deviceId = 0; // TODO implement device selection
@@ -261,7 +261,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
     }
   }
 
-  Future<Tensor> sinh({Tensor<double>? out}) async {
+  Future<Tensor<double>> sinh({Tensor<double>? out}) async {
     final ctx = Context();
     try {
       int deviceId = 0; // TODO implement device selection
@@ -290,7 +290,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
     }
   }
 
-  Future<Tensor> cosh({Tensor<double>? out}) async {
+  Future<Tensor<double>> cosh({Tensor<double>? out}) async {
     final ctx = Context();
     try {
       int deviceId = 0; // TODO implement device selection
@@ -319,7 +319,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
     }
   }
 
-  Future<Tensor> tanh({Tensor<double>? out}) async {
+  Future<Tensor<double>> tanh({Tensor<double>? out}) async {
     final ctx = Context();
     try {
       int deviceId = 0; // TODO implement device selection
