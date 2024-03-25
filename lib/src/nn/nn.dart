@@ -7,6 +7,13 @@ export 'loss_function/loss_function.dart';
 
 abstract class Layer<I extends num> {
   Future<Tensor<double>> forward(FutureOr<Tensor<I>> input);
+
+  Layer pipe(Layer next);
+
+  void backward(Tensor gradOutput);
+
+  Layer? get prev;
+  Layer? get next;
 }
 
 // TODO error messages should be more technical and domain specific
