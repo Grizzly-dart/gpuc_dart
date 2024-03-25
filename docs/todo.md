@@ -1,3 +1,7 @@
++ pow
++ sqr
++ sqrt
+
 + Tensor.rearrange in C and CUDA (pytorch.permute)
 + Test with complex math equation to optimize intermediate results
 + MaxPool2D return indices

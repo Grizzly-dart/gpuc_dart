@@ -62,7 +62,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
         OffsetTypedTensorView(this, size.numMatricesDim.unravel(index)));
   }
 
-  Future<Tensor> operator +(covariant FutureOr<Tensor> other) async {
+  Future<Tensor> operator +(FutureOr<Tensor> other) async {
     final b = await other;
     if (b.nel != nel) {
       throw ArgumentError('Size mismatch');
@@ -90,7 +90,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
     }
   }
 
-  Future<Tensor> operator -(covariant FutureOr<Tensor> other) async {
+  Future<Tensor> operator -(FutureOr<Tensor> other) async {
     final b = await other;
     if (b.nel != nel) {
       throw ArgumentError('Size mismatch');
@@ -118,7 +118,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
     }
   }
 
-  Future<Tensor> operator *(covariant FutureOr<Tensor> other) async {
+  Future<Tensor> operator *(FutureOr<Tensor> other) async {
     final b = await other;
     if (b.nel != nel) {
       throw ArgumentError('Size mismatch');
@@ -146,7 +146,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
     }
   }
 
-  Future<Tensor> operator /(covariant FutureOr<Tensor> other) async {
+  Future<Tensor> operator /(FutureOr<Tensor> other) async {
     final b = await other;
     if (b.nel != nel) {
       throw ArgumentError('Size mismatch');

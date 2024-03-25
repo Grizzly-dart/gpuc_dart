@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
 
+export 'activation/activation.dart';
+export 'loss_function/loss_function.dart';
+
 abstract class Layer<I extends num> {
   Future<Tensor<double>> forward(FutureOr<Tensor<I>> input);
 }
