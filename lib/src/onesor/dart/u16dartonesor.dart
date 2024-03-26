@@ -40,9 +40,6 @@ abstract mixin class U16DartOnesor implements DartOnesor<int>, U16Onesor {
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    if (this is U16DartOnesorView) {
-      start += (this as U16DartOnesorView).offset;
-    }
     return U16DartOnesorView(this, start, length);
   }
 }
@@ -63,7 +60,7 @@ class _U16DartOnesor
 
 class U16DartOnesorView
     with ListMixin<int>, Onesor<int>, U16Onesor, DartOnesor<int>, U16DartOnesor
-    implements U16DartOnesor, OnesorView<int> {
+    implements U16DartOnesor, DartOnesorView<int>, U16OnesorView {
   final U16DartOnesor _inner;
   @override
   final int offset;
@@ -75,4 +72,14 @@ class U16DartOnesorView
   @override
   late final Uint16List list =
       Uint16List.sublistView(_inner.list, offset, offset + length);
+
+  @override
+  U16DartOnesorView view(int start, int length) {
+    if (start > this.length) {
+      throw ArgumentError('Start index out of range');
+    } else if (start + length > this.length) {
+      throw ArgumentError('Length out of range');
+    }
+    return U16DartOnesorView(_inner, start + offset, length);
+  }
 }

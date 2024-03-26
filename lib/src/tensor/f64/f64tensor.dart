@@ -1,9 +1,13 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:gpuc_dart/gpuc_dart.dart';
-import 'package:gpuc_dart/src/tensor/f64/tensor_mixin.dart';
 
-abstract class F64Tensor implements Tensor<double> {
+export 'f64tensor_view.dart';
+
+abstract mixin class F64Tensor implements Tensor<double> {
+  @override
+  F64Onesor get as1d;
+
   factory F64Tensor(F64Onesor as1d, Dim size,
       {String name = '', Context? context}) =>
       _F64Tensor(as1d, size, name: name, context: context);
@@ -58,10 +62,11 @@ abstract class F64Tensor implements Tensor<double> {
     return ret;
   }
 
-  F64Tensor operator [](dynamic /* Dim | int | Iterable<int> */ index);
-
-  void operator []=(
-      dynamic /* Dim | int | Iterable<int> */ index, F64Tensor value);
+  @override
+  F64TensorView operator [](dynamic /* Dim | int | Iterable<int> */ index) {
+    if (index is! Dim) index = Dim.from(index);
+    return F64TensorView(this, index);
+  }
 
   // TODO return NListView
   Onesor<double> row(int index, {int colDims = 1});
@@ -88,16 +93,28 @@ abstract class F64Tensor implements Tensor<double> {
       {Tensor<double>? out});
 
 // TODO Tensor rearrange(List<int> order, {DeviceType? forceDeviceType});
+
+  // TODO start and length
+  /*F64Tensor slice(/* Dim | int | Iterable<int> */ index, {Context? context}) {
+    if (index is! Dim) index = Dim.from(index);
+    if (size.isIndex(index)) {
+      throw ArgumentError('Index out of range');
+    }
+
+    final outSize = Dim(size.asList.skip(index.dims));
+    return F64Tensor(as1d.slice(index.nel * outSize.nel, outSize.nel), outSize,
+        context: context);
+  }*/
 }
 
 class _F64Tensor
-    with Tensor<double>, F64TensorMixin, F64Tensor2dMixin
+    with Tensor<double>, F64Tensor, F64Tensor2dMixin
     implements F64Tensor {
   @override
   String name;
 
   @override
-  final Onesor<double> as1d;
+  final F64Onesor as1d;
 
   Dim _size;
 

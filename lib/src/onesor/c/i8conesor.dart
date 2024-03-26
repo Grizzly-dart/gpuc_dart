@@ -57,9 +57,6 @@ abstract mixin class I8COnesor implements COnesor<int>, I8Onesor {
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    if (this is COnesorView<int>) {
-      start += (this as COnesorView<int>).offset;
-    }
     return I8COnesorView(this, start, length);
   }
 }
@@ -119,7 +116,7 @@ class _I8COnesor
 
 class I8COnesorView
     with Onesor<int>, I8Onesor, ListMixin<int>, COnesor<int>, I8COnesor
-    implements I8COnesor, COnesorView<int> {
+    implements I8COnesor, COnesorView<int>, I8OnesorView {
   final I8COnesor _list;
 
   @override
@@ -139,5 +136,15 @@ class I8COnesorView
   @override
   set length(int newLength) {
     throw UnsupportedError('Cannot change length of view');
+  }
+
+  @override
+  I8COnesorView view(int start, int length) {
+    if (start > this.length) {
+      throw ArgumentError('Start index out of range');
+    } else if (start + length > this.length) {
+      throw ArgumentError('Length out of range');
+    }
+    return I8COnesorView(_list, start + offset, length);
   }
 }

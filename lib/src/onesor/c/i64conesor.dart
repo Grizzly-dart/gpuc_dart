@@ -57,9 +57,6 @@ abstract mixin class I64COnesor implements COnesor<int>, I64Onesor {
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    if (this is COnesorView<int>) {
-      start += (this as COnesorView<int>).offset;
-    }
     return I64COnesorView(this, start, length);
   }
 }
@@ -119,7 +116,7 @@ class _I64COnesor
 
 class I64COnesorView
     with Onesor<int>, I64Onesor, ListMixin<int>, COnesor<int>, I64COnesor
-    implements I64COnesor, COnesorView<int> {
+    implements I64COnesor, COnesorView<int>, I64OnesorView {
   final I64COnesor _list;
 
   @override
@@ -139,5 +136,15 @@ class I64COnesorView
   @override
   set length(int newLength) {
     throw UnsupportedError('Cannot change length of view');
+  }
+
+  @override
+  I64COnesorView view(int start, int length) {
+    if (start > this.length) {
+      throw ArgumentError('Start index out of range');
+    } else if (start + length > this.length) {
+      throw ArgumentError('Length out of range');
+    }
+    return I64COnesorView(_list, start + offset, length);
   }
 }

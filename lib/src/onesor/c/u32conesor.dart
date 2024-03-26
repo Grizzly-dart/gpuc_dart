@@ -57,9 +57,6 @@ abstract mixin class U32COnesor implements COnesor<int>, U32Onesor {
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    if (this is COnesorView<int>) {
-      start += (this as COnesorView<int>).offset;
-    }
     return U32COnesorView(this, start, length);
   }
 }
@@ -119,7 +116,7 @@ class _U32COnesor
 
 class U32COnesorView
     with Onesor<int>, U32Onesor, ListMixin<int>, COnesor<int>, U32COnesor
-    implements U32COnesor, COnesorView<int> {
+    implements U32COnesor, COnesorView<int>, U32OnesorView {
   final U32COnesor _list;
 
   @override
@@ -139,5 +136,15 @@ class U32COnesorView
   @override
   set length(int newLength) {
     throw UnsupportedError('Cannot change length of view');
+  }
+
+  @override
+  U32COnesorView view(int start, int length) {
+    if (start > this.length) {
+      throw ArgumentError('Start index out of range');
+    } else if (start + length > this.length) {
+      throw ArgumentError('Length out of range');
+    }
+    return U32COnesorView(_list, start + offset, length);
   }
 }

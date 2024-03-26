@@ -3,12 +3,14 @@ import 'dart:math';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
 
+export 'u16tensor_view.dart';
+
 abstract mixin class U16Tensor implements Tensor<int> {
   @override
   U16Onesor get as1d;
 
   factory U16Tensor(U16Onesor as1d, Dim size,
-      {String name = '', Context? context}) =>
+          {String name = '', Context? context}) =>
       _U16Tensor(as1d, size, name: name, context: context);
 
   factory U16Tensor.fromList(List<int> list,
@@ -60,6 +62,12 @@ abstract mixin class U16Tensor implements Tensor<int> {
       ret.as1d[i] = random.nextInt(u16.maxVal);
     }
     return ret;
+  }
+
+  @override
+  U16TensorView operator [](dynamic /* Dim | int | Iterable<int> */ index) {
+    if (index is! Dim) index = Dim.from(index);
+    return U16TensorView(this, index);
   }
 
   @override

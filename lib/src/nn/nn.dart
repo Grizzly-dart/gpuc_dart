@@ -19,9 +19,14 @@ abstract class Layer<I extends num> {
     return output;
   }
 
-  // TODO void train(Tensor input, Tensor target);
+  Future<Tensor> train(FutureOr<Tensor<I>> input) async {
+    output = await compute(input);
+    return (await next?.train(output!)) ?? output!;
+  }
 
-  // TODO void backward(Tensor gradOutput);
+  void backward(Tensor gradOutput, Optimizer optimizer) {
+
+  }
 
   Layer? prev;
   Layer? next;

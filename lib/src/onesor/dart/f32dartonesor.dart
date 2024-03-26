@@ -41,9 +41,6 @@ abstract mixin class F32DartOnesor implements DartOnesor<double>, F32Onesor {
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    if (this is F32DartOnesorView) {
-      start += (this as F32DartOnesorView).offset;
-    }
     return F32DartOnesorView(this, start, length);
   }
 }
@@ -74,7 +71,7 @@ class F32DartOnesorView
         F32Onesor,
         DartOnesor<double>,
         F32DartOnesor
-    implements F32DartOnesor, OnesorView<double> {
+    implements F32DartOnesor, DartOnesorView<double>, F32OnesorView {
   final F32DartOnesor _inner;
   @override
   final int offset;
@@ -86,4 +83,14 @@ class F32DartOnesorView
   @override
   late final Float32List list =
       Float32List.sublistView(_inner.list, offset, offset + length);
+
+  @override
+  F32DartOnesorView view(int start, int length) {
+    if (start > this.length) {
+      throw ArgumentError('Start index out of range');
+    } else if (start + length > this.length) {
+      throw ArgumentError('Length out of range');
+    }
+    return F32DartOnesorView(_inner, start + offset, length);
+  }
 }

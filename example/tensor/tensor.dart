@@ -8,8 +8,18 @@ void main() async {
   print(t1[1]);
   print(t1[2]);
   print(t1[3]);
-  print('Finished');
 
   print(t1[0].as1d);
   print(t1[0].size);
+
+  await index();
+
+  print('Finished');
+}
+
+Future<void> index() async {
+  final t1 =
+      U16Tensor.generate(Dim([2, 3, 4]), (size, index) => size.ravel(index));
+  print(t1.as1d);
+  t1.printTextTable();
 }

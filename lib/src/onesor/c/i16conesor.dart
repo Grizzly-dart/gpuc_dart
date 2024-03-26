@@ -57,9 +57,6 @@ abstract mixin class I16COnesor implements COnesor<int>, I16Onesor {
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    if (this is COnesorView<int>) {
-      start += (this as COnesorView<int>).offset;
-    }
     return I16COnesorView(this, start, length);
   }
 }
@@ -119,7 +116,7 @@ class _I16COnesor
 
 class I16COnesorView
     with Onesor<int>, I16Onesor, ListMixin<int>, COnesor<int>, I16COnesor
-    implements I16COnesor, COnesorView<int> {
+    implements I16COnesor, COnesorView<int>, I16OnesorView {
   final I16COnesor _list;
 
   @override
@@ -139,5 +136,15 @@ class I16COnesorView
   @override
   set length(int newLength) {
     throw UnsupportedError('Cannot change length of view');
+  }
+
+  @override
+  I16COnesorView view(int start, int length) {
+    if (start > this.length) {
+      throw ArgumentError('Start index out of range');
+    } else if (start + length > this.length) {
+      throw ArgumentError('Length out of range');
+    }
+    return I16COnesorView(_list, start + offset, length);
   }
 }

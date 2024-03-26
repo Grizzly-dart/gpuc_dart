@@ -66,9 +66,14 @@ abstract mixin class F64Onesor implements Onesor<double> {
   int get bytesPerItem => 8;
 
   @override
+  F64OnesorView view(int start, int length);
+
+  @override
   F64Tensor toTensor(Dim size, {String name = '', Context? context}) =>
       F64Tensor(this, size, name: name, context: context);
 }
+
+abstract mixin class F64OnesorView implements F64Onesor, OnesorView<double> {}
 
 abstract mixin class F32Onesor implements Onesor<double> {
   @override
@@ -84,9 +89,14 @@ abstract mixin class F32Onesor implements Onesor<double> {
   int get bytesPerItem => 4;
 
   @override
+  F32OnesorView view(int start, int length);
+
+  @override
   F32Tensor toTensor(Dim size, {String name = '', Context? context}) =>
       F32Tensor(this, size, name: name, context: context);
 }
+
+abstract mixin class F32OnesorView implements F32Onesor, OnesorView<double> {}
 
 abstract mixin class U64Onesor implements Onesor<int> {
   @override
@@ -102,9 +112,14 @@ abstract mixin class U64Onesor implements Onesor<int> {
   U64Onesor slice(int start, int length, {Context? context});
 
   @override
+  U64OnesorView view(int start, int length);
+
+  @override
   U64Tensor toTensor(Dim size, {String name = '', Context? context}) =>
       U64Tensor(this, size, name: name, context: context);
 }
+
+abstract mixin class U64OnesorView implements U64Onesor, OnesorView<int> {}
 
 abstract mixin class I64Onesor implements Onesor<int> {
   @override
@@ -117,9 +132,14 @@ abstract mixin class I64Onesor implements Onesor<int> {
   int get bytesPerItem => 8;
 
   @override
+  I64OnesorView view(int start, int length);
+
+  @override
   I64Tensor toTensor(Dim size, {String name = '', Context? context}) =>
       I64Tensor(this, size, name: name, context: context);
 }
+
+abstract mixin class I64OnesorView implements I64Onesor, OnesorView<int> {}
 
 abstract mixin class I32Onesor implements Onesor<int> {
   @override
@@ -132,9 +152,14 @@ abstract mixin class I32Onesor implements Onesor<int> {
   int get bytesPerItem => 4;
 
   @override
+  I32OnesorView view(int start, int length);
+
+  @override
   I32Tensor toTensor(Dim size, {String name = '', Context? context}) =>
       I32Tensor(this, size, name: name, context: context);
 }
+
+abstract mixin class I32OnesorView implements I32Onesor, OnesorView<int> {}
 
 abstract mixin class U32Onesor implements Onesor<int> {
   @override
@@ -147,9 +172,14 @@ abstract mixin class U32Onesor implements Onesor<int> {
   int get bytesPerItem => 4;
 
   @override
+  U32OnesorView view(int start, int length);
+
+  @override
   U32Tensor toTensor(Dim size, {String name = '', Context? context}) =>
       U32Tensor(this, size, name: name, context: context);
 }
+
+abstract mixin class U32OnesorView implements U32Onesor, OnesorView<int> {}
 
 abstract mixin class I16Onesor implements Onesor<int> {
   @override
@@ -162,9 +192,14 @@ abstract mixin class I16Onesor implements Onesor<int> {
   int get bytesPerItem => 2;
 
   @override
+  I16OnesorView view(int start, int length);
+
+  @override
   I16Tensor toTensor(Dim size, {String name = '', Context? context}) =>
       I16Tensor(this, size, name: name, context: context);
 }
+
+abstract mixin class I16OnesorView implements I16Onesor, OnesorView<int> {}
 
 abstract mixin class U16Onesor implements Onesor<int> {
   @override
@@ -177,9 +212,14 @@ abstract mixin class U16Onesor implements Onesor<int> {
   int get bytesPerItem => 2;
 
   @override
+  U16OnesorView view(int start, int length);
+
+  @override
   U16Tensor toTensor(Dim size, {String name = '', Context? context}) =>
       U16Tensor(this, size, name: name, context: context);
 }
+
+abstract mixin class U16OnesorView implements U16Onesor, OnesorView<int> {}
 
 abstract mixin class I8Onesor implements Onesor<int> {
   @override
@@ -192,9 +232,14 @@ abstract mixin class I8Onesor implements Onesor<int> {
   int get bytesPerItem => 1;
 
   @override
+  I8OnesorView view(int start, int length);
+
+  @override
   I8Tensor toTensor(Dim size, {String name = '', Context? context}) =>
       I8Tensor(this, size, name: name, context: context);
 }
+
+abstract mixin class I8OnesorView implements I8Onesor, OnesorView<int> {}
 
 abstract mixin class U8Onesor implements Onesor<int> {
   @override
@@ -207,9 +252,14 @@ abstract mixin class U8Onesor implements Onesor<int> {
   int get bytesPerItem => 1;
 
   @override
+  U8OnesorView view(int start, int length);
+
+  @override
   U8Tensor toTensor(Dim size, {String name = '', Context? context}) =>
       U8Tensor(this, size, name: name, context: context);
 }
+
+abstract mixin class U8OnesorView implements U8Onesor, OnesorView<int> {}
 
 enum DeviceType { c, dart, cuda, rocm, sycl }
 
@@ -282,7 +332,7 @@ class NumType<T extends num> {
           .cast<ffi.Double>()
           .asTypedList(array.length)
           .setAll(0, array.map((e) => e.toDouble()));
-    } else if(ffiType == ffi.Float) {
+    } else if (ffiType == ffi.Float) {
       ptr.ptr
           .cast<ffi.Float>()
           .asTypedList(array.length)

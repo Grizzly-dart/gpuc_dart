@@ -7,9 +7,10 @@ abstract class LossFunction {
 
   String get name;
 
-  double compute(Tensor y, Tensor yDash);
+  double compute(Tensor target, Tensor predicted);
 
-  Future<Tensor> derivative(FutureOr<Tensor> y, FutureOr<Tensor> yHat);
+  Future<Tensor> derivative(
+      FutureOr<Tensor> target, FutureOr<Tensor> predicted);
 }
 
 class MSE implements LossFunction {
@@ -26,8 +27,9 @@ class MSE implements LossFunction {
 
   // TODO handle batches
   @override
-  Future<Tensor> derivative(FutureOr<Tensor> y, FutureOr<Tensor> yHat) =>
-      yHat - y;
+  Future<Tensor> derivative(
+          FutureOr<Tensor> target, FutureOr<Tensor> predicted) =>
+      predicted - target;
 }
 
 class MAE implements LossFunction {
@@ -37,14 +39,15 @@ class MAE implements LossFunction {
   String get name => 'Mean Absolute Error';
 
   @override
-  double compute(Tensor y, Tensor yDash) {
+  double compute(Tensor target, Tensor predicted) {
     // TODO implement
     throw UnimplementedError();
   }
 
   // TODO handle batches
   @override
-  Future<Tensor> derivative(FutureOr<Tensor> y, FutureOr<Tensor> yHat) {
+  Future<Tensor> derivative(
+      FutureOr<Tensor> target, FutureOr<Tensor> predicted) {
     // TODO implement
     throw UnimplementedError();
   }

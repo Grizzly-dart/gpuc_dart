@@ -259,11 +259,11 @@ class CudaFFI {
         StrPtr Function(ffi.Pointer<CCudaStream>, Ptr, Ptr, ffi.Uint64,
             ffi.Uint8, ffi.Uint8, ffi.Uint8),
         StrPtr Function(ffi.Pointer<CCudaStream>, Ptr, Ptr, int, int, int,
-            int)>('libtcCudaSoftplusActivation');
+            int)>('libtcCudaSoftplus');
     final softsignActivation = dylib.lookupFunction<Op1d1InpSNative, Op1d1InpS>(
-        'libtcCudaSoftsignActivation');
+        'libtcCudaSoftsign');
     final mishActivation = dylib
-        .lookupFunction<Op1d1InpSNative, Op1d1InpS>('libtcCudaMishActivation');
+        .lookupFunction<Op1d1InpSNative, Op1d1InpS>('libtcCudaMish');
     final minThreshold = dylib.lookupFunction<
         StrPtr Function(ffi.Pointer<CCudaStream>, Ptr, Ptr, Ptr, Ptr,
             ffi.Uint64, ffi.Uint8),

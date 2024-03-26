@@ -106,14 +106,56 @@ abstract mixin class Tensor<T extends num> implements Resource {
     as1d.copyFrom(other.as1d);
   }
 
+  TensorView<T> operator [](dynamic /* Dim | int | Iterable<int> */ index) {
+    throw UnimplementedError();
+  }
+
+  void operator []=(
+      dynamic /* Dim | int | Iterable<int> */ index, Tensor<T> value) {
+    if (index is! Dim) index = Dim.from(index);
+    if (!size.isIndex(index)) {
+      throw ArgumentError('Index out of range');
+    }
+
+    final outSize = Dim(size.asList.skip(index.dims));
+    if (value.size.dims == outSize.dims) {
+      if (value.size != outSize) {
+        throw ArgumentError('Size mismatch');
+      }
+    } else if (value.size.dims == outSize.dims + 1) {
+      for (final pair in zip(value.size.asList.skip(1), outSize.asList)) {
+        if (pair.a != pair.b) {
+          throw ArgumentError('Size mismatch');
+        }
+      }
+      if (value.size.asList[0] + index.asList.last >
+          size.asList[index.dims - 1]) {
+        throw ArgumentError('Size mismatch');
+      }
+    } else {
+      throw ArgumentError('Size mismatch');
+    }
+    as1d.view(index.nel * outSize.nel, value.nel).copyFrom(value.as1d);
+  }
+
   Matrix<T> as2d({int colDims = 1}) => Matrix(this, colDims: colDims);
 
   Matrix<T> matrix(int index) {
     if (index < 0 || index >= size.numMatrices) {
       throw ArgumentError('Index out of range');
     }
-    return Matrix<T>(
-        OffsetTypedTensorView(this, size.numMatricesDim.unravel(index)));
+    return Matrix<T>(this[size.numMatricesDim.unravel(index)]);
+  }
+
+  Onesor<T> row(int index, {int colDims = 1}) {
+    if (size.dims < 2) {
+      throw StateError('Must be at least a 2D tensor');
+    }
+    final size2d = size.squeeze2D(colDims: colDims);
+    if (index < 0 || index >= size2d.rows) {
+      throw ArgumentError('Index out of range');
+    }
+    return as1d.view(index * size2d.cols, size2d.cols);
   }
 
   Future<Tensor> operator +(FutureOr<Tensor> other) async {
@@ -672,73 +714,49 @@ abstract mixin class Tensor<T extends num> implements Resource {
       print(TableRenderer().render(matrix(i)));
     }
   }
-}
 
-class OffsetTypedTensorView<T extends num> with Tensor<T> implements Tensor<T> {
+/*
   @override
-  String name = 'unnamed';
-
-  final Tensor<T> _inner;
-
-  final Dim offset;
-
-  @override
-  late final OnesorView<T> as1d =
-      _inner.as1d.view(offset.nel * size.nel, size.nel);
-
-  late Dim _size = Dim(size.asList.skip(offset.dims));
-
-  OffsetTypedTensorView(this._inner, this.offset, {this.name = 'unnamed'}) {
-    // TODO validate
-    if (as1d.length != size.nel) {
-      throw ArgumentError('Size does not match');
+  void rearrange(List<int> order, {DeviceType? forceDeviceType}) {
+    if (order.length != size.dims) {
+      throw ArgumentError('Invalid order length');
     }
-  }
-
-  @override
-  Dim get size => _size;
-
-  @override
-  set size(Dim newSize) {
-    if (newSize.nel != nel) {
-      throw ArgumentError('Size does not match');
+    final outSize = size.rearrange(order);
+    // TODO detect device
+    final deviceType = DeviceType.dart;
+    if (deviceType == DeviceType.dart) {
+      final outData = DartList.sized(outSize.nel);
+      for (int i = 0; i < size.nel; i++) {
+        final index = size.unravel(i);
+        final outIndex = outSize.ravel(index.rearrange(order));
+        outData[outIndex] = as1d[i];
+      }
+      final outTensor = Tensor(outData, outSize, name: 'rearrange($name)');
+      return outTensor;
+    } else if (deviceType == DeviceType.c) {
+      // TODO
+    } else if (deviceType == DeviceType.cuda) {
+      /* TODO
+      final outData = CList.sized(outSize.nel);
+      final ctx = Context();
+      try {
+        int deviceId = 0; // TODO implement device selection
+        final stream = CudaStream(deviceId, context: ctx);
+        final inp = CudaList.copy(data, stream: stream, context: ctx);
+        CudaFFI.rearrange(stream, outData.ptr.cast(), inp.ptr.cast(),
+            _size.toList(), outSize.toList());
+        final outTensor = Tensor(outData, outSize, name: 'rearrange($name)');
+        ctx.releaseOnErr(outTensor);
+        return outTensor;
+      } catch (e) {
+        ctx.release(isError: true);
+        rethrow;
+      } finally {
+        ctx.release();
+      }
+       */
     }
-    _size = newSize;
+    throw UnimplementedError('Device not implemented');
   }
-
-  @override
-  void release() {}
-
-  @override
-  Future<Tensor<T>> matmul(FutureOr<Tensor<T>> other, {Tensor<T>? out}) {
-    // TODO: implement matmul
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<Tensor<T>> matmulCadd(FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
-      {Tensor<T>? out}) {
-    // TODO: implement matmulCadd
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<Tensor<T>> matmulCaddT(
-      FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
-      {Tensor<T>? out}) {
-    // TODO: implement matmulCaddT
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<Tensor<T>> matmulT(FutureOr<Tensor<T>> other, {Tensor<T>? out}) {
-    // TODO: implement matmulT
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<Tensor<T>> t({Tensor<T>? out}) {
-    // TODO: implement t
-    throw UnimplementedError();
-  }
+   */
 }

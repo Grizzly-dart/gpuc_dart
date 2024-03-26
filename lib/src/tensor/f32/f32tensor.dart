@@ -3,6 +3,8 @@ import 'dart:math';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
 
+export 'f32tensor_view.dart';
+
 abstract mixin class F32Tensor implements Tensor<double> {
   @override
   F32Onesor get as1d;
@@ -59,6 +61,12 @@ abstract mixin class F32Tensor implements Tensor<double> {
       ret.as1d[i] = random.nextDouble();
     }
     return ret;
+  }
+
+  @override
+  F32TensorView operator [](dynamic /* Dim | int | Iterable<int> */ index) {
+    if (index is! Dim) index = Dim.from(index);
+    return F32TensorView(this, index);
   }
 
   @override

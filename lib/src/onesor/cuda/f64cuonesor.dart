@@ -82,10 +82,6 @@ abstract mixin class F64CuOnesor implements CuOnesor<double>, F64Onesor {
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    if (this is F64CuOnesorView) {
-      return F64CuOnesorView((this as F64CuOnesorView)._list,
-          start + (this as F64CuOnesorView).offset, length);
-    }
     return F64CuOnesorView(this, start, length);
   }
 }
@@ -159,7 +155,7 @@ class F64CuOnesorView
         ListMixin<double>,
         CuOnesor<double>,
         F64CuOnesor
-    implements F64CuOnesor, CuOnesorView<double> {
+    implements F64CuOnesor, CuOnesorView<double>, F64OnesorView {
   final CuOnesor<double> _list;
 
   @override
@@ -179,4 +175,14 @@ class F64CuOnesorView
 
   @override
   void release({CudaStream? stream}) {}
+
+  @override
+  F64CuOnesorView view(int start, int length) {
+    if (start > this.length) {
+      throw ArgumentError('Start index out of range');
+    } else if (start + length > this.length) {
+      throw ArgumentError('Length out of range');
+    }
+    return F64CuOnesorView(_list, start + offset, length);
+  }
 }

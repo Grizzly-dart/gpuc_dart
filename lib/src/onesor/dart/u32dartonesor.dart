@@ -40,9 +40,6 @@ abstract mixin class U32DartOnesor implements DartOnesor<int>, U32Onesor {
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    if (this is U32DartOnesorView) {
-      start += (this as U32DartOnesorView).offset;
-    }
     return U32DartOnesorView(this, start, length);
   }
 }
@@ -63,7 +60,7 @@ class _U32DartOnesor
 
 class U32DartOnesorView
     with ListMixin<int>, Onesor<int>, U32Onesor, DartOnesor<int>, U32DartOnesor
-    implements U32DartOnesor, OnesorView<int> {
+    implements U32DartOnesor, DartOnesorView<int>, U32OnesorView {
   final U32DartOnesor _inner;
   @override
   final int offset;
@@ -75,4 +72,14 @@ class U32DartOnesorView
   @override
   late final Uint32List list =
       Uint32List.sublistView(_inner.list, offset, offset + length);
+
+  @override
+  U32DartOnesorView view(int start, int length) {
+    if (start > this.length) {
+      throw ArgumentError('Start index out of range');
+    } else if (start + length > this.length) {
+      throw ArgumentError('Length out of range');
+    }
+    return U32DartOnesorView(_inner, start + offset, length);
+  }
 }
