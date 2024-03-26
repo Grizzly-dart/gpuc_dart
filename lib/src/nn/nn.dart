@@ -23,7 +23,7 @@ abstract class Layer<I extends num> {
   Layer? prev;
   Layer? next;
 
-  Layer pipe(Layer next) {
+  Layer chain(Layer next) {
     this.next = next;
     next.prev = this;
     return next;
