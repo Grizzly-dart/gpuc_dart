@@ -9,7 +9,7 @@ class ELUActivation extends Layer {
 
   @override
   Future<Tensor<double>> compute(FutureOr<Tensor> input,
-      {covariant Tensor<double>? out}) async {
+      {covariant Tensor<double>? out, bool training = false}) async {
     // TODO device selection
     final ctx = Context();
 
@@ -45,7 +45,7 @@ class RELUActivation extends Layer {
 
   @override
   Future<Tensor<double>> compute(FutureOr<Tensor> input,
-      {covariant Tensor<double>? out}) async {
+      {covariant Tensor<double>? out, bool training = false}) async {
     // TODO device selection
     final ctx = Context();
 
@@ -81,7 +81,7 @@ class TanhActivation extends Layer {
 
   @override
   Future<Tensor<double>> compute(FutureOr<Tensor> input,
-          {covariant Tensor<double>? out}) async =>
+          {covariant Tensor<double>? out, bool training = false}) async =>
       (await input).tanh(out: out);
 }
 
@@ -94,7 +94,7 @@ class ThresholdActivation extends Layer {
 
   @override
   Future<Tensor<double>> compute(FutureOr<Tensor> input,
-      {covariant Tensor<double>? out}) async {
+      {covariant Tensor<double>? out, bool training = false}) async {
     // TODO device selection
     final ctx = Context();
 
@@ -131,7 +131,7 @@ class SigmoidActivation extends Layer {
 
   @override
   Future<Tensor<double>> compute(FutureOr<Tensor> input,
-      {covariant Tensor<double>? out}) async {
+      {covariant Tensor<double>? out, bool training = false}) async {
     // TODO device selection
     final ctx = Context();
 
@@ -167,7 +167,7 @@ class SiLUActivation extends Layer {
 
   @override
   Future<Tensor<double>> compute(FutureOr<Tensor> input,
-      {covariant Tensor<double>? out}) async {
+      {covariant Tensor<double>? out, bool training = false}) async {
     final inp = await input;
     if (out != null) {
       if (out.size != inp.size) {
@@ -206,7 +206,7 @@ class SoftplusActivation extends Layer {
 
   @override
   Future<Tensor<double>> compute(FutureOr<Tensor> input,
-      {covariant Tensor<double>? out}) async {
+      {covariant Tensor<double>? out, bool training = false}) async {
     // TODO device selection
     final ctx = Context();
 
@@ -243,7 +243,7 @@ class SoftsignActivation extends Layer {
 
   @override
   Future<Tensor<double>> compute(FutureOr<Tensor> input,
-      {covariant Tensor<double>? out}) async {
+      {covariant Tensor<double>? out, bool training = false}) async {
     // TODO device selection
     final ctx = Context();
 
@@ -279,7 +279,7 @@ class MishActivation extends Layer {
 
   @override
   Future<Tensor<double>> compute(FutureOr<Tensor> input,
-      {covariant Tensor<double>? out}) async {
+      {covariant Tensor<double>? out, bool training = false}) async {
     final inp = await input;
     if (out != null) {
       if (out.size != inp.size) {

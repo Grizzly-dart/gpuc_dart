@@ -22,7 +22,7 @@ class MaxPool2D<T extends num> extends Layer2D<T> {
 
   @override
   Future<Tensor<T>> compute(FutureOr<Tensor<T>> input,
-      {covariant Tensor<T>? out}) async {
+      {covariant Tensor<T>? out, bool training = false}) async {
     final inp = await input;
     final outS2d = outSize2D(inp.size);
     final outS = outSize(inp.size);

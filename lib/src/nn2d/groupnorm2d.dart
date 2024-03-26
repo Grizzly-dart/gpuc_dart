@@ -15,7 +15,7 @@ class GroupNorm extends Layer2D<double> {
 
   @override
   Future<Tensor<double>> compute(FutureOr<Tensor<double>> input,
-      {covariant Tensor<double>? out}) async {
+      {covariant Tensor<double>? out, bool training = false}) async {
     final inp = await input;
     throw UnimplementedError();
   }

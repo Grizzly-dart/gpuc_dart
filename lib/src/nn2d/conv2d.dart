@@ -80,7 +80,7 @@ class Conv2D extends Layer2D<double> {
 
   @override
   Future<Tensor<double>> compute(FutureOr<Tensor<double>> input,
-      {covariant Tensor<double>? out}) async {
+      {covariant Tensor<double>? out, bool training = false}) async {
     final inp = await input;
     if (inp.size.channels != inChannels) {
       throw ArgumentError('input channels must be $inChannels');

@@ -18,7 +18,7 @@ class Embedding extends Layer<int> {
 
   @override
   Future<Tensor<double>> compute(FutureOr<Tensor<int>> input,
-      {covariant Tensor<double>? out}) async {
+      {covariant Tensor<double>? out, bool training = false}) async {
     return weight.pickRows(await input);
   }
 

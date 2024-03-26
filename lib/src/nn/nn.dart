@@ -4,9 +4,12 @@ import 'package:gpuc_dart/gpuc_dart.dart';
 
 export 'activation/activation.dart';
 export 'loss_function/loss_function.dart';
+export 'optimizer/optimizer.dart';
+export 'model/model.dart';
 
 abstract class Layer<I extends num> {
-  Future<Tensor> compute(FutureOr<Tensor<I>> input, {Tensor? out});
+  Future<Tensor> compute(FutureOr<Tensor<I>> input,
+      {Tensor? out, bool training = false});
 
   Future<Tensor> predict(FutureOr<Tensor<I>> input) async {
     final output = await compute(input);
@@ -63,7 +66,7 @@ class Linear extends Layer<double> {
 
   @override
   Future<Tensor<double>> compute(FutureOr<Tensor<double>> input,
-      {Tensor? out}) async {
+      {Tensor? out, bool training = false}) async {
     final inp = await input;
     if (inp.size.cols != weight.size.rows) {
       throw ArgumentError('input columns must be equal to weight rows');
@@ -78,11 +81,4 @@ class Linear extends Layer<double> {
 
   Dim outSize(Dim inSize) =>
       Dim([...inSize.asList.take(inSize.dims - 1), weight.size.cols]);
-
-  @override
-  void backward(Tensor gradOutput) {
-    // TODO
-  }
 }
-
-
