@@ -20,38 +20,46 @@ abstract mixin class U32Tensor implements Tensor<int> {
     } else {
       size = Dim([list.length]);
     }
-    // TODO check if C/Dart
-    final data = U32COnesor.fromList(list, context: context);
-    return U32Tensor(data, size, name: name, context: context);
+    U32Onesor data;
+    if (cffi != null) {
+      data = U32COnesor.fromList(list, context: context);
+    } else {
+      data = U32DartOnesor.fromList(list);
+    }
+    return _U32Tensor(data, size, name: name, context: context);
   }
 
   factory U32Tensor.sized(/* Dim | Iterable<int> | int */ size,
       {String name = '', Context? context}) {
-    if (size is! Dim) size = Dim.from(size);
-    return U32Tensor(U32COnesor.sized(size.nel, context: context), size,
-        name: name, context: context);
+    size = Dim.from(size);
+    U32Onesor data;
+    if (cffi != null) {
+      data = U32COnesor.sized(size.nel, context: context);
+    } else {
+      data = U32DartOnesor.sized(size.nel);
+    }
+    return _U32Tensor(data, size, name: name, context: context);
   }
 
   factory U32Tensor.generate(/* Dim | Iterable<int> | int */ size,
       int Function(Dim size, Dim index) generator,
       {String name = '', Context? context}) {
-    if (size is! Dim) size = Dim.from(size);
-    final data = U32COnesor.sized(size.nel, context: context);
+    final ret = U32Tensor.sized(size, name: name, context: context);
     for (var i = 0; i < size.nel; i++) {
-      data[i] = generator(size, size.unravel(i));
+      ret.as1d[i] = generator(size, size.unravel(i));
     }
-    return U32Tensor(data, size, name: name, context: context);
+    return ret;
   }
 
   factory U32Tensor.random(/* Dim | Iterable<int> | int */ size,
       {Random? random, String name = '', Context? context}) {
     if (size is! Dim) size = Dim.from(size);
     random ??= Random();
-    final data = U32COnesor.sized(size.nel, context: context);
+    final ret = U32Tensor.sized(size, name: name, context: context);
     for (var i = 0; i < size.nel; i++) {
-      data[i] = random.nextInt(u32.maxVal);
+      ret.as1d[i] = random.nextInt(u32.maxVal);
     }
-    return U32Tensor(data, size, name: name, context: context);
+    return ret;
   }
 
   @override

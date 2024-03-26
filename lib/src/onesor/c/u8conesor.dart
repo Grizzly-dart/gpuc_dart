@@ -38,7 +38,7 @@ abstract mixin class U8COnesor implements COnesor<int>, U8Onesor {
       throw ArgumentError('Length out of range');
     }
     final ret = U8COnesor.sized(length, context: context);
-    CFFI.memcpy(ret.ptr.cast(), (ptr + start * ret.bytesPerItem).cast(),
+    cffi!.memcpy(ret.ptr.cast(), (ptr + start * ret.bytesPerItem).cast(),
         length * ret.bytesPerItem);
     return ret;
   }
@@ -46,7 +46,7 @@ abstract mixin class U8COnesor implements COnesor<int>, U8Onesor {
   @override
   U8COnesor read({Context? context}) {
     final ret = U8COnesor.sized(length, context: context);
-    CFFI.memcpy(ret.ptr.cast(), ptr.cast(), lengthBytes);
+    cffi!.memcpy(ret.ptr.cast(), ptr.cast(), lengthBytes);
     return ret;
   }
 
@@ -108,7 +108,7 @@ class _U8COnesor
 
   @override
   set length(int newLength) {
-    final newPtr = CFFI.realloc(_ptr.cast(), newLength * bytesPerItem);
+    final newPtr = cffi!.realloc(_ptr.cast(), newLength * bytesPerItem);
     if (newPtr == ffi.nullptr) {
       throw Exception('Failed to allocate memory');
     }

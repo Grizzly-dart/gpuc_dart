@@ -20,38 +20,45 @@ abstract mixin class F32Tensor implements Tensor<double> {
     } else {
       size = Dim([list.length]);
     }
-    // TODO check if C/Dart
-    final data = F32COnesor.fromList(list, context: context);
-    return F32Tensor(data, size, name: name, context: context);
+    F32Onesor data;
+    if (cffi != null) {
+      data = F32COnesor.fromList(list, context: context);
+    } else {
+      data = F32DartOnesor.fromList(list);
+    }
+    return _F32Tensor(data, size, name: name, context: context);
   }
 
   factory F32Tensor.sized(/* Dim | Iterable<int> | int */ size,
       {String name = '', Context? context}) {
-    if (size is! Dim) size = Dim.from(size);
-    return F32Tensor(F32COnesor.sized(size.nel, context: context), size,
-        name: name, context: context);
+    size = Dim.from(size);
+    F32Onesor data;
+    if (cffi != null) {
+      data = F32COnesor.sized(size.nel, context: context);
+    } else {
+      data = F32DartOnesor.sized(size.nel);
+    }
+    return _F32Tensor(data, size, name: name, context: context);
   }
 
   factory F32Tensor.generate(/* Dim | Iterable<int> | int */ size,
       double Function(Dim size, Dim index) generator,
       {String name = '', Context? context}) {
-    if (size is! Dim) size = Dim.from(size);
-    final data = F32COnesor.sized(size.nel, context: context);
+    final ret = F32Tensor.sized(size, name: name, context: context);
     for (var i = 0; i < size.nel; i++) {
-      data[i] = generator(size, size.unravel(i));
+      ret.as1d[i] = generator(size, size.unravel(i));
     }
-    return F32Tensor(data, size, name: name, context: context);
+    return ret;
   }
 
   factory F32Tensor.random(/* Dim | Iterable<int> | int */ size,
       {Random? random, String name = '', Context? context}) {
-    if (size is! Dim) size = Dim.from(size);
+    final ret = F32Tensor.sized(size, name: name, context: context);
     random ??= Random();
-    final data = F32COnesor.sized(size.nel, context: context);
     for (var i = 0; i < size.nel; i++) {
-      data[i] = random.nextDouble();
+      ret.as1d[i] = random.nextDouble();
     }
-    return F32Tensor(data, size, name: name, context: context);
+    return ret;
   }
 
   @override

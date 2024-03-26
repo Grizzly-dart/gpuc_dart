@@ -19,7 +19,7 @@ Future<void> test(
       size: Dim([1, 1, 16, 16]));
   // input.printTextTable();
   final maxPool2D = MaxPool2D(kernelSize, stride: stride, padding: padding);
-  final out = await maxPool2D.forward(input);
+  final out = await maxPool2D.compute(input);
   print(out.size);
   print(out.as1d);
   // out.printTextTable();

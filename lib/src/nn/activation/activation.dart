@@ -2,18 +2,18 @@ import 'dart:async';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-class ELUActivation implements Layer {
+class ELUActivation extends Layer {
   final double alpha;
 
   ELUActivation({this.alpha = 1.0});
 
   @override
-  Future<Tensor<double>> forward(FutureOr<Tensor> x,
-      {Tensor<double>? out}) async {
+  Future<Tensor<double>> compute(FutureOr<Tensor> input,
+      {covariant Tensor<double>? out}) async {
     // TODO device selection
     final ctx = Context();
 
-    final inp = await x;
+    final inp = await input;
 
     try {
       final stream = CudaStream(0, context: ctx);
@@ -40,16 +40,16 @@ class ELUActivation implements Layer {
   }
 }
 
-class RELUActivation implements Layer {
+class RELUActivation extends Layer {
   RELUActivation();
 
   @override
-  Future<Tensor<double>> forward(FutureOr<Tensor> x,
-      {Tensor<double>? out}) async {
+  Future<Tensor<double>> compute(FutureOr<Tensor> input,
+      {covariant Tensor<double>? out}) async {
     // TODO device selection
     final ctx = Context();
 
-    final inp = await x;
+    final inp = await input;
 
     try {
       final stream = CudaStream(0, context: ctx);
@@ -76,17 +76,16 @@ class RELUActivation implements Layer {
   }
 }
 
-class TanhActivation implements Layer {
+class TanhActivation extends Layer {
   TanhActivation();
 
   @override
-  Future<Tensor<double>> forward(FutureOr<Tensor> x,
-      {Tensor<double>? out}) async {
-    return (await x).tanh(out: out);
-  }
+  Future<Tensor<double>> compute(FutureOr<Tensor> input,
+          {covariant Tensor<double>? out}) async =>
+      (await input).tanh(out: out);
 }
 
-class ThresholdActivation implements Layer {
+class ThresholdActivation extends Layer {
   double threshold;
 
   double value;
@@ -94,12 +93,12 @@ class ThresholdActivation implements Layer {
   ThresholdActivation({required this.threshold, required this.value});
 
   @override
-  Future<Tensor<double>> forward(FutureOr<Tensor> x,
-      {Tensor<double>? out}) async {
+  Future<Tensor<double>> compute(FutureOr<Tensor> input,
+      {covariant Tensor<double>? out}) async {
     // TODO device selection
     final ctx = Context();
 
-    final inp = await x;
+    final inp = await input;
 
     try {
       final stream = CudaStream(0, context: ctx);
@@ -127,16 +126,16 @@ class ThresholdActivation implements Layer {
   }
 }
 
-class SigmoidActivation implements Layer {
+class SigmoidActivation extends Layer {
   SigmoidActivation();
 
   @override
-  Future<Tensor<double>> forward(FutureOr<Tensor> x,
-      {Tensor<double>? out}) async {
+  Future<Tensor<double>> compute(FutureOr<Tensor> input,
+      {covariant Tensor<double>? out}) async {
     // TODO device selection
     final ctx = Context();
 
-    final inp = await x;
+    final inp = await input;
 
     try {
       final stream = CudaStream(0, context: ctx);
@@ -163,13 +162,13 @@ class SigmoidActivation implements Layer {
   }
 }
 
-class SiLUActivation implements Layer {
+class SiLUActivation extends Layer {
   SiLUActivation();
 
   @override
-  Future<Tensor<double>> forward(FutureOr<Tensor> x,
-      {Tensor<double>? out}) async {
-    final inp = await x;
+  Future<Tensor<double>> compute(FutureOr<Tensor> input,
+      {covariant Tensor<double>? out}) async {
+    final inp = await input;
     if (out != null) {
       if (out.size != inp.size) {
         throw ArgumentError('output size must be equal to input size');
@@ -199,19 +198,19 @@ class SiLUActivation implements Layer {
   }
 }
 
-class SoftplusActivation implements Layer {
+class SoftplusActivation extends Layer {
   int beta;
   int threshold;
 
   SoftplusActivation({this.beta = 1, this.threshold = 20});
 
   @override
-  Future<Tensor<double>> forward(FutureOr<Tensor> x,
-      {Tensor<double>? out}) async {
+  Future<Tensor<double>> compute(FutureOr<Tensor> input,
+      {covariant Tensor<double>? out}) async {
     // TODO device selection
     final ctx = Context();
 
-    final inp = await x;
+    final inp = await input;
 
     try {
       final stream = CudaStream(0, context: ctx);
@@ -239,16 +238,16 @@ class SoftplusActivation implements Layer {
   }
 }
 
-class SoftsignActivation implements Layer {
+class SoftsignActivation extends Layer {
   SoftsignActivation();
 
   @override
-  Future<Tensor<double>> forward(FutureOr<Tensor> x,
-      {Tensor<double>? out}) async {
+  Future<Tensor<double>> compute(FutureOr<Tensor> input,
+      {covariant Tensor<double>? out}) async {
     // TODO device selection
     final ctx = Context();
 
-    final inp = await x;
+    final inp = await input;
 
     try {
       final stream = CudaStream(0, context: ctx);
@@ -275,13 +274,13 @@ class SoftsignActivation implements Layer {
   }
 }
 
-class MishActivation implements Layer {
+class MishActivation extends Layer {
   MishActivation();
 
   @override
-  Future<Tensor<double>> forward(FutureOr<Tensor> x,
-      {Tensor<double>? out}) async {
-    final inp = await x;
+  Future<Tensor<double>> compute(FutureOr<Tensor> input,
+      {covariant Tensor<double>? out}) async {
+    final inp = await input;
     if (out != null) {
       if (out.size != inp.size) {
         throw ArgumentError('output size must be equal to input size');

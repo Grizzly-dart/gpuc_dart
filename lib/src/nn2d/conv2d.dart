@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-class Conv2D implements Layer2D<double> {
+class Conv2D extends Layer2D<double> {
   final F64Tensor kernel;
 
   final F64Tensor? bias;
@@ -79,18 +79,24 @@ class Conv2D implements Layer2D<double> {
   }
 
   @override
-  Future<F64Tensor> forward(FutureOr<Tensor<double>> input) async {
+  Future<Tensor<double>> compute(FutureOr<Tensor<double>> input,
+      {covariant Tensor<double>? out}) async {
     final inp = await input;
     if (inp.size.channels != inChannels) {
       throw ArgumentError('input channels must be $inChannels');
     }
     final out2DS = outSize2D(inp.size);
+    int batches = inp.size.batch;
+    final outS = Dim([batches, outChannels] + out2DS.toList());
+    if (out != null) {
+      if (out.size != outS) {
+        throw ArgumentError('output size must be $outS');
+      }
+    }
     Dim2 padding = this.padding;
     if (padSameSize) {
       padding = padSameSize2D(inp.size.to2D());
     }
-
-    int batches = inp.size.batch;
 
     // TODO device selection
     final ctx = Context();
@@ -98,15 +104,14 @@ class Conv2D implements Layer2D<double> {
     // TODO split batches if cannot fit in memory
     try {
       final stream = CudaStream(0, context: ctx);
-      final outS = Dim([batches, outChannels] + out2DS.toList());
-      final out = F64CuOnesor.sized(stream, outS.nel, context: ctx);
-      final inpL = F64CuOnesor.copy(stream, inp.as1d, context: ctx);
-      final kernL = F64CuOnesor.copy(stream, kernel.as1d, context: ctx);
+      final outBuf = F64CuOnesor.sized(stream, outS.nel, context: ctx);
+      final inpBuf = F64CuOnesor.copy(stream, inp.as1d, context: ctx);
+      final kernBuf = F64CuOnesor.copy(stream, kernel.as1d, context: ctx);
       cuda.conv2D(
           stream,
-          out.ptr,
-          inpL.ptr,
-          kernL.ptr,
+          outBuf.ptr,
+          inpBuf.ptr,
+          kernBuf.ptr,
           batches,
           Dim3(outChannels, out2DS.rows, out2DS.cols),
           Dim3(inChannels, inp.size.rows, inp.size.cols),
@@ -117,11 +122,13 @@ class Conv2D implements Layer2D<double> {
           pad,
           stride,
           dilation);
-      final outTensor = F64Tensor.sized(outS);
-      ctx.releaseOnErr(outTensor);
-      out.copyTo(outTensor.as1d, stream: stream);
+      if(out == null) {
+        out = F64Tensor.sized(outS);
+        ctx.releaseOnErr(out);
+      }
+      outBuf.copyTo(out.as1d, stream: stream);
       await stream.sync();
-      return outTensor;
+      return out;
     } catch (e) {
       ctx.release(isError: true);
       rethrow;

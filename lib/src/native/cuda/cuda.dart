@@ -102,10 +102,10 @@ class Cuda {
       {CudaStream? stream}) {
     final context = Context();
     try {
-      final dst = CF64Ptr.allocate(context: context);
+      final dst = CPtr.allocate(8);
       stream = stream ?? CudaStream(deviceId, context: context);
       memcpy(stream, dst.ptr.cast(), (src + index).cast(), 8);
-      return dst.value;
+      return dst.ptr.cast<ffi.Double>().value;
     } finally {
       context.release();
     }
@@ -116,8 +116,8 @@ class Cuda {
       {CudaStream? stream}) {
     final context = Context();
     try {
-      final src = CF64Ptr.allocate(context: context);
-      src.value = value;
+      final src = CPtr.allocate(8);
+      src.ptr.cast<ffi.Double>().value = value;
       stream = stream ?? CudaStream(deviceId, context: context);
       cuda.memcpy(stream.ptr, (dst + index).cast(), src.ptr.cast(), 8);
       return dst.value;
@@ -341,8 +341,7 @@ class Cuda {
     }
   }
 
-  void maxPool2D(CudaStream stream, ffi.Pointer<ffi.Double> out,
-      ffi.Pointer<ffi.Double> inp,
+  void maxPool2D(CudaStream stream, ffi.Pointer out, ffi.Pointer inp,
       {required Dim2 kernSize,
       required Dim2 outSize,
       required Dim2 inpSize,
@@ -472,8 +471,8 @@ class Cuda {
     if (inp.type != out.type) {
       throw ArgumentError('Input and output types must be the same');
     }
-    final err = cuda.mishActivation(
-        stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
+    final err =
+        cuda.mishActivation(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -563,7 +562,7 @@ class CudaMemInfo implements ffi.Finalizable {
   static CudaMemInfo allocate() {
     final ptr = ffi.calloc.allocate<CCudaMemInfo>(ffi.sizeOf<CCudaMemInfo>());
     final ret = CudaMemInfo(ptr);
-    CFFI.finalizer.attach(ret, ptr.cast());
+    cffi!.finalizer.attach(ret, ptr.cast());
     return ret;
   }
 
@@ -593,7 +592,7 @@ class CudaDeviceProps implements ffi.Finalizable {
   static CudaDeviceProps allocate() {
     final ret = CudaDeviceProps(
         ffi.calloc.allocate<CCudaDeviceProps>(ffi.sizeOf<CCudaDeviceProps>()));
-    CFFI.finalizer.attach(ret, ret.ptr.cast());
+    cffi!.finalizer.attach(ret, ret.ptr.cast());
     return ret;
   }
 

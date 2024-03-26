@@ -14,6 +14,9 @@ abstract mixin class F64DartOnesor implements DartOnesor<double>, F64Onesor {
   factory F64DartOnesor.copy(Onesor<double> other) =>
       _F64DartOnesor.copy(other);
 
+  factory F64DartOnesor.fromList(List<double> list) =>
+      _F64DartOnesor(Float64List.fromList(list));
+
   @override
   F64COnesor read({Context? context}) {
     final ret = F64COnesor.sized(length, context: context);

@@ -20,38 +20,46 @@ abstract mixin class I64Tensor implements Tensor<int> {
     } else {
       size = Dim([list.length]);
     }
-    // TODO check if C/Dart
-    final data = I64COnesor.fromList(list, context: context);
-    return I64Tensor(data, size, name: name, context: context);
+    I64Onesor data;
+    if (cffi != null) {
+      data = I64COnesor.fromList(list, context: context);
+    } else {
+      data = I64DartOnesor.fromList(list);
+    }
+    return _I64Tensor(data, size, name: name, context: context);
   }
 
   factory I64Tensor.sized(/* Dim | Iterable<int> | int */ size,
       {String name = '', Context? context}) {
-    if (size is! Dim) size = Dim.from(size);
-    return I64Tensor(I64COnesor.sized(size.nel, context: context), size,
-        name: name, context: context);
+    size = Dim.from(size);
+    I64Onesor data;
+    if (cffi != null) {
+      data = I64COnesor.sized(size.nel, context: context);
+    } else {
+      data = I64DartOnesor.sized(size.nel);
+    }
+    return _I64Tensor(data, size, name: name, context: context);
   }
 
   factory I64Tensor.generate(/* Dim | Iterable<int> | int */ size,
       int Function(Dim size, Dim index) generator,
       {String name = '', Context? context}) {
-    if (size is! Dim) size = Dim.from(size);
-    final data = I64COnesor.sized(size.nel, context: context);
+    final ret = I64Tensor.sized(size, name: name, context: context);
     for (var i = 0; i < size.nel; i++) {
-      data[i] = generator(size, size.unravel(i));
+      ret.as1d[i] = generator(size, size.unravel(i));
     }
-    return I64Tensor(data, size, name: name, context: context);
+    return ret;
   }
 
   factory I64Tensor.random(/* Dim | Iterable<int> | int */ size,
       {Random? random, String name = '', Context? context}) {
     if (size is! Dim) size = Dim.from(size);
     random ??= Random();
-    final data = I64COnesor.sized(size.nel, context: context);
+    final ret = I64Tensor.sized(size, name: name, context: context);
     for (var i = 0; i < size.nel; i++) {
-      data[i] = random.nextInt(i64.maxVal);
+      ret.as1d[i] = random.nextInt(i64.maxVal);
     }
-    return I64Tensor(data, size, name: name, context: context);
+    return ret;
   }
 
   @override

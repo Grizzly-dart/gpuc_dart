@@ -113,7 +113,7 @@ Future<void> testConv2D({
       dilation: dilation,
       padMode: padMode,
       padSameSize: padSameSize);
-  final t2 = await conv2D.forward(t1);
+  final t2 = await conv2D.compute(t1);
   print(t2.size);
   print(t2.as1d);
   final tensonCmd = TensonCmd();

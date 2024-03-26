@@ -8,7 +8,7 @@ abstract mixin class I32Tensor implements Tensor<int> {
   I32Onesor get as1d;
 
   factory I32Tensor(I32Onesor as1d, Dim size,
-      {String name = '', Context? context}) =>
+          {String name = '', Context? context}) =>
       _I32Tensor(as1d, size, name: name, context: context);
 
   factory I32Tensor.fromList(List<int> list,
@@ -20,38 +20,46 @@ abstract mixin class I32Tensor implements Tensor<int> {
     } else {
       size = Dim([list.length]);
     }
-    // TODO check if C/Dart
-    final data = I32COnesor.fromList(list, context: context);
+    I32Onesor data;
+    if(cffi != null) {
+      data = I32COnesor.fromList(list, context: context);
+    } else {
+      data = I32DartOnesor.fromList(list);
+    }
     return I32Tensor(data, size, name: name, context: context);
   }
 
   factory I32Tensor.sized(/* Dim | Iterable<int> | int */ size,
       {String name = '', Context? context}) {
-    if (size is! Dim) size = Dim.from(size);
-    return I32Tensor(I32COnesor.sized(size.nel, context: context), size,
-        name: name, context: context);
+    size = Dim.from(size);
+    I32Onesor data;
+    if(cffi != null) {
+      data = I32COnesor.sized(size.nel, context: context);
+    } else {
+      data = I32DartOnesor.sized(size.nel);
+    }
+    return I32Tensor(data, Dim.from(size), name: name, context: context);
   }
 
   factory I32Tensor.generate(/* Dim | Iterable<int> | int */ size,
       int Function(Dim size, Dim index) generator,
       {String name = '', Context? context}) {
-    if (size is! Dim) size = Dim.from(size);
-    final data = I32COnesor.sized(size.nel, context: context);
+    final ret = I32Tensor.sized(size, name: name, context: context);
     for (var i = 0; i < size.nel; i++) {
-      data[i] = generator(size, size.unravel(i));
+      ret.as1d[i] = generator(size, size.unravel(i));
     }
-    return I32Tensor(data, size, name: name, context: context);
+    return ret;
   }
 
   factory I32Tensor.random(/* Dim | Iterable<int> | int */ size,
       {Random? random, String name = '', Context? context}) {
     if (size is! Dim) size = Dim.from(size);
     random ??= Random();
-    final data = I32COnesor.sized(size.nel, context: context);
+    final ret = I32Tensor.sized(size, name: name, context: context);
     for (var i = 0; i < size.nel; i++) {
-      data[i] = random.nextInt(i32.maxVal);
+      ret.as1d[i] = random.nextInt(i32.maxVal);
     }
-    return I32Tensor(data, size, name: name, context: context);
+    return ret;
   }
 
   @override

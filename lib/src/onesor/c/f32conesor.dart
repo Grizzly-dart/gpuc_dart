@@ -38,7 +38,7 @@ abstract mixin class F32COnesor implements COnesor<double>, F32Onesor {
       throw ArgumentError('Length out of range');
     }
     final ret = F32COnesor.sized(length, context: context);
-    CFFI.memcpy(ret.ptr.cast(), (ptr + start * ret.bytesPerItem).cast(),
+    cffi!.memcpy(ret.ptr.cast(), (ptr + start * ret.bytesPerItem).cast(),
         length * ret.bytesPerItem);
     return ret;
   }
@@ -46,7 +46,7 @@ abstract mixin class F32COnesor implements COnesor<double>, F32Onesor {
   @override
   F32COnesor read({Context? context}) {
     final ret = F32COnesor.sized(length, context: context);
-    CFFI.memcpy(ret.ptr.cast(), ptr.cast(), lengthBytes);
+    cffi!.memcpy(ret.ptr.cast(), ptr.cast(), lengthBytes);
     return ret;
   }
 
@@ -113,7 +113,7 @@ class _F32COnesor
 
   @override
   set length(int newLength) {
-    final newPtr = CFFI.realloc(_ptr.cast(), newLength * bytesPerItem);
+    final newPtr = cffi!.realloc(_ptr.cast(), newLength * bytesPerItem);
     if (newPtr == ffi.nullptr) {
       throw Exception('Failed to allocate memory');
     }

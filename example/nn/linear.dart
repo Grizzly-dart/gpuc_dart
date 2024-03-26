@@ -19,7 +19,7 @@ Future<void> test(int inFeatures, int outFeatures,
     bias = F64Tensor.random(Dim([outFeatures]), random: rnd);
   }
   final linear = Linear.withWeights(weights, bias: bias);
-  final out = await linear.forward(inp);
+  final out = await linear.compute(inp);
   final out2 = await TensonCmd().linear(inp, await weights.t(), bias);
   out.assertEqual(out2, eps: inp.size.to2D().nel * 1e-6);
 }

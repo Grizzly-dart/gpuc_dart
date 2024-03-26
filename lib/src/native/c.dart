@@ -36,6 +36,51 @@ void initializeTensorC({String? libPath}) {
   CFFI.initialize(dylib);
 }
 
+CFFI? cffi;
+
+class CFFI {
+  final ffi
+      .Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>
+      freeNative;
+  final void Function(ffi.Pointer<ffi.Void>) free;
+  final ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void> oldPtr, int size)
+      realloc;
+  final void Function(
+      ffi.Pointer<ffi.Void> dst, ffi.Pointer<ffi.Void> src, int size) memcpy;
+
+  CFFI(
+      {required this.freeNative,
+      required this.free,
+      required this.realloc,
+      required this.memcpy});
+
+  factory CFFI.lookup(ffi.DynamicLibrary dylib) {
+    final freeNative = dylib
+        .lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+            'libtcFree');
+    final free = dylib.lookupFunction<ffi.Void Function(ffi.Pointer<ffi.Void>),
+        void Function(ffi.Pointer<ffi.Void>)>('libtcFree');
+    final realloc = dylib.lookupFunction<
+        ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void>, ffi.Uint64),
+        ffi.Pointer<ffi.Void> Function(
+            ffi.Pointer<ffi.Void>, int)>('libtcRealloc');
+    final memcpy = dylib.lookupFunction<
+        ffi.Void Function(
+            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, ffi.Uint64),
+        void Function(
+            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, int)>('libtcMemcpy');
+
+    return CFFI(
+        freeNative: freeNative, free: free, realloc: realloc, memcpy: memcpy);
+  }
+
+  static void initialize(ffi.DynamicLibrary dylib) {
+    cffi = CFFI.lookup(dylib);
+  }
+
+  late final finalizer = ffi.NativeFinalizer(freeNative);
+}
+
 typedef Ptr = ffi.Pointer;
 typedef NativePtr = ffi.Pointer<ffi.SizedNativeType>;
 typedef VoidPtr = ffi.Pointer<ffi.Void>;
@@ -93,7 +138,7 @@ class CPtr<T extends ffi.NativeType> implements Resource, ffi.Finalizable {
   ffi.Pointer<T> _mem;
 
   CPtr(this._mem, {Context? context}) {
-    CFFI.finalizer.attach(this, _mem.cast());
+    cffi!.finalizer.attach(this, _mem.cast());
     context?.add(this);
   }
 
@@ -111,62 +156,4 @@ class CPtr<T extends ffi.NativeType> implements Resource, ffi.Finalizable {
     ffi.malloc.free(_mem);
     _mem = ffi.nullptr;
   }
-}
-
-class CF64Ptr implements Resource {
-  ffi.Pointer<ffi.Double> _mem;
-
-  CF64Ptr(this._mem, {Context? context}) {
-    context?.add(this);
-  }
-
-  static CF64Ptr allocate({Context? context}) {
-    final mem = ffi.calloc<ffi.Double>(8);
-    return CF64Ptr(mem, context: context);
-  }
-
-  ffi.Pointer<ffi.Double> get ptr => _mem;
-
-  double get value => _mem.value;
-
-  set value(double value) => _mem.value = value;
-
-  @override
-  void release() {
-    if (_mem == ffi.nullptr) {
-      return;
-    }
-    ffi.malloc.free(_mem);
-    _mem = ffi.nullptr;
-  }
-}
-
-abstract class CFFI {
-  static late final ffi
-      .Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>
-      freeNative;
-  static late final void Function(ffi.Pointer<ffi.Void>) free;
-  static late final ffi.Pointer<ffi.Void> Function(
-      ffi.Pointer<ffi.Void> oldPtr, int size) realloc;
-  static late final void Function(
-      ffi.Pointer<ffi.Void> dst, ffi.Pointer<ffi.Void> src, int size) memcpy;
-
-  static void initialize(ffi.DynamicLibrary dylib) {
-    freeNative = dylib
-        .lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
-            'libtcFree');
-    free = dylib.lookupFunction<ffi.Void Function(ffi.Pointer<ffi.Void>),
-        void Function(ffi.Pointer<ffi.Void>)>('libtcFree');
-    realloc = dylib.lookupFunction<
-        ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void>, ffi.Uint64),
-        ffi.Pointer<ffi.Void> Function(
-            ffi.Pointer<ffi.Void>, int)>('libtcRealloc');
-    memcpy = dylib.lookupFunction<
-        ffi.Void Function(
-            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, ffi.Uint64),
-        void Function(
-            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, int)>('libtcMemcpy');
-  }
-
-  static final finalizer = ffi.NativeFinalizer(CFFI.freeNative);
 }

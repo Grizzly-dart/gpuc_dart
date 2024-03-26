@@ -20,38 +20,46 @@ abstract mixin class U16Tensor implements Tensor<int> {
     } else {
       size = Dim([list.length]);
     }
-    // TODO check if C/Dart
-    final data = U16COnesor.fromList(list, context: context);
-    return U16Tensor(data, size, name: name, context: context);
+    U16Onesor data;
+    if (cffi != null) {
+      data = U16COnesor.fromList(list, context: context);
+    } else {
+      data = U16DartOnesor.fromList(list);
+    }
+    return _U16Tensor(data, size, name: name, context: context);
   }
 
   factory U16Tensor.sized(/* Dim | Iterable<int> | int */ size,
       {String name = '', Context? context}) {
-    if (size is! Dim) size = Dim.from(size);
-    return U16Tensor(U16COnesor.sized(size.nel, context: context), size,
-        name: name, context: context);
+    size = Dim.from(size);
+    U16Onesor data;
+    if (cffi != null) {
+      data = U16COnesor.sized(size.nel, context: context);
+    } else {
+      data = U16DartOnesor.sized(size.nel);
+    }
+    return _U16Tensor(data, size, name: name, context: context);
   }
 
   factory U16Tensor.generate(/* Dim | Iterable<int> | int */ size,
       int Function(Dim size, Dim index) generator,
       {String name = '', Context? context}) {
-    if (size is! Dim) size = Dim.from(size);
-    final data = U16COnesor.sized(size.nel, context: context);
+    final ret = U16Tensor.sized(size, name: name, context: context);
     for (var i = 0; i < size.nel; i++) {
-      data[i] = generator(size, size.unravel(i));
+      ret.as1d[i] = generator(size, size.unravel(i));
     }
-    return U16Tensor(data, size, name: name, context: context);
+    return ret;
   }
 
   factory U16Tensor.random(/* Dim | Iterable<int> | int */ size,
       {Random? random, String name = '', Context? context}) {
     if (size is! Dim) size = Dim.from(size);
     random ??= Random();
-    final data = U16COnesor.sized(size.nel, context: context);
+    final ret = U16Tensor.sized(size, name: name, context: context);
     for (var i = 0; i < size.nel; i++) {
-      data[i] = random.nextInt(u16.maxVal);
+      ret.as1d[i] = random.nextInt(u16.maxVal);
     }
-    return U16Tensor(data, size, name: name, context: context);
+    return ret;
   }
 
   @override

@@ -347,10 +347,11 @@ typedef Normalize2d = StrPtr Function(ffi.Pointer<CCudaStream> stream, Ptr out,
 typedef Normalize2DNative = StrPtr Function(ffi.Pointer<CCudaStream> stream,
     Ptr out, Ptr inp, CDim2, ffi.Double, ffi.Uint8, ffi.Uint8);
 
+// TODO take dtype
 typedef MaxPool2D = ffi.Pointer<ffi.Utf8> Function(
   ffi.Pointer<CCudaStream>,
-  ffi.Pointer<ffi.Double>,
-  ffi.Pointer<ffi.Double>,
+  ffi.Pointer,
+  ffi.Pointer,
   CDim2, // kernS
   CDim2, // outS
   CDim2, // inpS
@@ -361,8 +362,8 @@ typedef MaxPool2D = ffi.Pointer<ffi.Utf8> Function(
 );
 typedef MaxPool2DNative = ffi.Pointer<ffi.Utf8> Function(
   ffi.Pointer<CCudaStream>,
-  ffi.Pointer<ffi.Double>,
-  ffi.Pointer<ffi.Double>,
+  ffi.Pointer,
+  ffi.Pointer,
   CDim2, // kernS
   CDim2, // outS
   CDim2, // inpS

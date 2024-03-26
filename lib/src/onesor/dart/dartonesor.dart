@@ -1,6 +1,15 @@
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 export 'f64dartonesor.dart';
+export 'f32dartonesor.dart';
+export 'u64dartonesor.dart';
+export 'i64dartonesor.dart';
+export 'i32dartonesor.dart';
+export 'u32dartonesor.dart';
+export 'i16dartonesor.dart';
+export 'u16dartonesor.dart';
+export 'i8dartonesor.dart';
+export 'u8dartonesor.dart';
 
 abstract mixin class DartOnesor<T extends num> implements Onesor<T> {
   List<T> get list;

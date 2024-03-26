@@ -20,6 +20,60 @@ export 'i8/i8tensor.dart';
 export 'u8/u8tensor.dart';
 
 abstract mixin class Tensor<T extends num> implements Resource {
+  factory Tensor(Onesor<T> as1d, Dim size, {String name = ''}) {
+    switch (as1d.type) {
+      case f64:
+        return F64Tensor(as1d as F64Onesor, size, name: name) as Tensor<T>;
+      case f32:
+        return F32Tensor(as1d as F32Onesor, size, name: name) as Tensor<T>;
+      case i64:
+        return I64Tensor(as1d as I64Onesor, size, name: name) as Tensor<T>;
+      case u64:
+        return U64Tensor(as1d as U64Onesor, size, name: name) as Tensor<T>;
+      case i32:
+        return I32Tensor(as1d as I32Onesor, size, name: name) as Tensor<T>;
+      case u32:
+        return U32Tensor(as1d as U32Onesor, size, name: name) as Tensor<T>;
+      case i16:
+        return I16Tensor(as1d as I16Onesor, size, name: name) as Tensor<T>;
+      case u16:
+        return U16Tensor(as1d as U16Onesor, size, name: name) as Tensor<T>;
+      case i8:
+        return I8Tensor(as1d as I8Onesor, size, name: name) as Tensor<T>;
+      case u8:
+        return U8Tensor(as1d as U8Onesor, size, name: name) as Tensor<T>;
+      default:
+        throw ArgumentError('Unsupported type: ${as1d.type}');
+    }
+  }
+
+  factory Tensor.sized(Dim size, NumType<T> type, {String name = ''}) {
+    switch (type) {
+      case f64:
+        return F64Tensor.sized(size, name: name) as Tensor<T>;
+      case f32:
+        return F32Tensor.sized(size, name: name) as Tensor<T>;
+      case i64:
+        return I64Tensor.sized(size, name: name) as Tensor<T>;
+      case u64:
+        return U64Tensor.sized(size, name: name) as Tensor<T>;
+      case i32:
+        return I32Tensor.sized(size, name: name) as Tensor<T>;
+      case u32:
+        return U32Tensor.sized(size, name: name) as Tensor<T>;
+      case i16:
+        return I16Tensor.sized(size, name: name) as Tensor<T>;
+      case u16:
+        return U16Tensor.sized(size, name: name) as Tensor<T>;
+      case i8:
+        return I8Tensor.sized(size, name: name) as Tensor<T>;
+      case u8:
+        return U8Tensor.sized(size, name: name) as Tensor<T>;
+      default:
+        throw ArgumentError('Unsupported type: $type');
+    }
+  }
+
   String get name;
 
   set name(String name);
@@ -211,7 +265,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
       final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
       final outBuf =
-      CuOnesor.sized(stream, out?.type ?? f64, nel, context: ctx);
+          CuOnesor.sized(stream, out?.type ?? f64, nel, context: ctx);
       cuda.cos(stream, outBuf, inp1Buf, nel);
       if (out == null) {
         out = F64Tensor.sized(size, name: 'sin($name)');
@@ -240,7 +294,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
       final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
       final outBuf =
-      CuOnesor.sized(stream, out?.type ?? f64, nel, context: ctx);
+          CuOnesor.sized(stream, out?.type ?? f64, nel, context: ctx);
       cuda.tan(stream, outBuf, inp1Buf, nel);
       if (out == null) {
         out = F64Tensor.sized(size, name: 'sin($name)');
@@ -269,7 +323,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
       final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
       final outBuf =
-      CuOnesor.sized(stream, out?.type ?? f64, nel, context: ctx);
+          CuOnesor.sized(stream, out?.type ?? f64, nel, context: ctx);
       cuda.sinh(stream, outBuf, inp1Buf, nel);
       if (out == null) {
         out = F64Tensor.sized(size, name: 'sin($name)');
@@ -298,7 +352,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
       final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
       final outBuf =
-      CuOnesor.sized(stream, out?.type ?? f64, nel, context: ctx);
+          CuOnesor.sized(stream, out?.type ?? f64, nel, context: ctx);
       cuda.cosh(stream, outBuf, inp1Buf, nel);
       if (out == null) {
         out = F64Tensor.sized(size, name: 'sin($name)');
@@ -327,7 +381,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
       final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
       final outBuf =
-      CuOnesor.sized(stream, out?.type ?? f64, nel, context: ctx);
+          CuOnesor.sized(stream, out?.type ?? f64, nel, context: ctx);
       cuda.tanh(stream, outBuf, inp1Buf, nel);
       if (out == null) {
         out = F64Tensor.sized(size, name: 'sin($name)');

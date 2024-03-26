@@ -6,14 +6,30 @@ export 'activation/activation.dart';
 export 'loss_function/loss_function.dart';
 
 abstract class Layer<I extends num> {
-  Future<Tensor<double>> forward(FutureOr<Tensor<I>> input);
+  Future<Tensor> compute(FutureOr<Tensor<I>> input, {Tensor? out});
 
-  Layer pipe(Layer next);
+  Future<Tensor> predict(FutureOr<Tensor<I>> input) async {
+    final output = await compute(input);
+    if (next != null) {
+      return next!.predict(output);
+    }
+    return output;
+  }
 
-  void backward(Tensor gradOutput);
+  // TODO void train(Tensor input, Tensor target);
 
-  Layer? get prev;
-  Layer? get next;
+  // TODO void backward(Tensor gradOutput);
+
+  Layer? prev;
+  Layer? next;
+
+  Layer pipe(Layer next) {
+    this.next = next;
+    next.prev = this;
+    return next;
+  }
+
+  Tensor? output;
 }
 
 // TODO error messages should be more technical and domain specific
@@ -29,7 +45,7 @@ class Linear extends Layer<double> {
       if (bias!.size.cols != weight.size.cols) {
         throw ArgumentError('bias columns must be equal to weight columns');
       }
-      if(bias!.nel != weight.size.cols) {
+      if (bias!.nel != weight.size.cols) {
         throw ArgumentError('bias nel must be equal to weight columns');
       }
     }
@@ -46,7 +62,8 @@ class Linear extends Layer<double> {
   }
 
   @override
-  Future<Tensor<double>> forward(FutureOr<Tensor<double>> input) async {
+  Future<Tensor<double>> compute(FutureOr<Tensor<double>> input,
+      {Tensor? out}) async {
     final inp = await input;
     if (inp.size.cols != weight.size.rows) {
       throw ArgumentError('input columns must be equal to weight rows');
@@ -61,23 +78,11 @@ class Linear extends Layer<double> {
 
   Dim outSize(Dim inSize) =>
       Dim([...inSize.asList.take(inSize.dims - 1), weight.size.cols]);
-}
-
-class Sequential extends Layer {
-  final List<Layer> layers;
-
-  Sequential(this.layers) {
-    if (layers.isEmpty) {
-      throw ArgumentError('layers must not be empty');
-    }
-  }
 
   @override
-  Future<Tensor<double>> forward(FutureOr<Tensor> input) async {
-    var out = await input;
-    for (final layer in layers) {
-      out = await layer.forward(out);
-    }
-    return out as Tensor<double>;
+  void backward(Tensor gradOutput) {
+    // TODO
   }
 }
+
+

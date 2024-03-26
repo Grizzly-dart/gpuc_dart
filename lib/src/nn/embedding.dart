@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-class Embedding implements Layer<int> {
+class Embedding extends Layer<int> {
   final F64Tensor weight;
 
   // TODO padding index
@@ -17,10 +17,12 @@ class Embedding implements Layer<int> {
   }
 
   @override
-  Future<Tensor<double>> forward(FutureOr<Tensor<int>> input) async {
+  Future<Tensor<double>> compute(FutureOr<Tensor<int>> input,
+      {covariant Tensor<double>? out}) async {
     return weight.pickRows(await input);
   }
 
   int get numEmbeddings => weight.size.rows;
+
   int get embeddingDim => weight.size.cols;
 }
