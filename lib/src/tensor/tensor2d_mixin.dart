@@ -43,7 +43,7 @@ mixin F64Tensor2dMixin implements F64Tensor {
   }
 
   @override
-  Future<Tensor<double>> matmul(FutureOr<Tensor<double>> other,
+  Future<Tensor<double>> mm(FutureOr<Tensor<double>> other,
       {Tensor<double>? out}) async {
     if (cuda.exists()) {
       int deviceId = 0; // TODO implement device selection
@@ -55,7 +55,7 @@ mixin F64Tensor2dMixin implements F64Tensor {
   }
 
   @override
-  Future<Tensor<double>> matmulT(FutureOr<Tensor<double>> other,
+  Future<Tensor<double>> mmBt(FutureOr<Tensor<double>> other,
       {Tensor<double>? out}) async {
     if (cuda.exists()) {
       int deviceId = 0; // TODO implement device selection
@@ -67,7 +67,7 @@ mixin F64Tensor2dMixin implements F64Tensor {
   }
 
   @override
-  Future<Tensor<double>> matmulCadd(
+  Future<Tensor<double>> mmColAdd(
       FutureOr<Tensor<double>> other, FutureOr<Tensor<double>> c,
       {Tensor<double>? out}) async {
     if (cuda.exists()) {
@@ -81,7 +81,7 @@ mixin F64Tensor2dMixin implements F64Tensor {
   }
 
   @override
-  Future<Tensor<double>> matmulCaddT(
+  Future<Tensor<double>> mmBtColAdd(
       FutureOr<Tensor<double>> other, FutureOr<Tensor<double>> c,
       {Tensor<double>? out}) async {
     if (cuda.exists()) {

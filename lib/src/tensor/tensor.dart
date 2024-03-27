@@ -621,14 +621,18 @@ abstract mixin class Tensor<T extends num> implements Resource {
 
   Future<Tensor<T>> t({Tensor<T>? out});
 
-  Future<Tensor<T>> matmul(FutureOr<Tensor<T>> other, {Tensor<T>? out});
+  Future<Tensor<T>> mm(FutureOr<Tensor<T>> other, {Tensor<T>? out});
 
-  Future<Tensor<T>> matmulT(FutureOr<Tensor<T>> other, {Tensor<T>? out});
+  Future<Tensor<T>> mmAt(FutureOr<Tensor<T>> other, {Tensor<T>? out}) {
+    throw UnimplementedError();
+  }
 
-  Future<Tensor<T>> matmulCadd(FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
+  Future<Tensor<T>> mmBt(FutureOr<Tensor<T>> other, {Tensor<T>? out});
+
+  Future<Tensor<T>> mmColAdd(FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
       {Tensor<T>? out});
 
-  Future<Tensor<T>> matmulCaddT(
+  Future<Tensor<T>> mmBtColAdd(
       FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
       {Tensor<T>? out});
 

@@ -42,7 +42,7 @@ Future<void> test(
   // a.printTextTable();
   // b.printTextTable();
   final watch = Stopwatch()..start();
-  final out = await a.matmul(b);
+  final out = await a.mm(b);
   print('Elapsed: ${watch.elapsedMilliseconds} ms');
   print(out.as1d);
   final out2 = await TensonCmd().matmul(a, b);

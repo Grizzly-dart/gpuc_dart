@@ -11,13 +11,13 @@ dependencies:
   ffi: ^2.1.2
   mt19937: ^0.1.0
   path: ^1.9.0
-  grizzly: ^1.0.6
+  grizzly: ^1.0.7
   text_table:
 
 dev_dependencies:
   lints: ^3.0.0
   test: ^1.24.0
 
-dependency_overrides:
-  grizzly:
-    path: ../../grizzly/grizzly
+#dependency_overrides:
+#  grizzly:
+#    path: ../../grizzly/grizzly

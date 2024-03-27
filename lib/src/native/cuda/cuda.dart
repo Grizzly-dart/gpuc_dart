@@ -13,8 +13,10 @@ void initializeTensorCuda({String? libPath}) {
     os = 'linux';
   } else if (Platform.isMacOS) {
     os = 'darwin';
+    return; // CUDA not supported for MacOSX
   } else if (Platform.isWindows) {
     os = 'windows';
+    return; // TODO windows not supported yet
   } else {
     return;
   }

@@ -103,24 +103,24 @@ abstract mixin class U16Tensor implements Tensor<int> {
   }
 
   @override
-  Future<Tensor<int>> matmul(FutureOr<Tensor<int>> other, {Tensor<int>? out}) {
+  Future<Tensor<int>> mm(FutureOr<Tensor<int>> other, {Tensor<int>? out}) {
     throw UnimplementedError();
   }
 
   @override
-  Future<Tensor<int>> matmulT(FutureOr<Tensor<int>> other, {Tensor<int>? out}) {
+  Future<Tensor<int>> mmBt(FutureOr<Tensor<int>> other, {Tensor<int>? out}) {
     throw UnimplementedError();
   }
 
   @override
-  Future<Tensor<int>> matmulCadd(
+  Future<Tensor<int>> mmColAdd(
       FutureOr<Tensor<int>> other, FutureOr<Tensor<int>> c,
       {Tensor<int>? out}) {
     throw UnimplementedError();
   }
 
   @override
-  Future<Tensor<int>> matmulCaddT(
+  Future<Tensor<int>> mmBtColAdd(
       FutureOr<Tensor<int>> other, FutureOr<Tensor<int>> c,
       {Tensor<int>? out}) {
     throw UnimplementedError();

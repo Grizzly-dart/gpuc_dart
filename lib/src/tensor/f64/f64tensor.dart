@@ -102,20 +102,20 @@ abstract mixin class F64Tensor implements Tensor<double> {
   Future<Tensor<double>> t({covariant Tensor<double>? out});
 
   @override
-  Future<Tensor<double>> matmul(FutureOr<Tensor<double>> other,
+  Future<Tensor<double>> mm(FutureOr<Tensor<double>> other,
       {Tensor<double>? out});
 
   @override
-  Future<Tensor<double>> matmulT(FutureOr<Tensor<double>> other,
+  Future<Tensor<double>> mmBt(FutureOr<Tensor<double>> other,
       {Tensor<double>? out});
 
   @override
-  Future<Tensor<double>> matmulCadd(
+  Future<Tensor<double>> mmColAdd(
       FutureOr<Tensor<double>> other, FutureOr<Tensor<double>> c,
       {Tensor<double>? out});
 
   @override
-  Future<Tensor<double>> matmulCaddT(
+  Future<Tensor<double>> mmBtColAdd(
       FutureOr<Tensor<double>> other, FutureOr<Tensor<double>> c,
       {Tensor<double>? out});
 

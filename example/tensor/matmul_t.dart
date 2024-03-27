@@ -40,7 +40,7 @@ Future<void> test({int batches = 1, int m = 2, int n = 2, int k = 2}) async {
   // a.printTextTable();
   // bT.printTextTable();
   final watch = Stopwatch()..start();
-  final out = await a.matmulT(bT);
+  final out = await a.mmBt(bT);
   print('Elapsed: ${watch.elapsedMilliseconds} ms');
   // print(out.as1d);
   final out2 = await TensonCmd().matmul(a, b);

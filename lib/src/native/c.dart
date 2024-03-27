@@ -12,6 +12,7 @@ void initializeTensorC({String? libPath}) {
     os = 'darwin';
   } else if (Platform.isWindows) {
     os = 'windows';
+    return; // TODO windows not supported yet
   } else {
     return;
   }
@@ -25,7 +26,7 @@ void initializeTensorC({String? libPath}) {
   if (Platform.isLinux) {
     libraryPath = path.join(libraryPath, 'libtensorc.so');
   } else if (Platform.isMacOS) {
-    libraryPath = path.join(libraryPath, 'libtensorc.dylib');
+    libraryPath = path.join(libraryPath, 'libtensorc.so');
   } else if (Platform.isWindows) {
     libraryPath = path.join(libraryPath, 'libtensorc.dll');
   } else {

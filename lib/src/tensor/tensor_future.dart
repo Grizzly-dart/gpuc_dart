@@ -32,6 +32,24 @@ extension TensorFutureExt<T extends num> on FutureOr<Tensor<T>> {
   Future<Tensor<double>> tanh({Tensor<double>? out}) async =>
       (await this).tanh();
 
+  Future<Tensor<T>> t({Tensor<T>? out}) async => (await this).t(out: out);
+
+  Future<Tensor<T>> mm(FutureOr<Tensor<T>> other, {Tensor<T>? out}) async =>
+      (await this).mm(other, out: out);
+
+  Future<Tensor<T>> mmBt(FutureOr<Tensor<T>> other,
+          {Tensor<T>? out}) async =>
+      (await this).mmBt(other, out: out);
+
+  Future<Tensor<T>> mmColAdd(FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
+          {Tensor<T>? out}) async =>
+      (await this).mmColAdd(other, c, out: out);
+
+  Future<Tensor<T>> mmBtColAdd(
+          FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
+          {Tensor<T>? out}) async =>
+      (await this).mmBtColAdd(other, c, out: out);
+
 /*
   TODO
   Future<Tensor> sumRows() async {
