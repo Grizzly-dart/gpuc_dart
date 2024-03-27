@@ -24,6 +24,16 @@ abstract class Dim {
 
   factory Dim.to2D(int rows, [int? cols]) => _DimImpl([rows, cols ?? rows]);
 
+  static Extent<Dim> extentFrom(Extent value) {
+    if (value is Extent<Dim>) {
+      return value;
+    } else if(value is Extent<int>) {
+      return Extent<Dim>(Dim([value.lower]), Dim([value.upper]));
+    } else {
+      throw ArgumentError('Invalid type');
+    }
+  }
+
   int operator [](int index);
 
   int get dims;
@@ -94,6 +104,9 @@ abstract class Dim {
 mixin DimMixin implements Dim {
   @override
   Dim unravel(int index) {
+    if(dims == 0 && index == 0) {
+      return Dim([]);
+    }
     if (index < 0 || index >= nel) {
       throw ArgumentError('Index out of range');
     }
@@ -256,11 +269,7 @@ mixin DimMixin implements Dim {
 class _DimImpl with DimMixin implements Dim {
   final List<int> _sizes;
 
-  _DimImpl(this._sizes) {
-    if (_sizes.isEmpty) {
-      _sizes.add(1);
-    }
-  }
+  _DimImpl(this._sizes);
 
   @override
   int get dims => _sizes.length;
@@ -276,7 +285,7 @@ class _DimImpl with DimMixin implements Dim {
   }
 
   @override
-  int get nel => _sizes.reduce((a, b) => a * b);
+  int get nel => _sizes.isEmpty? 0: _sizes.reduce((a, b) => a * b);
 
   @override
   int get rows {
@@ -320,7 +329,7 @@ class _DimImpl with DimMixin implements Dim {
 
   @override
   Dim get numMatricesDim {
-    if (dims < 2) {
+    if (dims <= 2) {
       return Dim([]);
     }
     return Dim(asList.take(dims - 2));

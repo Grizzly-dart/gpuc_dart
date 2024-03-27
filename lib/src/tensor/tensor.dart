@@ -123,10 +123,8 @@ abstract mixin class Tensor<T extends num> implements Resource {
         throw ArgumentError('Size mismatch');
       }
     } else if (value.size.dims == outSize.dims + 1) {
-      for (final pair in zip(value.size.asList.skip(1), outSize.asList)) {
-        if (pair.a != pair.b) {
-          throw ArgumentError('Size mismatch');
-        }
+      if(!value.size.asList.skip(1).isEqual(outSize.asList)) {
+        throw ArgumentError('Size mismatch');
       }
       if (value.size.asList[0] + index.asList.last >
           size.asList[index.dims - 1]) {
@@ -144,7 +142,8 @@ abstract mixin class Tensor<T extends num> implements Resource {
     if (index < 0 || index >= size.numMatrices) {
       throw ArgumentError('Index out of range');
     }
-    return Matrix<T>(this[size.numMatricesDim.unravel(index)]);
+    final matIndex = size.numMatricesDim.unravel(index);
+    return Matrix<T>(this[matIndex]);
   }
 
   Onesor<T> row(int index, {int colDims = 1}) {

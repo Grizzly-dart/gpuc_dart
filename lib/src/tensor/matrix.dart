@@ -18,7 +18,6 @@ class Matrix<T extends num> with ListMixin<List<T>> implements List<List<T>> {
 
   @override
   List<T> operator [](int index) {
-    print(index);
     return tensor.as1d.view(index * size.cols, size.cols);
   }
 

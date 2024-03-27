@@ -19,7 +19,8 @@ void main() async {
 
 Future<void> index() async {
   final t1 =
-      U16Tensor.generate(Dim([2, 3, 4]), (size, index) => size.ravel(index));
-  print(t1.as1d);
+      U16Tensor.generate(Dim([2, 4, 4]), (size, index) => size.ravel(index));
   t1.printTextTable();
+  print('-----');
+  t1[Extent(Dim([1,2]), Dim([1,3]))].printTextTable();
 }

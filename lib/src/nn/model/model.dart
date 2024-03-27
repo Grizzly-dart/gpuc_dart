@@ -38,8 +38,8 @@ class Model {
     for (int epoch = 0; epoch < epochs; epoch++) {
       int step = 0;
       for (int i = 0; i < input.size.batch; i += batchSize) {
-        final inputBatch = input/* TODO [Range(i, i + batchSize)]*/;
-        final targetBatch = target/* TODO [Range(i, i + batchSize)]*/;
+        final inputBatch = input[Extent(i, i + batchSize - 1)];
+        final targetBatch = target[Extent(i, i + batchSize - 1)];
         final predicted = layers.train(inputBatch);
         final lossGrad = await lossFunction.derivative(targetBatch, predicted);
         lastLayer.backward(lossGrad, optimizer);

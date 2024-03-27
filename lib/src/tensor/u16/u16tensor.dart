@@ -66,8 +66,35 @@ abstract mixin class U16Tensor implements Tensor<int> {
 
   @override
   U16TensorView operator [](dynamic /* Dim | int | Iterable<int> */ index) {
+    if (index is Extent) {
+      if(index is! Extent<Dim>) index = Dim.extentFrom(index);
+      if (index.lower.dims != index.upper.dims) {
+        throw ArgumentError('Extents dimension mismatch');
+      }
+      if (!size.isIndex(index.upper)) {
+        throw ArgumentError('Index out of range');
+      }
+      if (!index.lower.asList
+          .take(index.lower.dims - 1)
+          .isEqual(index.upper.asList.take(index.upper.dims - 1))) {
+        throw ArgumentError('Extents dimension mismatch');
+      }
+      if (index.lower.asList.last > index.upper.asList.last) {
+        throw ArgumentError(
+            'Invalid Extent! lower bound is greater than upper bound');
+      }
+
+      return U16TensorView(
+          this,
+          index.lower,
+          Dim([
+            index.upper.asList.last - index.lower.asList.last + 1,
+            ...size.asList.skip(index.lower.dims)
+          ]));
+    }
+
     if (index is! Dim) index = Dim.from(index);
-    return U16TensorView(this, index);
+    return U16TensorView(this, index, Dim(size.asList.skip(index.dims)));
   }
 
   @override

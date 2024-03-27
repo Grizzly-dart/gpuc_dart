@@ -25,7 +25,7 @@ abstract class Layer<I extends num> {
   }
 
   void backward(Tensor gradOutput, Optimizer optimizer) {
-
+    // TODO
   }
 
   Layer? prev;
@@ -86,4 +86,9 @@ class Linear extends Layer<double> {
 
   Dim outSize(Dim inSize) =>
       Dim([...inSize.asList.take(inSize.dims - 1), weight.size.cols]);
+
+  @override
+  void backward(Tensor gradOutput, Optimizer optimizer) {
+    // TODO
+  }
 }
