@@ -88,6 +88,8 @@ abstract mixin class Tensor<T extends num> implements Resource {
 
   int get nel => size.nel;
 
+  int get lengthBytes => as1d.lengthBytes;
+
   DeviceType get deviceType => as1d.deviceType;
 
   int get deviceId => as1d.deviceId;
@@ -157,6 +159,41 @@ abstract mixin class Tensor<T extends num> implements Resource {
       throw ArgumentError('Index out of range');
     }
     return as1d.view(index * size2d.cols, size2d.cols);
+  }
+
+  Future<Tensor> plus_(FutureOr<Tensor> other) => plus(other, out: this);
+
+  Future<Tensor> plus(FutureOr<Tensor> other, {Tensor? out}) async {
+    final b = await other;
+    if (b.nel != nel) {
+      throw ArgumentError('Size mismatch');
+    }
+    if (out != null && out.nel != nel) {
+      throw ArgumentError('Output size mismatch');
+    }
+    final ctx = Context();
+    try {
+      int deviceId = 0; // TODO implement device selection
+      final stream = CudaStream(deviceId, context: ctx);
+      // TODO implement split processing if not all data fits into memory or to maximize parallelism
+      final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
+      final inp2Buf = CuOnesor.copy(stream, b.as1d, context: ctx);
+      final outType = type.bytes > b.type.bytes ? type : b.type;
+      final outBuf = CuOnesor.sized(stream, outType, nel, context: ctx);
+      cuda.addition(stream, outBuf, inp1Buf, inp2Buf, nel);
+      if (out == null) {
+        out = Tensor.sized(size, outType, name: '$name + ${b.name}');
+        ctx.releaseOnErr(out);
+      }
+      outBuf.copyTo(out.as1d, stream: stream);
+      await stream.sync();
+      return out;
+    } catch (e) {
+      ctx.release(isError: true);
+      rethrow;
+    } finally {
+      ctx.release();
+    }
   }
 
   Future<Tensor> operator +(FutureOr<Tensor> other) async {
@@ -632,8 +669,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
   Future<Tensor<T>> mmColAdd(FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
       {Tensor<T>? out});
 
-  Future<Tensor<T>> mmBtColAdd(
-      FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
+  Future<Tensor<T>> mmBtColAdd(FutureOr<Tensor<T>> other, FutureOr<Tensor<T>> c,
       {Tensor<T>? out});
 
   Map<String, dynamic> toJson() => {

@@ -20,6 +20,7 @@ abstract mixin class COnesor<T extends num> implements Onesor<T>, NumPtr {
   @override
   int get deviceId => 0;
 
+  @override
   ffi.Pointer<ffi.SizedNativeType> get ptr;
 
   List<T> asTypedList(int length);

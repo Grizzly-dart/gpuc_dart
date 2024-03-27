@@ -7,7 +7,8 @@ export 'cuda/cuonesor.dart';
 export 'c/conesor.dart';
 
 // TODO complex onesor?
-abstract mixin class Onesor<T extends num> implements Resource, List<T> {
+abstract mixin class Onesor<T extends num>
+    implements Resource, List<T> {
   DeviceType get deviceType;
 
   int get deviceId;

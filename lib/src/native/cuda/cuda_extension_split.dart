@@ -4,12 +4,69 @@ import 'dart:math';
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 extension CudaSplitExtension on Cuda {
+  Future<Tensor> plus(int deviceId, Tensor a, Tensor b, {Tensor? out}) async {
+    if (a.size != b.size) {
+      throw ArgumentError('Size mismatch');
+    }
+    if (out != null) {
+      if (out.size != a.size) {
+        throw ArgumentError('Size mismatch');
+      }
+    }
+    final outType = a.type.bytes > b.type.bytes ? a.type : b.type;
+    final size = a.size;
+    final ctx = Context();
+    try {
+      if (out == null) {
+        out = Tensor.sized(size, outType, name: '${a.name} + ${b.name}');
+        ctx.releaseOnErr(out);
+      }
+      final props = cuda.getMemInfo(deviceId);
+      int batchSize =
+          (a.lengthBytes + b.lengthBytes + out.lengthBytes) ~/ props.total;
+      if (batchSize < 1) {
+        throw StateError('Insufficient memory');
+      } else if (batchSize > size.nel) {
+        batchSize = size.nel;
+      }
+      final streams = <CudaStream>[];
+      int batchStart = 0;
+      while (batchStart < size.nel) {
+        int split = min(batchSize, size.nel - batchStart);
+        final stream = CudaStream(deviceId, context: ctx);
+        streams.add(stream);
+        final aSplit =
+            CuOnesor.copy(stream, a.as1d.view(batchStart, split), context: ctx);
+        final bSplit =
+            CuOnesor.copy(stream, b.as1d.view(batchStart, split), context: ctx);
+        final outSplit = CuOnesor.sized(stream, outType, split);
+        cuda.addition(stream, outSplit, aSplit, bSplit, split);
+        outSplit.copyTo(out.as1d.view(batchStart, split), stream: stream);
+        batchStart += split;
+      }
+
+      // TODO
+    } catch (e) {
+      ctx.release(isError: true);
+      rethrow;
+    } finally {
+      ctx.release();
+    }
+  }
+
   // TODO use tensor views instead
   Future<Tensor<double>> matmulSplit(
       int deviceId, Tensor<double> a, Tensor<double> b,
       {Tensor<double>? out}) async {
     if (a.size.cols != b.size.rows) {
       throw ArgumentError('Columns of A must match rows of B');
+    }
+    final outSize2D = Dim2(a.size.rows, b.size.cols);
+    final outSize = a.size.withMatrix(outSize2D.rows, outSize2D.cols);
+    if (out != null) {
+      if (out.size != outSize) {
+        throw ArgumentError('Size mismatch');
+      }
     }
     int numMats = a.size.numMatrices;
     if (numMats != b.size.numMatrices) {
@@ -18,19 +75,12 @@ extension CudaSplitExtension on Cuda {
 
     final inp1Size2D = a.size.to2D();
     final inp2Size2D = b.size.to2D();
-    final outSize2D = Dim2(a.size.rows, b.size.cols);
-    final outSize = a.size.withMatrix(outSize2D.rows, outSize2D.cols);
-    outSize2D.extend2D(a.size.asList.take(a.size.asList.length - 2));
 
     final ctx = Context();
     try {
       if (out == null) {
         out = F64Tensor.sized(outSize, name: '${a.name} * ${b.name}');
         ctx.releaseOnErr(out);
-      } else {
-        if (out.size != outSize) {
-          throw ArgumentError('Size mismatch');
-        }
       }
       final props = cuda.getMemInfo(deviceId);
       int batchSize = props.total ~/

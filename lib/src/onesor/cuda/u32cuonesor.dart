@@ -3,31 +3,31 @@ import 'dart:ffi' as ffi;
 import 'dart:typed_data';
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-abstract mixin class I64CuOnesor implements CuOnesor<int>, I64Onesor {
+abstract mixin class U32CuOnesor implements CuOnesor<int>, U32Onesor {
   @override
-  ffi.Pointer<ffi.Int64> get ptr;
+  ffi.Pointer<ffi.Uint32> get ptr;
 
-  factory I64CuOnesor(ffi.Pointer<ffi.Int64> ptr, int length, int deviceId,
-      {Context? context}) =>
-      _I64CuOnesor(ptr, length, deviceId, context: context);
+  factory U32CuOnesor(ffi.Pointer<ffi.Uint32> ptr, int length, int deviceId,
+          {Context? context}) =>
+      _U32CuOnesor(ptr, length, deviceId, context: context);
 
-  static I64CuOnesor sized(CudaStream stream, int length, {Context? context}) =>
-      _I64CuOnesor.sized(stream, length, context: context);
+  static U32CuOnesor sized(CudaStream stream, int length, {Context? context}) =>
+      _U32CuOnesor.sized(stream, length, context: context);
 
-  static I64CuOnesor fromList(CudaStream stream, Int64List list,
-      {Context? context}) =>
-      _I64CuOnesor.fromList(stream, list, context: context);
+  static U32CuOnesor fromList(CudaStream stream, Uint32List list,
+          {Context? context}) =>
+      _U32CuOnesor.fromList(stream, list, context: context);
 
-  static I64CuOnesor copy(CudaStream? stream, Onesor<int> other,
-      {Context? context}) =>
-      _I64CuOnesor.copy(other, stream: stream, context: context);
+  static U32CuOnesor copy(CudaStream? stream, Onesor<int> other,
+          {Context? context}) =>
+      _U32CuOnesor.copy(other, stream: stream, context: context);
 
   @override
   int operator [](int index) {
     if (index < 0 || index >= length) {
       throw RangeError('Index out of range');
     }
-    return cuda.getI64(ptr, index, deviceId);
+    return cuda.getU32(ptr, index, deviceId);
   }
 
   @override
@@ -35,12 +35,12 @@ abstract mixin class I64CuOnesor implements CuOnesor<int>, I64Onesor {
     if (index < 0 || index >= length) {
       throw RangeError('Index out of range');
     }
-    cuda.setI64(ptr, index, value, deviceId);
+    cuda.setU32(ptr, index, value, deviceId);
   }
 
   @override
-  I64COnesor read({Context? context, CudaStream? stream}) {
-    final ret = I64COnesor.sized(length, context: context);
+  U32COnesor read({Context? context, CudaStream? stream}) {
+    final ret = U32COnesor.sized(length, context: context);
     final lContext = Context();
     try {
       stream = stream ?? CudaStream(deviceId, context: lContext);
@@ -52,7 +52,7 @@ abstract mixin class I64CuOnesor implements CuOnesor<int>, I64Onesor {
   }
 
   @override
-  I64CuOnesor slice(int start, int length,
+  U32CuOnesor slice(int start, int length,
       {Context? context, CudaStream? stream}) {
     if (start > this.length) {
       throw ArgumentError('Start index out of range');
@@ -62,7 +62,7 @@ abstract mixin class I64CuOnesor implements CuOnesor<int>, I64Onesor {
     final lContext = Context();
     try {
       stream ??= CudaStream(deviceId, context: lContext);
-      final ret = I64CuOnesor.sized(stream, length, context: context);
+      final ret = U32CuOnesor.sized(stream, length, context: context);
       lContext.releaseOnErr(ret);
       cuda.memcpy(stream, ret.ptr.cast(), (ptr + bytesPerItem).cast(),
           length * bytesPerItem);
@@ -76,25 +76,20 @@ abstract mixin class I64CuOnesor implements CuOnesor<int>, I64Onesor {
   }
 
   @override
-  I64CuOnesorView view(int start, int length) {
+  U32CuOnesorView view(int start, int length) {
     if (start > this.length) {
       throw ArgumentError('Start index out of range');
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    return I64CuOnesorView(this, start, length);
+    return U32CuOnesorView(this, start, length);
   }
 }
 
-class _I64CuOnesor
-    with
-        Onesor<int>,
-        ListMixin<int>,
-        I64Onesor,
-        CuOnesor<int>,
-        I64CuOnesor
-    implements I64CuOnesor {
-  ffi.Pointer<ffi.Int64> _ptr;
+class _U32CuOnesor
+    with Onesor<int>, ListMixin<int>, U32Onesor, CuOnesor<int>, U32CuOnesor
+    implements U32CuOnesor {
+  ffi.Pointer<ffi.Uint32> _ptr;
 
   @override
   final int length;
@@ -102,28 +97,28 @@ class _I64CuOnesor
   @override
   final int deviceId;
 
-  _I64CuOnesor(this._ptr, this.length, this.deviceId, {Context? context}) {
+  _U32CuOnesor(this._ptr, this.length, this.deviceId, {Context? context}) {
     context?.add(this);
   }
 
-  static _I64CuOnesor sized(CudaStream stream, int length, {Context? context}) {
-    final ptr = cuda.allocate(stream, length * Int64List.bytesPerElement);
-    return _I64CuOnesor(ptr.cast(), length, stream.deviceId, context: context);
+  static _U32CuOnesor sized(CudaStream stream, int length, {Context? context}) {
+    final ptr = cuda.allocate(stream, length * Uint32List.bytesPerElement);
+    return _U32CuOnesor(ptr.cast(), length, stream.deviceId, context: context);
   }
 
-  static _I64CuOnesor fromList(CudaStream stream, Int64List list,
+  static _U32CuOnesor fromList(CudaStream stream, Uint32List list,
       {Context? context}) {
-    final ret = _I64CuOnesor.sized(stream, list.length, context: context);
-    ret.copyFrom(I64DartOnesor(list), stream: stream);
+    final ret = _U32CuOnesor.sized(stream, list.length, context: context);
+    ret.copyFrom(U32DartOnesor(list), stream: stream);
     return ret;
   }
 
-  static _I64CuOnesor copy(Onesor<int> other,
+  static _U32CuOnesor copy(Onesor<int> other,
       {CudaStream? stream, Context? context}) {
     final lContext = Context();
     try {
       stream = stream ?? CudaStream(other.deviceId, context: lContext);
-      final ret = _I64CuOnesor.sized(stream, other.length, context: context);
+      final ret = _U32CuOnesor.sized(stream, other.length, context: context);
       ret.copyFrom(other, stream: stream);
       return ret;
     } finally {
@@ -132,7 +127,7 @@ class _I64CuOnesor
   }
 
   @override
-  ffi.Pointer<ffi.Int64> get ptr => _ptr;
+  ffi.Pointer<ffi.Uint32> get ptr => _ptr;
 
   @override
   void release({CudaStream? stream}) {
@@ -148,15 +143,10 @@ class _I64CuOnesor
   }
 }
 
-class I64CuOnesorView
-    with
-        Onesor<int>,
-        I64Onesor,
-        ListMixin<int>,
-        CuOnesor<int>,
-        I64CuOnesor
-    implements I64CuOnesor, CuOnesorView<int>, I64OnesorView {
-  final I64CuOnesor _list;
+class U32CuOnesorView
+    with Onesor<int>, U32Onesor, ListMixin<int>, CuOnesor<int>, U32CuOnesor
+    implements U32CuOnesor, CuOnesorView<int>, U32OnesorView {
+  final U32CuOnesor _list;
 
   @override
   final int offset;
@@ -164,25 +154,24 @@ class I64CuOnesorView
   @override
   final int length;
 
-  I64CuOnesorView(this._list, this.offset, this.length);
+  U32CuOnesorView(this._list, this.offset, this.length);
 
   @override
   int get deviceId => _list.deviceId;
 
   @override
-  late final ffi.Pointer<ffi.Int64> ptr =
-      _list.ptr.cast<ffi.Int64>() + offset;
+  late final ffi.Pointer<ffi.Uint32> ptr = _list.ptr + offset;
 
   @override
   void release({CudaStream? stream}) {}
 
   @override
-  I64CuOnesorView view(int start, int length) {
+  U32CuOnesorView view(int start, int length) {
     if (start > this.length) {
       throw ArgumentError('Start index out of range');
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    return I64CuOnesorView(_list, start + offset, length);
+    return U32CuOnesorView(_list, start + offset, length);
   }
 }

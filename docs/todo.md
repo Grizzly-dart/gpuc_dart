@@ -1,3 +1,8 @@
++ Finalize CudaStream
++ Onesors should store CPtr and should not use context? Is there a way to mix CPtr and context?
++ Null CudaStream
++ Implement List methods on CuOnesor to not access single elements
+
 + pow
 + sqr
 + sqrt
