@@ -123,7 +123,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
         throw ArgumentError('Size mismatch');
       }
     } else if (value.size.dims == outSize.dims + 1) {
-      if(!value.size.asList.skip(1).isEqual(outSize.asList)) {
+      if (!value.size.asList.skip(1).isEqual(outSize.asList)) {
         throw ArgumentError('Size mismatch');
       }
       if (value.size.asList[0] + index.asList.last >
@@ -133,7 +133,9 @@ abstract mixin class Tensor<T extends num> implements Resource {
     } else {
       throw ArgumentError('Size mismatch');
     }
-    as1d.view(index.nel * outSize.nel, value.nel).copyFrom(value.as1d);
+    as1d
+        .view((index.asList * size.strides).sum, value.nel)
+        .copyFrom(value.as1d);
   }
 
   Matrix<T> as2d({int colDims = 1}) => Matrix(this, colDims: colDims);

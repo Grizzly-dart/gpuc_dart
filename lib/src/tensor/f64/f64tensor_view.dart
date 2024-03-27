@@ -12,13 +12,13 @@ class F64TensorView
   final Dim offset;
 
   @override
-  late final F64OnesorView as1d =
-      _inner.as1d.view(offset.nel * size.nel, size.nel);
+  final Dim size;
 
   @override
-  late final Dim size = Dim(_inner.size.asList.skip(offset.dims));
+  late final F64OnesorView as1d = _inner.as1d
+      .view((offset.asList * _inner.size.strides.asList).sum, size.nel);
 
-  F64TensorView(this._inner, this.offset, {this.name = 'unnamed'}) {
+  F64TensorView(this._inner, this.offset, this.size, {this.name = 'unnamed'}) {
     if (!_inner.size.isIndex(offset)) {
       throw ArgumentError('Index out of range');
     }
