@@ -38,6 +38,13 @@ class ELUActivation extends Layer {
       ctx.release();
     }
   }
+
+  @override
+  Future<Tensor> computeBackward(
+      Tensor input, Tensor djByDy, Optimizer optimizer) {
+    // TODO
+    throw UnimplementedError();
+  }
 }
 
 class RELUActivation extends Layer {
@@ -74,6 +81,13 @@ class RELUActivation extends Layer {
       ctx.release();
     }
   }
+
+  @override
+  Future<Tensor> computeBackward(
+      Tensor input, Tensor djByDy, Optimizer optimizer) {
+    // TODO
+    throw UnimplementedError();
+  }
 }
 
 class TanhActivation extends Layer {
@@ -83,6 +97,13 @@ class TanhActivation extends Layer {
   Future<Tensor<double>> compute(FutureOr<Tensor> input,
           {covariant Tensor<double>? out, bool training = false}) async =>
       (await input).tanh(out: out);
+
+  @override
+  Future<Tensor> computeBackward(
+      Tensor input, Tensor djByDy, Optimizer optimizer) {
+    // TODO
+    throw UnimplementedError();
+  }
 }
 
 class ThresholdActivation extends Layer {
@@ -124,6 +145,13 @@ class ThresholdActivation extends Layer {
       ctx.release();
     }
   }
+
+  @override
+  Future<Tensor> computeBackward(
+      Tensor input, Tensor djByDy, Optimizer optimizer) {
+    // TODO
+    throw UnimplementedError();
+  }
 }
 
 class SigmoidActivation extends Layer {
@@ -160,6 +188,13 @@ class SigmoidActivation extends Layer {
       ctx.release();
     }
   }
+
+  @override
+  Future<Tensor> computeBackward(
+      Tensor input, Tensor djByDy, Optimizer optimizer) {
+    // TODO
+    throw UnimplementedError();
+  }
 }
 
 class SiLUActivation extends Layer {
@@ -195,6 +230,13 @@ class SiLUActivation extends Layer {
     } finally {
       ctx.release();
     }
+  }
+
+  @override
+  Future<Tensor> computeBackward(
+      Tensor input, Tensor djByDy, Optimizer optimizer) {
+    // TODO
+    throw UnimplementedError();
   }
 }
 
@@ -236,6 +278,13 @@ class SoftplusActivation extends Layer {
       ctx.release();
     }
   }
+
+  @override
+  Future<Tensor> computeBackward(
+      Tensor input, Tensor djByDy, Optimizer optimizer) {
+    // TODO
+    throw UnimplementedError();
+  }
 }
 
 class SoftsignActivation extends Layer {
@@ -272,6 +321,13 @@ class SoftsignActivation extends Layer {
       ctx.release();
     }
   }
+
+  @override
+  Future<Tensor> computeBackward(
+      Tensor input, Tensor djByDy, Optimizer optimizer) {
+    // TODO
+    throw UnimplementedError();
+  }
 }
 
 class MishActivation extends Layer {
@@ -307,5 +363,12 @@ class MishActivation extends Layer {
     } finally {
       ctx.release();
     }
+  }
+
+  @override
+  Future<Tensor> computeBackward(
+      Tensor input, Tensor djByDy, Optimizer optimizer) {
+    // TODO
+    throw UnimplementedError();
   }
 }

@@ -25,4 +25,11 @@ class Embedding extends Layer<int> {
   int get numEmbeddings => weight.size.rows;
 
   int get embeddingDim => weight.size.cols;
+
+  @override
+  Future<Tensor> computeBackward(
+      Tensor input, Tensor djByDy, Optimizer optimizer) {
+    // TODO
+    throw UnimplementedError();
+  }
 }

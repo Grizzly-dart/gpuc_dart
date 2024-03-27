@@ -40,9 +40,8 @@ class Model {
       for (int i = 0; i < input.size.batch; i += batchSize) {
         final inputBatch = input[Extent(i, i + batchSize - 1)];
         final targetBatch = target[Extent(i, i + batchSize - 1)];
-        final predicted = layers.train(inputBatch);
-        final lossGrad = await lossFunction.derivative(targetBatch, predicted);
-        lastLayer.backward(lossGrad, optimizer);
+        final propagator = BackPropagator(lossFunction, optimizer, targetBatch);
+        layers.train(inputBatch, propagator);
         // TODO trigger callbacks
         // TODO verbose mode
         step++;
@@ -59,4 +58,13 @@ class Model {
     }
     return layer;
   }
+}
+
+class BackPropagator {
+  final LossFunction lf;
+  final Optimizer optimizer;
+  final Tensor target;
+  Tensor? predicted;
+
+  BackPropagator(this.lf, this.optimizer, this.target);
 }

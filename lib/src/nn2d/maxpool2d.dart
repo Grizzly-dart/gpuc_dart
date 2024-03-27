@@ -72,4 +72,11 @@ class MaxPool2D<T extends num> extends Layer2D<T> {
   Dim outSize(Dim inSize) {
     return Dim([inSize.batch, inSize.channels] + outSize2D(inSize).toList());
   }
+
+  @override
+  Future<Tensor> computeBackward(
+      Tensor input, Tensor djByDy, Optimizer optimizer) {
+    // TODO
+    throw UnimplementedError();
+  }
 }

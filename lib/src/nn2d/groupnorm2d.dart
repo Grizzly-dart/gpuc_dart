@@ -19,4 +19,11 @@ class GroupNorm extends Layer2D<double> {
     final inp = await input;
     throw UnimplementedError();
   }
+
+  @override
+  Future<Tensor> computeBackward(
+      Tensor input, Tensor djByDy, Optimizer optimizer) {
+    // TODO
+    throw UnimplementedError();
+  }
 }

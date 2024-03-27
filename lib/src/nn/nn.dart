@@ -19,21 +19,23 @@ abstract class Layer<I extends num> {
     return output;
   }
 
-  Future<Tensor> train(FutureOr<Tensor<I>> input) async {
+  Future<Tensor> train(FutureOr<Tensor<I>> input, BackPropagator bp) async {
     final inp = await input;
-    recordInput(inp);
     final output = await compute(inp, training: true);
-    return (await next?.train(output)) ?? output;
-  }
 
-  Future<Tensor> computeBackward(Tensor djByDy, Optimizer optimizer);
-
-  Future<void> backward(Tensor djByDy, Optimizer optimizer) async {
-    final djByDyp = await computeBackward(djByDy, optimizer);
-    if (prev != null) {
-      await prev!.backward(djByDyp, optimizer);
+    Tensor djByDy;
+    if (next == null) {
+      bp.predicted = output;
+      djByDy = await bp.lf.derivative(bp.target, output);
+    } else {
+      djByDy = await next!.train(output, bp);
     }
+
+    return computeBackward(inp, djByDy, bp.optimizer);
   }
+
+  Future<Tensor> computeBackward(
+      Tensor input, Tensor djByDy, Optimizer optimizer);
 
   Layer? prev;
   Layer? next;
@@ -43,8 +45,6 @@ abstract class Layer<I extends num> {
     next.prev = this;
     return next;
   }
-
-  void recordInput(Tensor input);
 }
 
 // TODO error messages should be more technical and domain specific
@@ -95,8 +95,9 @@ class Linear extends Layer<double> {
       Dim([...inSize.asList.take(inSize.dims - 1), weight.size.cols]);
 
   @override
-  Future<Tensor> computeBackward(Tensor djByDy, Optimizer optimizer) async {
-    final djByDw = await _input!.mmAt(djByDy);
+  Future<Tensor> computeBackward(
+      Tensor input, Tensor djByDy, Optimizer optimizer) async {
+    final djByDw = await input.mmAt(djByDy);
     await optimizer.update(weight, djByDw);
     if (bias != null) {
       final djByDb = djByDy;
@@ -106,9 +107,4 @@ class Linear extends Layer<double> {
     final djByDx = djByDy.mmBt(weight);
     return djByDx;
   }
-
-  @override
-  void recordInput(Tensor input) => _input = input;
-
-  Tensor? _input;
 }

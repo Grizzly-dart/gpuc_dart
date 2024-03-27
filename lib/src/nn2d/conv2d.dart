@@ -158,4 +158,12 @@ class Conv2D extends Layer2D<double> {
   Dim2 padSameSize2D(Dim2 inSize) =>
       (inSize * stride - stride + dilation * (kernelSize - 1) - inSize + 1) ~/
       2;
+
+
+  @override
+  Future<Tensor> computeBackward(
+      Tensor input, Tensor djByDy, Optimizer optimizer) {
+    // TODO
+    throw UnimplementedError();
+  }
 }
