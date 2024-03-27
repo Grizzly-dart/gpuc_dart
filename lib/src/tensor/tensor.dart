@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
+import 'package:gpuc_dart/src/native/cuda/cuda_extension_split.dart';
 import 'package:text_table/text_table.dart';
 
 export 'dim.dart';
@@ -161,152 +162,50 @@ abstract mixin class Tensor<T extends num> implements Resource {
     return as1d.view(index * size2d.cols, size2d.cols);
   }
 
-  Future<Tensor> plus_(FutureOr<Tensor> other) => plus(other, out: this);
-
   Future<Tensor> plus(FutureOr<Tensor> other, {Tensor? out}) async {
-    final b = await other;
-    if (b.nel != nel) {
-      throw ArgumentError('Size mismatch');
+    if (cuda.exists()) {
+      return cuda.binaryArithSplit(0, this, await other, cuda.addition,
+          out: out);
     }
-    if (out != null && out.nel != nel) {
-      throw ArgumentError('Output size mismatch');
-    }
-    final ctx = Context();
-    try {
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
-      final inp2Buf = CuOnesor.copy(stream, b.as1d, context: ctx);
-      final outType = type.bytes > b.type.bytes ? type : b.type;
-      final outBuf = CuOnesor.sized(stream, outType, nel, context: ctx);
-      cuda.addition(stream, outBuf, inp1Buf, inp2Buf, nel);
-      if (out == null) {
-        out = Tensor.sized(size, outType, name: '$name + ${b.name}');
-        ctx.releaseOnErr(out);
-      }
-      outBuf.copyTo(out.as1d, stream: stream);
-      await stream.sync();
-      return out;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
-    }
+    throw UnimplementedError('plus on CPU(Dart/C) is not implemented yet!');
   }
 
-  Future<Tensor> operator +(FutureOr<Tensor> other) async {
-    final b = await other;
-    if (b.nel != nel) {
-      throw ArgumentError('Size mismatch');
+  Future<Tensor> operator +(FutureOr<Tensor> other) => plus(other);
+
+  Future<Tensor> sub(FutureOr<Tensor> other, {Tensor? out}) async {
+    if (cuda.exists()) {
+      return cuda.binaryArithSplit(0, this, await other, cuda.sub, out: out);
     }
-    final ctx = Context();
-    try {
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
-      final inp2Buf = CuOnesor.copy(stream, b.as1d, context: ctx);
-      final outType = type.bytes > b.type.bytes ? type : b.type;
-      final outBuf = CuOnesor.sized(stream, outType, nel, context: ctx);
-      cuda.addition(stream, outBuf, inp1Buf, inp2Buf, nel);
-      final out = outBuf.read(stream: stream);
-      ctx.releaseOnErr(out);
-      final outTensor = out.toTensor(size, name: '$name + ${b.name}');
-      await stream.sync();
-      return outTensor;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
-    }
+    throw UnimplementedError('sub on CPU(Dart/C) is not implemented yet!');
   }
 
-  Future<Tensor> operator -(FutureOr<Tensor> other) async {
-    final b = await other;
-    if (b.nel != nel) {
-      throw ArgumentError('Size mismatch');
+  Future<Tensor> operator -(FutureOr<Tensor> other) => sub(other);
+
+  Future<Tensor> mul(FutureOr<Tensor> other, {Tensor? out}) async {
+    if (cuda.exists()) {
+      return cuda.binaryArithSplit(0, this, await other, cuda.mul, out: out);
     }
-    final ctx = Context();
-    try {
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
-      final inp2Buf = CuOnesor.copy(stream, b.as1d, context: ctx);
-      final outType = type.bytes > b.type.bytes ? type : b.type;
-      final outBuf = CuOnesor.sized(stream, outType, nel, context: ctx);
-      cuda.sub(stream, outBuf, inp1Buf, inp2Buf, nel);
-      final out = outBuf.read(stream: stream);
-      ctx.releaseOnErr(out);
-      final outTensor = out.toTensor(size, name: '$name - ${b.name}');
-      await stream.sync();
-      return outTensor;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
-    }
+    throw UnimplementedError('mul on CPU(Dart/C) is not implemented yet!');
   }
 
-  Future<Tensor> operator *(FutureOr<Tensor> other) async {
-    final b = await other;
-    if (b.nel != nel) {
-      throw ArgumentError('Size mismatch');
+  Future<Tensor> operator *(other) async {
+    if (other is Future) {
+      other = await other;
     }
-    final ctx = Context();
-    try {
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
-      final inp2Buf = CuOnesor.copy(stream, b.as1d, context: ctx);
-      final outType = type.bytes > b.type.bytes ? type : b.type;
-      final outBuf = CuOnesor.sized(stream, outType, nel, context: ctx);
-      cuda.mul(stream, outBuf, inp1Buf, inp2Buf, nel);
-      final out = outBuf.read(stream: stream);
-      ctx.releaseOnErr(out);
-      final outTensor = out.toTensor(size, name: '$name * ${b.name}');
-      await stream.sync();
-      return outTensor;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
+    if (other is Tensor) {
+      return mul(other);
     }
+    throw UnsupportedError('Unsupported type: ${other.runtimeType}');
   }
 
-  Future<Tensor> operator /(FutureOr<Tensor> other) async {
-    final b = await other;
-    if (b.nel != nel) {
-      throw ArgumentError('Size mismatch');
+  Future<Tensor> div(FutureOr<Tensor> other, {Tensor? out}) async {
+    if (cuda.exists()) {
+      return cuda.divSplit(0, this, await other, out: out);
     }
-    final ctx = Context();
-    try {
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
-      final inp2Buf = CuOnesor.copy(stream, b.as1d, context: ctx);
-      final outType = type.bytes > b.type.bytes ? type : b.type;
-      final outBuf = CuOnesor.sized(stream, outType, nel, context: ctx);
-      cuda.div(stream, outBuf, inp1Buf, inp2Buf, nel);
-      final out = outBuf.read(stream: stream);
-      ctx.releaseOnErr(out);
-      final outTensor = out.toTensor(size, name: '$name / ${b.name}');
-      await stream.sync();
-      return outTensor;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
-    }
+    throw UnimplementedError('div on CPU(Dart/C) is not implemented yet!');
   }
+
+  Future<Tensor> operator /(FutureOr<Tensor> other) => div(other);
 
   Future<Tensor<double>> sin({Tensor<double>? out}) async {
     final ctx = Context();

@@ -2,9 +2,15 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
+import 'package:gpuc_dart/src/onesor/onesor.dart';
 
-extension CudaSplitExtension on Cuda {
-  Future<Tensor> plus(int deviceId, Tensor a, Tensor b, {Tensor? out}) async {
+typedef CudaBinaryArithOp = void Function(
+    CudaStream stream, NumPtr out, NumPtr inp1, NumPtr inp2, int size);
+
+extension CudaArithSplitExtension on Cuda {
+  Future<Tensor> binaryArithSplit(
+      int deviceId, Tensor a, Tensor b, CudaBinaryArithOp op,
+      {Tensor? out}) async {
     if (a.size != b.size) {
       throw ArgumentError('Size mismatch');
     }
@@ -13,7 +19,12 @@ extension CudaSplitExtension on Cuda {
         throw ArgumentError('Size mismatch');
       }
     }
-    final outType = a.type.bytes > b.type.bytes ? a.type : b.type;
+    NumType outType;
+    if (out != null) {
+      outType = out.type;
+    } else {
+      outType = a.type.bytes > b.type.bytes ? a.type : b.type;
+    }
     final size = a.size;
     final ctx = Context();
     try {
@@ -40,12 +51,15 @@ extension CudaSplitExtension on Cuda {
         final bSplit =
             CuOnesor.copy(stream, b.as1d.view(batchStart, split), context: ctx);
         final outSplit = CuOnesor.sized(stream, outType, split);
-        cuda.addition(stream, outSplit, aSplit, bSplit, split);
+        op(stream, outSplit, aSplit, bSplit, split);
         outSplit.copyTo(out.as1d.view(batchStart, split), stream: stream);
+        aSplit.release(stream: stream);
+        bSplit.release(stream: stream);
+        outSplit.release(stream: stream);
         batchStart += split;
       }
-
-      // TODO
+      await Future.wait(streams.map((s) => s.sync()));
+      return out;
     } catch (e) {
       ctx.release(isError: true);
       rethrow;
@@ -54,6 +68,21 @@ extension CudaSplitExtension on Cuda {
     }
   }
 
+  Future<Tensor> divSplit(int deviceId, Tensor a, Tensor b,
+      {Tensor? out}) async {
+    if (out != null) {
+      if (!out.type.isFloat) {
+        throw ArgumentError('Output type must be float');
+      }
+    } else {
+      // TODO release this
+      out = Tensor.sized(a.size, f64, name: '${a.name} / ${b.name}');
+    }
+    return binaryArithSplit(deviceId, a, b, cuda.div, out: out);
+  }
+}
+
+extension CudaSplitExtension on Cuda {
   // TODO use tensor views instead
   Future<Tensor<double>> matmulSplit(
       int deviceId, Tensor<double> a, Tensor<double> b,
