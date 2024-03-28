@@ -26,6 +26,7 @@ class CudaFFI {
   final Op1d1Inp sinh;
   final Op1d1Inp cosh;
   final Op1d1Inp tanh;
+  final Op1d1i1t sqr;
 
   final Map<String, Op1d2Inp> additions;
   final Map<String, Op1d2Inp> subs;
@@ -64,12 +65,12 @@ class CudaFFI {
           ffi.Pointer<CCudaStream>, Ptr out, Ptr inp, int, double, int)
       eluActivation;
 
-  final Op1d1InpS sigmoidActivation;
-  final Op1d1InpS siluActivation;
+  final Op1d1i1t sigmoidActivation;
+  final Op1d1i1t siluActivation;
   final StrPtr Function(ffi.Pointer<CCudaStream>, Ptr out, Ptr inp, int size,
       int beta, int threshold, int dataType) softplusActivation;
-  final Op1d1InpS softsignActivation;
-  final Op1d1InpS mishActivation;
+  final Op1d1i1t softsignActivation;
+  final Op1d1i1t mishActivation;
 
   final StrPtr Function(ffi.Pointer<CCudaStream>, Ptr out, Ptr inp,
       Ptr threshold, Ptr value, int, int) minThreshold;
@@ -89,6 +90,7 @@ class CudaFFI {
     required this.sinh,
     required this.cosh,
     required this.tanh,
+    required this.sqr,
     required this.additions,
     required this.subs,
     required this.muls,
@@ -175,6 +177,7 @@ class CudaFFI {
         dylib.lookupFunction<Op1d1InpNative, Op1d1Inp>('libtcCudaCosh');
     final tanh =
         dylib.lookupFunction<Op1d1InpNative, Op1d1Inp>('libtcCudaTanh');
+    final sqr = dylib.lookupFunction<Op1d1i1tNative, Op1d1i1t>('libtcCudaSqr');
 
     final additions = <String, Op1d2Inp>{};
     final subs = <String, Op1d2Inp>{};
@@ -252,18 +255,18 @@ class CudaFFI {
         StrPtr Function(ffi.Pointer<CCudaStream>, Ptr, Ptr, int, double,
             int)>('libtcCudaELU');
     final sigmoid =
-        dylib.lookupFunction<Op1d1InpSNative, Op1d1InpS>('libtcCudaSigmoid');
+        dylib.lookupFunction<Op1d1i1tNative, Op1d1i1t>('libtcCudaSigmoid');
     final silu =
-        dylib.lookupFunction<Op1d1InpSNative, Op1d1InpS>('libtcCudaSiLU');
+        dylib.lookupFunction<Op1d1i1tNative, Op1d1i1t>('libtcCudaSiLU');
     final softplusActivation = dylib.lookupFunction<
         StrPtr Function(ffi.Pointer<CCudaStream>, Ptr, Ptr, ffi.Uint64,
             ffi.Uint8, ffi.Uint8, ffi.Uint8),
         StrPtr Function(ffi.Pointer<CCudaStream>, Ptr, Ptr, int, int, int,
             int)>('libtcCudaSoftplus');
-    final softsignActivation = dylib.lookupFunction<Op1d1InpSNative, Op1d1InpS>(
-        'libtcCudaSoftsign');
-    final mishActivation = dylib
-        .lookupFunction<Op1d1InpSNative, Op1d1InpS>('libtcCudaMish');
+    final softsignActivation =
+        dylib.lookupFunction<Op1d1i1tNative, Op1d1i1t>('libtcCudaSoftsign');
+    final mishActivation =
+        dylib.lookupFunction<Op1d1i1tNative, Op1d1i1t>('libtcCudaMish');
     final minThreshold = dylib.lookupFunction<
         StrPtr Function(ffi.Pointer<CCudaStream>, Ptr, Ptr, Ptr, Ptr,
             ffi.Uint64, ffi.Uint8),
@@ -285,6 +288,7 @@ class CudaFFI {
       sinh: sinh,
       cosh: cosh,
       tanh: tanh,
+      sqr: sqr,
       additions: additions,
       subs: subs,
       muls: muls,
@@ -315,14 +319,16 @@ class CudaFFI {
 
 typedef CNumType = ffi.Uint8;
 
-typedef Op1d1InpS = StrPtr Function(
+typedef Op1d1i1t = StrPtr Function(
     ffi.Pointer<CCudaStream> stream, Ptr out, Ptr inp, int size, int dataType);
-typedef Op1d1InpSNative = StrPtr Function(ffi.Pointer<CCudaStream> stream,
+typedef Op1d1i1tNative = StrPtr Function(ffi.Pointer<CCudaStream> stream,
     Ptr out, Ptr inp, ffi.Uint64 size, CNumType dataType);
+
 typedef Op1d1Inp = StrPtr Function(ffi.Pointer<CCudaStream> stream, Ptr out,
     Ptr inp, int size, int outType, int inpType);
 typedef Op1d1InpNative = StrPtr Function(ffi.Pointer<CCudaStream> stream,
     Ptr out, Ptr inp, ffi.Uint64 size, CNumType outType, CNumType inpType);
+
 typedef Op1d2Inp = StrPtr Function(
     ffi.Pointer<CCudaStream> stream, Ptr out, Ptr inp1, Ptr inp2, int size);
 typedef Op1d2InpNative = StrPtr Function(ffi.Pointer<CCudaStream> stream,

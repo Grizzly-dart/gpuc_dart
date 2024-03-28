@@ -148,6 +148,14 @@ class Cuda {
     }
   }
 
+  void sqr(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    final err =
+        cuda.sqr(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
   void transpose2D(CudaStream stream, F64Ptr out, F64Ptr inp, Dim3 size) {
     final ctx = Context();
     try {
