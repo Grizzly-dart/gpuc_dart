@@ -82,6 +82,12 @@ extension CudaArithSplitExtension on Cuda {
   }
 }
 
+extension CudaUnarySplitExtension on Cuda {
+  Future<Tensor> sqr<T>(int deviceId, Tensor a, {Tensor? out}) async {
+
+  }
+}
+
 extension CudaSplitExtension on Cuda {
   // TODO use tensor views instead
   Future<Tensor<double>> matmulSplit(

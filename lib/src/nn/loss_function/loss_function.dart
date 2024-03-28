@@ -20,8 +20,8 @@ class MSE implements LossFunction {
   String get name => 'Mean Squared Error';
 
   @override
-  double compute(Tensor y, Tensor yDash) {
-    // TODO implement
+  double compute(Tensor target, Tensor predicted) {
+    (target - predicted).sqr().mean();
     throw UnimplementedError();
   }
 

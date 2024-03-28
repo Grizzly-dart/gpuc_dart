@@ -207,6 +207,14 @@ abstract mixin class Tensor<T extends num> implements Resource {
 
   Future<Tensor> operator /(FutureOr<Tensor> other) => div(other);
 
+  Future<Tensor> sqr({Tensor? out}) async {
+    if (cuda.exists()) {
+      // TODO
+      throw UnimplementedError();
+    }
+    throw UnimplementedError('sqr on CPU(Dart/C) is not implemented yet!');
+  }
+
   Future<Tensor<double>> sin({Tensor<double>? out}) async {
     final ctx = Context();
     try {
