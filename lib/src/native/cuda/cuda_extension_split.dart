@@ -4,29 +4,20 @@ import 'dart:math';
 import 'package:gpuc_dart/gpuc_dart.dart';
 import 'package:gpuc_dart/src/onesor/onesor.dart';
 
-typedef Cu1d2i3tOp = void Function(
+typedef CuOp1d2i3t = void Function(
     CudaStream stream, NumPtr out, NumPtr inp1, NumPtr inp2, int size);
-typedef Cu1d1i1tOp = void Function(
+typedef CuOp1d1i1t = void Function(
     CudaStream stream, NumPtr out, NumPtr inp1, int size);
 
 extension CudaArithSplitExtension on Cuda {
-  Future<Tensor> binaryArithSplit(
-      int deviceId, Tensor a, Tensor b, Cu1d2i3tOp op,
+  Future<Tensor> op1d2i3t(int deviceId, Tensor a, Tensor b, CuOp1d2i3t op,
       {Tensor? out}) async {
-    if (a.nel != b.nel) {
+    if (a.nel != b.nel) throw ArgumentError('Size mismatch');
+    if (out != null && out.nel != a.nel) {
       throw ArgumentError('Size mismatch');
     }
-    if (out != null) {
-      if (out.nel != a.nel) {
-        throw ArgumentError('Size mismatch');
-      }
-    }
-    NumType outType;
-    if (out != null) {
-      outType = out.type;
-    } else {
-      outType = a.type.bytes > b.type.bytes ? a.type : b.type;
-    }
+    NumType outType =
+        out?.type ?? (a.type.bytes > b.type.bytes ? a.type : b.type);
     final size = a.size;
     final ctx = Context();
     try {
@@ -36,7 +27,7 @@ extension CudaArithSplitExtension on Cuda {
       }
       final props = cuda.getMemInfo(deviceId);
       int batchSize =
-          (a.lengthBytes + b.lengthBytes + out.lengthBytes) ~/ props.total;
+          props.total ~/ (a.lengthBytes + b.lengthBytes + out.lengthBytes);
       if (batchSize < 1) {
         throw StateError('Insufficient memory');
       } else if (batchSize > size.nel) {
@@ -80,32 +71,26 @@ extension CudaArithSplitExtension on Cuda {
       // TODO release this
       out = Tensor.sized(a.size, f64, name: '${a.name} / ${b.name}');
     }
-    return binaryArithSplit(deviceId, a, b, cuda.div, out: out);
+    return op1d2i3t(deviceId, a, b, cuda.div, out: out);
   }
 }
 
 extension CudaUnarySplitExtension on Cuda {
-  Future<Tensor> sqr<T>(int deviceId, Tensor a, {Tensor? out}) async {
-    if (out != null) {
-      if (out.nel != a.nel) {
-        throw ArgumentError('Size mismatch');
-      }
+  Future<Tensor> op1d1i1t<T>(int deviceId, Tensor a, CuOp1d1i1t op,
+      {Tensor? out}) async {
+    if (out != null && out.nel != a.nel) {
+      throw ArgumentError('Size mismatch');
     }
-    NumType outType;
-    if (out != null) {
-      outType = out.type;
-    } else {
-      outType = a.type;
-    }
+    NumType outType = out?.type ?? a.type;
     final size = a.size;
     final ctx = Context();
     try {
       if (out == null) {
-        out = Tensor.sized(size, outType, name: '${a.name} + ${b.name}');
+        out = Tensor.sized(size, outType, name: 'op(${a.name})');
         ctx.releaseOnErr(out);
       }
       final props = cuda.getMemInfo(deviceId);
-      int batchSize = (a.lengthBytes + out.lengthBytes) ~/ props.total;
+      int batchSize = props.total ~/ (a.lengthBytes + out.lengthBytes);
       if (batchSize < 1) {
         throw StateError('Insufficient memory');
       } else if (batchSize > size.nel) {
@@ -119,13 +104,10 @@ extension CudaUnarySplitExtension on Cuda {
         streams.add(stream);
         final aSplit =
             CuOnesor.copy(stream, a.as1d.view(batchStart, split), context: ctx);
-        final bSplit =
-            CuOnesor.copy(stream, b.as1d.view(batchStart, split), context: ctx);
         final outSplit = CuOnesor.sized(stream, outType, split);
-        op(stream, outSplit, aSplit, bSplit, split);
+        op(stream, outSplit, aSplit, split);
         outSplit.copyTo(out.as1d.view(batchStart, split), stream: stream);
         aSplit.release(stream: stream);
-        bSplit.release(stream: stream);
         outSplit.release(stream: stream);
         batchStart += split;
       }

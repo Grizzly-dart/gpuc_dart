@@ -164,8 +164,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
 
   Future<Tensor> plus(FutureOr<Tensor> other, {Tensor? out}) async {
     if (cuda.exists()) {
-      return cuda.binaryArithSplit(0, this, await other, cuda.addition,
-          out: out);
+      return cuda.op1d2i3t(0, this, await other, cuda.addition, out: out);
     }
     throw UnimplementedError('plus on CPU(Dart/C) is not implemented yet!');
   }
@@ -174,7 +173,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
 
   Future<Tensor> sub(FutureOr<Tensor> other, {Tensor? out}) async {
     if (cuda.exists()) {
-      return cuda.binaryArithSplit(0, this, await other, cuda.sub, out: out);
+      return cuda.op1d2i3t(0, this, await other, cuda.sub, out: out);
     }
     throw UnimplementedError('sub on CPU(Dart/C) is not implemented yet!');
   }
@@ -183,7 +182,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
 
   Future<Tensor> mul(FutureOr<Tensor> other, {Tensor? out}) async {
     if (cuda.exists()) {
-      return cuda.binaryArithSplit(0, this, await other, cuda.mul, out: out);
+      return cuda.op1d2i3t(0, this, await other, cuda.mul, out: out);
     }
     throw UnimplementedError('mul on CPU(Dart/C) is not implemented yet!');
   }
@@ -209,8 +208,21 @@ abstract mixin class Tensor<T extends num> implements Resource {
 
   Future<Tensor> sqr({Tensor? out}) async {
     if (cuda.exists()) {
-      // TODO
-      throw UnimplementedError();
+      return cuda.op1d1i1t(0, this, cuda.sqr, out: out);
+    }
+    throw UnimplementedError('sqr on CPU(Dart/C) is not implemented yet!');
+  }
+
+  Future<Tensor> sqrt({Tensor? out}) async {
+    if (cuda.exists()) {
+      return cuda.op1d1i1t(0, this, cuda.sqrt, out: out);
+    }
+    throw UnimplementedError('sqr on CPU(Dart/C) is not implemented yet!');
+  }
+
+  Future<Tensor> exp({Tensor? out}) async {
+    if (cuda.exists()) {
+      return cuda.op1d1i1t(0, this, cuda.exp, out: out);
     }
     throw UnimplementedError('sqr on CPU(Dart/C) is not implemented yet!');
   }
@@ -387,6 +399,34 @@ abstract mixin class Tensor<T extends num> implements Resource {
     } finally {
       ctx.release();
     }
+  }
+
+  Future<Tensor> abs({Tensor? out}) async {
+    if (cuda.exists()) {
+      return cuda.op1d1i1t(0, this, cuda.abs, out: out);
+    }
+    throw UnimplementedError('abs on CPU(Dart/C) is not implemented yet!');
+
+  }
+
+  Future<T> sum() {
+    // TODO
+    throw UnimplementedError();
+  }
+
+  Future<double> mean() {
+    // TODO
+    throw UnimplementedError();
+  }
+
+  Future<double> variance() {
+    // TODO
+    throw UnimplementedError();
+  }
+
+  Future<double> std() {
+    // TODO
+    throw UnimplementedError();
   }
 
   Future<Tensor<double>> sumRows({int colDims = 1, Tensor<double>? out}) async {

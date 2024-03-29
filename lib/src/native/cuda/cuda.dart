@@ -149,8 +149,21 @@ class Cuda {
   }
 
   void sqr(CudaStream stream, NumPtr out, NumPtr inp, int size) {
-    final err =
-        cuda.sqr(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+    final err = cuda.sqr(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void sqrt(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    final err = cuda.sqrt(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void exp(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    final err = cuda.exp(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }

@@ -3,9 +3,9 @@
 + Null CudaStream
 + Implement List methods on CuOnesor to not access single elements
 
-+ pow
-+ sqr
-+ sqrt
++ pow, log, abs, asinh, acosh, atanh, erf, ceil, floor, round
++ mean, std, var, sum, prod, min, max, argmin, argmax
++ safetensors
 
 + Tensor.rearrange in C and CUDA (pytorch.permute)
 + Test with complex math equation to optimize intermediate results

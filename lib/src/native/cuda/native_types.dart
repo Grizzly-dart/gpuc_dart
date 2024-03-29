@@ -27,6 +27,8 @@ class CudaFFI {
   final Op1d1Inp cosh;
   final Op1d1Inp tanh;
   final Op1d1i1t sqr;
+  final Op1d1i1t sqrt;
+  final Op1d1i1t exp;
 
   final Map<String, Op1d2Inp> additions;
   final Map<String, Op1d2Inp> subs;
@@ -91,6 +93,8 @@ class CudaFFI {
     required this.cosh,
     required this.tanh,
     required this.sqr,
+    required this.sqrt,
+    required this.exp,
     required this.additions,
     required this.subs,
     required this.muls,
@@ -178,6 +182,8 @@ class CudaFFI {
     final tanh =
         dylib.lookupFunction<Op1d1InpNative, Op1d1Inp>('libtcCudaTanh');
     final sqr = dylib.lookupFunction<Op1d1i1tNative, Op1d1i1t>('libtcCudaSqr');
+    final sqrt = dylib.lookupFunction<Op1d1i1tNative, Op1d1i1t>('libtcCudaSqrt');
+    final exp = dylib.lookupFunction<Op1d1i1tNative, Op1d1i1t>('libtcCudaExp');
 
     final additions = <String, Op1d2Inp>{};
     final subs = <String, Op1d2Inp>{};
@@ -289,6 +295,8 @@ class CudaFFI {
       cosh: cosh,
       tanh: tanh,
       sqr: sqr,
+      sqrt: sqrt,
+      exp: exp,
       additions: additions,
       subs: subs,
       muls: muls,
