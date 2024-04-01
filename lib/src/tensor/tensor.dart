@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:gpuc_dart/gpuc_dart.dart';
 import 'package:gpuc_dart/src/native/cuda/cuda_extension_split.dart';
 import 'package:text_table/text_table.dart';
+import 'dart:math' as math;
 
 export 'dim.dart';
 export 'matrix.dart';
@@ -89,6 +90,8 @@ abstract mixin class Tensor<T extends num> implements Resource {
 
   int get nel => size.nel;
 
+  int get bytesPerItem => as1d.bytesPerItem;
+
   int get lengthBytes => as1d.lengthBytes;
 
   DeviceType get deviceType => as1d.deviceType;
@@ -162,27 +165,36 @@ abstract mixin class Tensor<T extends num> implements Resource {
     return as1d.view(index * size2d.cols, size2d.cols);
   }
 
+  Future<Tensor<T>> neg({Tensor<T>? out}) async {
+    if (cuda.exists()) {
+      return cuda.op1d1i(0, this, cuda.neg, out: out) as Tensor<T>;
+    }
+    throw UnimplementedError('neg on CPU(Dart/C) is not implemented yet!');
+  }
+
+  Future<Tensor<T>> operator -() => neg();
+
   Future<Tensor> plus(FutureOr<Tensor> other, {Tensor? out}) async {
     if (cuda.exists()) {
-      return cuda.op1d2i3t(0, this, await other, cuda.addition, out: out);
+      return cuda.op1d2i(0, this, await other, cuda.plus, out: out);
     }
     throw UnimplementedError('plus on CPU(Dart/C) is not implemented yet!');
   }
 
   Future<Tensor> operator +(FutureOr<Tensor> other) => plus(other);
 
-  Future<Tensor> sub(FutureOr<Tensor> other, {Tensor? out}) async {
+  Future<Tensor> minus(FutureOr<Tensor> other, {Tensor? out}) async {
     if (cuda.exists()) {
-      return cuda.op1d2i3t(0, this, await other, cuda.sub, out: out);
+      return cuda.op1d2i(0, this, await other, cuda.minus, out: out);
     }
     throw UnimplementedError('sub on CPU(Dart/C) is not implemented yet!');
   }
 
-  Future<Tensor> operator -(FutureOr<Tensor> other) => sub(other);
+  Future<Tensor> operator -(FutureOr<Tensor> other) => minus(other);
 
   Future<Tensor> mul(FutureOr<Tensor> other, {Tensor? out}) async {
     if (cuda.exists()) {
-      return cuda.op1d2i3t(0, this, await other, cuda.mul, out: out);
+      return cuda.op1d2i(0, this, await other, cuda.mul, out: out);
     }
     throw UnimplementedError('mul on CPU(Dart/C) is not implemented yet!');
   }
@@ -206,401 +218,178 @@ abstract mixin class Tensor<T extends num> implements Resource {
 
   Future<Tensor> operator /(FutureOr<Tensor> other) => div(other);
 
+  // TODO int division
+
+  Future<Tensor<T>> abs({Tensor<T>? out}) async {
+    if (cuda.exists()) {
+      return cuda.op1d1i(0, this, cuda.abs, out: out) as Tensor<T>;
+    }
+    throw UnimplementedError('abs on CPU(Dart/C) is not implemented yet!');
+  }
+
   Future<Tensor> sqr({Tensor? out}) async {
     if (cuda.exists()) {
-      return cuda.op1d1i1t(0, this, cuda.sqr, out: out);
+      return cuda.op1d1i(0, this, cuda.sqr, out: out);
     }
     throw UnimplementedError('sqr on CPU(Dart/C) is not implemented yet!');
   }
 
   Future<Tensor> sqrt({Tensor? out}) async {
     if (cuda.exists()) {
-      return cuda.op1d1i1t(0, this, cuda.sqrt, out: out);
+      return cuda.op1d1i(0, this, cuda.sqrt, out: out);
+    }
+    throw UnimplementedError('sqr on CPU(Dart/C) is not implemented yet!');
+  }
+
+  Future<Tensor> log({Tensor<double>? out}) async {
+    if (cuda.exists()) {
+      return cuda.op1d1i(0, this, cuda.log, out: out);
     }
     throw UnimplementedError('sqr on CPU(Dart/C) is not implemented yet!');
   }
 
   Future<Tensor> exp({Tensor? out}) async {
     if (cuda.exists()) {
-      return cuda.op1d1i1t(0, this, cuda.exp, out: out);
+      return cuda.op1d1i(0, this, cuda.exp, out: out);
     }
     throw UnimplementedError('sqr on CPU(Dart/C) is not implemented yet!');
   }
 
-  Future<Tensor<double>> sin({Tensor<double>? out}) async {
-    final ctx = Context();
-    try {
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
-      final outBuf =
-          CuOnesor.sized(stream, out?.type ?? f64, nel, context: ctx);
-      cuda.sin(stream, outBuf, inp1Buf, nel);
-      if (out == null) {
-        out = F64Tensor.sized(size, name: 'sin($name)');
-        ctx.releaseOnErr(out);
-      } else {
-        if (out.nel != nel) {
-          throw ArgumentError('Output size mismatch');
-        }
-      }
-      outBuf.copyTo(out.as1d, stream: stream);
-      await stream.sync();
-      return out;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
+  Future<Tensor<double>> sin({Tensor? out}) async {
+    if (cuda.exists()) {
+      return cuda.op1d1i(0, this, cuda.sin, out: out, outType: f64)
+          as Tensor<double>;
     }
+    throw UnimplementedError('sin on CPU(Dart/C) is not implemented yet!');
   }
 
   Future<Tensor<double>> cos({Tensor<double>? out}) async {
-    final ctx = Context();
-    try {
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
-      final outBuf =
-          CuOnesor.sized(stream, out?.type ?? f64, nel, context: ctx);
-      cuda.cos(stream, outBuf, inp1Buf, nel);
-      if (out == null) {
-        out = F64Tensor.sized(size, name: 'sin($name)');
-        ctx.releaseOnErr(out);
-      } else {
-        if (out.nel != nel) {
-          throw ArgumentError('Output size mismatch');
-        }
-      }
-      outBuf.copyTo(out.as1d, stream: stream);
-      await stream.sync();
-      return out;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
+    if (cuda.exists()) {
+      return cuda.op1d1i(0, this, cuda.cos, out: out, outType: f64)
+          as Tensor<double>;
     }
+    throw UnimplementedError('cos on CPU(Dart/C) is not implemented yet!');
   }
 
   Future<Tensor<double>> tan({Tensor<double>? out}) async {
-    final ctx = Context();
-    try {
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
-      final outBuf =
-          CuOnesor.sized(stream, out?.type ?? f64, nel, context: ctx);
-      cuda.tan(stream, outBuf, inp1Buf, nel);
-      if (out == null) {
-        out = F64Tensor.sized(size, name: 'sin($name)');
-        ctx.releaseOnErr(out);
-      } else {
-        if (out.nel != nel) {
-          throw ArgumentError('Output size mismatch');
-        }
-      }
-      outBuf.copyTo(out.as1d, stream: stream);
-      await stream.sync();
-      return out;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
+    if (cuda.exists()) {
+      return cuda.op1d1i(0, this, cuda.tan, out: out, outType: f64)
+          as Tensor<double>;
     }
+    throw UnimplementedError('tan on CPU(Dart/C) is not implemented yet!');
   }
 
   Future<Tensor<double>> sinh({Tensor<double>? out}) async {
-    final ctx = Context();
-    try {
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
-      final outBuf =
-          CuOnesor.sized(stream, out?.type ?? f64, nel, context: ctx);
-      cuda.sinh(stream, outBuf, inp1Buf, nel);
-      if (out == null) {
-        out = F64Tensor.sized(size, name: 'sin($name)');
-        ctx.releaseOnErr(out);
-      } else {
-        if (out.nel != nel) {
-          throw ArgumentError('Output size mismatch');
-        }
-      }
-      outBuf.copyTo(out.as1d, stream: stream);
-      await stream.sync();
-      return out;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
+    if (cuda.exists()) {
+      return cuda.op1d1i(0, this, cuda.sinh, out: out, outType: f64)
+          as Tensor<double>;
     }
+    throw UnimplementedError('sinh on CPU(Dart/C) is not implemented yet!');
   }
 
   Future<Tensor<double>> cosh({Tensor<double>? out}) async {
-    final ctx = Context();
-    try {
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
-      final outBuf =
-          CuOnesor.sized(stream, out?.type ?? f64, nel, context: ctx);
-      cuda.cosh(stream, outBuf, inp1Buf, nel);
-      if (out == null) {
-        out = F64Tensor.sized(size, name: 'sin($name)');
-        ctx.releaseOnErr(out);
-      } else {
-        if (out.nel != nel) {
-          throw ArgumentError('Output size mismatch');
-        }
-      }
-      outBuf.copyTo(out.as1d, stream: stream);
-      await stream.sync();
-      return out;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
+    if (cuda.exists()) {
+      return cuda.op1d1i(0, this, cuda.cosh, out: out, outType: f64)
+          as Tensor<double>;
     }
+    throw UnimplementedError('cosh on CPU(Dart/C) is not implemented yet!');
   }
 
   Future<Tensor<double>> tanh({Tensor<double>? out}) async {
-    final ctx = Context();
-    try {
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final inp1Buf = CuOnesor.copy(stream, as1d, context: ctx);
-      final outBuf =
-          CuOnesor.sized(stream, out?.type ?? f64, nel, context: ctx);
-      cuda.tanh(stream, outBuf, inp1Buf, nel);
-      if (out == null) {
-        out = F64Tensor.sized(size, name: 'sin($name)');
-        ctx.releaseOnErr(out);
-      } else {
-        if (out.nel != nel) {
-          throw ArgumentError('Output size mismatch');
-        }
-      }
-      outBuf.copyTo(out.as1d, stream: stream);
-      await stream.sync();
-      return out;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
-    }
-  }
-
-  Future<Tensor> abs({Tensor? out}) async {
     if (cuda.exists()) {
-      return cuda.op1d1i1t(0, this, cuda.abs, out: out);
+      return cuda.op1d1i(0, this, cuda.tanh, out: out, outType: f64)
+          as Tensor<double>;
     }
-    throw UnimplementedError('abs on CPU(Dart/C) is not implemented yet!');
-
+    throw UnimplementedError('tanh on CPU(Dart/C) is not implemented yet!');
   }
 
   Future<T> sum() {
-    // TODO
-    throw UnimplementedError();
+    if (cuda.exists()) {
+      return cuda.op1d2tRed<T>(0, this, cuda.mean);
+    }
+    throw UnimplementedError('sum on CPU(Dart/C) is not implemented yet!');
   }
 
   Future<double> mean() {
-    // TODO
-    throw UnimplementedError();
+    if (cuda.exists()) {
+      return cuda.op1dF64Red(0, this, cuda.mean);
+    }
+    throw UnimplementedError('mean on CPU(Dart/C) is not implemented yet!');
   }
 
   Future<double> variance() {
-    // TODO
-    throw UnimplementedError();
+    if (cuda.exists()) {
+      return cuda.op1dF64Red(0, this, cuda.variance);
+    }
+    throw UnimplementedError('mean on CPU(Dart/C) is not implemented yet!');
   }
 
-  Future<double> std() {
-    // TODO
-    throw UnimplementedError();
+  Future<double> std() async {
+    if (cuda.exists()) {
+      return math.sqrt(await cuda.op1dF64Red(0, this, cuda.variance));
+    }
+    throw UnimplementedError('mean on CPU(Dart/C) is not implemented yet!');
   }
 
-  Future<Tensor<double>> sumRows({int colDims = 1, Tensor<double>? out}) async {
-    if (size.dims < 2) {
-      throw StateError('Must be at least a 2D tensor');
+  Future<Tensor> sumRows(
+      {int colDims = 1, Tensor? out, NumType? outType}) async {
+    if (cuda.exists()) {
+      return cuda.op2d1i(0, this, cuda.sum2d,
+          colDims: colDims, out: out, outType: outType);
     }
-    Dim inpSize = size.squeeze2D(colDims: colDims);
-    Dim outSize = Dim2(inpSize.rows, 1);
-    final ctx = Context();
-    try {
-      // TODO implement Dart summing for web
-      // TODO implement C summing for non-web
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      final inp = CuOnesor.copy(stream, as1d, context: ctx);
-      final outCuda = F64CuOnesor.sized(stream, outSize.nel, context: ctx);
-      cuda.sum2d(stream, outCuda, inp, inpSize.to2D());
-      if (out == null) {
-        out = F64Tensor.sized(outSize, name: 'sum2D($name)');
-        ctx.releaseOnErr(out);
-      } else {
-        if (out.nel != outSize.nel) {
-          throw ArgumentError('Output size mismatch');
-        }
-      }
-      outCuda.copyTo(out.as1d, stream: stream);
-      await stream.sync();
-      return out;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
-    }
+    throw UnimplementedError('sumRows on CPU(Dart/C) is not implemented yet!');
   }
 
-  Future<Tensor<double>> meanRows(
-      {int colDims = 1, Tensor<double>? out}) async {
-    if (size.dims < 2) {
-      throw StateError('Must be at least a 2D tensor');
+  Future<Tensor> meanRows(
+      {int colDims = 1, Tensor<double>? out, NumType outType = f64}) async {
+    if (cuda.exists()) {
+      return cuda.op2d1i(0, this, cuda.mean2d,
+          colDims: colDims, out: out, outType: outType);
     }
-    Dim inpSize = size.squeeze2D(colDims: colDims);
-    Dim outSize = Dim2(inpSize.rows, 1);
-    final ctx = Context();
-    try {
-      // TODO implement Dart summing for web
-      // TODO implement C summing for non-web
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      final inp = CuOnesor.copy(stream, as1d, context: ctx);
-      final outCuda = F64CuOnesor.sized(stream, outSize.nel, context: ctx);
-      cuda.mean2d(stream, outCuda, inp, inpSize.to2D());
-      if (out == null) {
-        out = F64Tensor.sized(outSize, name: 'sum2D($name)');
-        ctx.releaseOnErr(out);
-      } else {
-        if (out.nel != outSize.nel) {
-          throw ArgumentError('Output size mismatch');
-        }
-      }
-      outCuda.copyTo(out.as1d, stream: stream);
-      await stream.sync();
-      return out;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
-    }
+    throw UnimplementedError('meanRows on CPU(Dart/C) is not implemented yet!');
   }
 
-  Future<Tensor<double>> varianceRows(
-      {int colDims = 1, Tensor<double>? out, int correction = 0}) async {
-    if (size.dims < 2) {
-      throw StateError('Must be at least a 2D tensor');
+  Future<Tensor> varianceRows(
+      {int colDims = 1,
+      Tensor<double>? out,
+      int correction = 0,
+      NumType outType = f64}) async {
+    if (cuda.exists()) {
+      void func(CudaStream stream, NumPtr out, NumPtr inp1, Dim2 inpSize) =>
+          cuda.variance2d(stream, out, inp1, inpSize, correction);
+      return cuda.op2d1i(0, this, func,
+          colDims: colDims, out: out, outType: outType);
     }
-    Dim inpSize = size.squeeze2D(colDims: colDims);
-    Dim outSize = Dim2(inpSize.rows, 1);
-    final ctx = Context();
-    try {
-      // TODO implement Dart summing for web
-      // TODO implement C summing for non-web
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      final inp = CuOnesor.copy(stream, as1d, context: ctx);
-      final outCuda = F64CuOnesor.sized(stream, outSize.nel, context: ctx);
-      cuda.variance2d(stream, outCuda, inp, inpSize.to2D(), correction);
-      if (out == null) {
-        out = F64Tensor.sized(outSize, name: 'sum2D($name)');
-        ctx.releaseOnErr(out);
-      } else {
-        if (out.nel != outSize.nel) {
-          throw ArgumentError('Output size mismatch');
-        }
-      }
-      outCuda.copyTo(out.as1d, stream: stream);
-      await stream.sync();
-      return out;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
-    }
+    throw UnimplementedError('meanRows on CPU(Dart/C) is not implemented yet!');
   }
 
-  Future<Tensor<double>> stdRows(
-      {int colDims = 1, Tensor<double>? out, int correction = 0}) async {
-    if (size.dims < 2) {
-      throw StateError('Must be at least a 2D tensor');
+  Future<Tensor> stdRows(
+      {int colDims = 1,
+      Tensor<double>? out,
+      int correction = 0,
+      NumType outType = f64}) async {
+    if (cuda.exists()) {
+      void func(CudaStream stream, NumPtr out, NumPtr inp1, Dim2 inpSize) =>
+          cuda.std2d(stream, out, inp1, inpSize, correction);
+      return cuda.op2d1i(0, this, func,
+          colDims: colDims, out: out, outType: outType);
     }
-    Dim inpSize = size.squeeze2D(colDims: colDims);
-    Dim outSize = Dim2(inpSize.rows, 1);
-    final ctx = Context();
-    try {
-      // TODO implement Dart summing for web
-      // TODO implement C summing for non-web
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      final inp = CuOnesor.copy(stream, as1d, context: ctx);
-      final outCuda = F64CuOnesor.sized(stream, outSize.nel, context: ctx);
-      cuda.std2d(stream, outCuda, inp, inpSize.to2D(), correction);
-      if (out == null) {
-        out = F64Tensor.sized(outSize, name: 'sum2D($name)');
-        ctx.releaseOnErr(out);
-      } else {
-        if (out.nel != outSize.nel) {
-          throw ArgumentError('Output size mismatch');
-        }
-      }
-      outCuda.copyTo(out.as1d, stream: stream);
-      await stream.sync();
-      return out;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
-    }
+    throw UnimplementedError('meanRows on CPU(Dart/C) is not implemented yet!');
   }
 
   Future<Tensor<double>> normalizeRows(
-      {int colDims = 1, Tensor<double>? out, double epsilon = 1e-5}) async {
-    if (size.dims < 2) {
-      throw StateError('Must be at least a 2D tensor');
+      {int colDims = 1,
+      Tensor<double>? out,
+      double epsilon = 1e-5,
+      NumType outType = f64}) async {
+    if (cuda.exists()) {
+      void func(CudaStream stream, NumPtr out, NumPtr inp1, Dim2 inpSize) =>
+          cuda.normalize2d(stream, out, inp1, inpSize, epsilon);
+      return cuda.op2d1i(0, this, func,
+          colDims: colDims, out: out, outType: outType) as Tensor<double>;
     }
-    Dim inpSize = size.squeeze2D(colDims: colDims);
-    Dim outSize = Dim2(inpSize.rows, 1);
-    final ctx = Context();
-    try {
-      // TODO implement Dart summing for web
-      // TODO implement C summing for non-web
-      int deviceId = 0; // TODO implement device selection
-      final stream = CudaStream(deviceId, context: ctx);
-      final inp = CuOnesor.copy(stream, as1d, context: ctx);
-      final outCuda = F64CuOnesor.sized(stream, outSize.nel, context: ctx);
-      cuda.normalize2d(stream, outCuda, inp, inpSize.to2D(), epsilon);
-      if (out == null) {
-        out = F64Tensor.sized(outSize, name: 'sum2D($name)');
-        ctx.releaseOnErr(out);
-      } else {
-        if (out.nel != outSize.nel) {
-          throw ArgumentError('Output size mismatch');
-        }
-      }
-      outCuda.copyTo(out.as1d, stream: stream);
-      await stream.sync();
-      return out;
-    } catch (e) {
-      ctx.release(isError: true);
-      rethrow;
-    } finally {
-      ctx.release();
-    }
+    throw UnimplementedError(
+        'normalizeRows on CPU(Dart/C) is not implemented yet!');
   }
 
   Future<Tensor<T>> t({Tensor<T>? out});

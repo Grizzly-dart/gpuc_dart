@@ -100,6 +100,85 @@ class Cuda {
     }
   }
 
+  void neg(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    final err = cuda.neg(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void plus(CudaStream stream, NumPtr out, NumPtr inp1, NumPtr inp2, int size) {
+    final err = cuda.plus(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, ffi.nullptr,
+        size, 0, out.type.id, inp1.type.id, inp2.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void minus(
+      CudaStream stream, NumPtr out, NumPtr inp1, NumPtr inp2, int size) {
+    final err = cuda.minus(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, ffi.nullptr,
+        size, 0, out.type.id, inp1.type.id, inp2.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void mul(CudaStream stream, NumPtr out, NumPtr inp1, NumPtr inp2, int size) {
+    final err = cuda.mul(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, ffi.nullptr,
+        size, 0, out.type.id, inp1.type.id, inp2.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void div(CudaStream stream, NumPtr out, NumPtr inp1, NumPtr inp2, int size) {
+    final err = cuda.div(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, ffi.nullptr,
+        size, 0, out.type.id, inp1.type.id, inp2.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void abs(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    final err = cuda.abs(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void sqr(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    final err =
+        cuda.sqr(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void sqrt(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    final err =
+        cuda.sqrt(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void log(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    final err =
+        cuda.log(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
+  void exp(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    final err =
+        cuda.exp(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
   void sin(CudaStream stream, NumPtr out, NumPtr inp, int size) {
     final err =
         cuda.sin(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
@@ -148,27 +227,6 @@ class Cuda {
     }
   }
 
-  void sqr(CudaStream stream, NumPtr out, NumPtr inp, int size) {
-    final err = cuda.sqr(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
-    if (err != ffi.nullptr) {
-      throw CudaException(err.toDartString());
-    }
-  }
-
-  void sqrt(CudaStream stream, NumPtr out, NumPtr inp, int size) {
-    final err = cuda.sqrt(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
-    if (err != ffi.nullptr) {
-      throw CudaException(err.toDartString());
-    }
-  }
-
-  void exp(CudaStream stream, NumPtr out, NumPtr inp, int size) {
-    final err = cuda.exp(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
-    if (err != ffi.nullptr) {
-      throw CudaException(err.toDartString());
-    }
-  }
-
   void transpose2D(CudaStream stream, F64Ptr out, F64Ptr inp, Dim3 size) {
     final ctx = Context();
     try {
@@ -195,35 +253,15 @@ class Cuda {
     }
   }
 
-  void addition(
-      CudaStream stream, NumPtr out, NumPtr inp1, NumPtr inp2, int size) {
-    final key = '${out.type.short}_${inp1.type.short}_${inp2.type.short}';
-    final err =
-        cuda.additions[key]!(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, size);
+  void mean(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    final err = cuda.mean(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
   }
 
-  void sub(CudaStream stream, NumPtr out, NumPtr inp1, NumPtr inp2, int size) {
-    final key = '${out.type.short}_${inp1.type.short}_${inp2.type.short}';
-    final err = cuda.subs[key]!(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, size);
-    if (err != ffi.nullptr) {
-      throw CudaException(err.toDartString());
-    }
-  }
-
-  void mul(CudaStream stream, NumPtr out, NumPtr inp1, NumPtr inp2, int size) {
-    final key = '${out.type.short}_${inp1.type.short}_${inp2.type.short}';
-    final err = cuda.muls[key]!(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, size);
-    if (err != ffi.nullptr) {
-      throw CudaException(err.toDartString());
-    }
-  }
-
-  void div(CudaStream stream, NumPtr out, NumPtr inp1, NumPtr inp2, int size) {
-    final key = '${out.type.short}_${inp1.type.short}_${inp2.type.short}';
-    final err = cuda.divs[key]!(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, size);
+  void variance(CudaStream stream, NumPtr out, NumPtr inp, int size) {
+    final err = cuda.variance(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
