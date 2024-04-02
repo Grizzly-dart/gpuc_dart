@@ -115,6 +115,23 @@ class Cuda {
     }
   }
 
+  void plusScalar(CudaStream stream, NumPtr out, NumPtr inp1, scalar, int size, {bool flipScalar = false}) {
+    NumType inp2Type;
+    CPtr inp2Ptr = CPtr.allocate(8);
+    if(scalar is int) {
+      inp2Type = i64;
+    } else if(scalar is double) {
+      inp2Type = f64;
+    } else {
+      throw ArgumentError('Scalar must be an int or double');
+    }
+    final err = cuda.plus(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, ffi.nullptr,
+        size, 0, out.type.id, inp1.type.id, inp2.type.id);
+    if (err != ffi.nullptr) {
+      throw CudaException(err.toDartString());
+    }
+  }
+
   void minus(
       CudaStream stream, NumPtr out, NumPtr inp1, NumPtr inp2, int size) {
     final err = cuda.minus(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, ffi.nullptr,

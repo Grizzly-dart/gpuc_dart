@@ -17,8 +17,9 @@ Future<void> test3(Dim size) async {
   final t1 = F64Tensor.random(size, random: rnd);
   final t2 = F64Tensor.random(size, random: rnd);
   final t3 = F64Tensor.random(size, random: rnd);
+  print('running...');
   final out = await(t1 + t2 + t3);
-  print('verifying!');
+  print('verifying...');
   out.as2d().assertEqual(t1.as2d().plus(t2.as2d()).plus(t3.as2d()));
 }
 
