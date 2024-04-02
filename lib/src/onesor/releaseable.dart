@@ -17,13 +17,21 @@ class Context {
   void release({bool isError = false}) {
     if (isError) {
       for (final resource in _onError) {
-        resource.release();
+        try {
+          resource.release();
+        } catch(e) {
+          // TODO
+        }
       }
       _onError.clear();
     }
 
     for (final resources in _resources) {
-      resources.release();
+      try {
+        resources.release();
+      } catch(e) {
+        // TODO
+      }
     }
     _resources.clear();
   }

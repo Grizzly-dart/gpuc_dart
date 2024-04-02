@@ -2,7 +2,7 @@ import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-class CudaFFI {
+class CuFFI {
   final StrPtr Function(ffi.Pointer<CCudaDeviceProps>, int device)
       getDeviceProps;
   final StrPtr Function(ffi.Pointer<CCudaMemInfo>, int device) getMemInfo;
@@ -84,7 +84,7 @@ class CudaFFI {
   final StrPtr Function(ffi.Pointer<CCudaStream>, Ptr out, Ptr inp,
       Ptr threshold, Ptr value, int, int) minThreshold;
 
-  CudaFFI({
+  CuFFI({
     required this.getDeviceProps,
     required this.getMemInfo,
     required this.allocate,
@@ -133,13 +133,13 @@ class CudaFFI {
     required this.minThreshold,
   });
 
-  static CudaFFI? instance;
+  static CuFFI? instance;
 
   static void initialize(ffi.DynamicLibrary dylib) {
-    instance = CudaFFI.lookup(dylib);
+    instance = CuFFI.lookup(dylib);
   }
 
-  factory CudaFFI.lookup(ffi.DynamicLibrary dylib) {
+  factory CuFFI.lookup(ffi.DynamicLibrary dylib) {
     final getDeviceProps = dylib.lookupFunction<
         ffi.Pointer<ffi.Utf8> Function(
             ffi.Pointer<CCudaDeviceProps>, ffi.Int32),
@@ -274,7 +274,7 @@ class CudaFFI {
         StrPtr Function(ffi.Pointer<CCudaStream>, Ptr, Ptr, Ptr, Ptr, int,
             int)>('tcuMinThreshold');
 
-    return CudaFFI(
+    return CuFFI(
       getDeviceProps: getDeviceProps,
       getMemInfo: getMemInfo,
       allocate: allocate,
@@ -505,7 +505,7 @@ final class CCudaStream extends ffi.Struct {
   static ffi.Pointer<CCudaStream> create(int device) {
     final stream = ffi.calloc.allocate<CCudaStream>(ffi.sizeOf<CCudaStream>());
     try {
-      final err = CudaFFI.instance!.createStream(stream, device);
+      final err = CuFFI.instance!.createStream(stream, device);
       if (err != ffi.nullptr) {
         throw CudaException(err.toDartString());
       }

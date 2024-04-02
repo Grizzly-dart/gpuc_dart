@@ -174,49 +174,71 @@ abstract mixin class Tensor<T extends num> implements Resource {
 
   Future<Tensor<T>> operator -() => neg();
 
-  Future<Tensor> plus(FutureOr<Tensor> other, {Tensor? out}) async {
+  Future<Tensor> plus(/* FutureOr<Tensor> | num */ other, {Tensor? out}) async {
+    if (other is Future) other = await other;
     if (cuda.exists()) {
-      return cuda.op1d2i(0, this, await other, cuda.plus, out: out);
+      if (other is Tensor) {
+        return cuda.op1d2i(0, this, other, cuda.cuFFI.plus, out: out);
+      } else if (other is num) {
+        return cuda.op1d2iScalar(0, this, other, cuda.cuFFI.plus, out: out);
+      } else {
+        throw ArgumentError('Unsupported type: ${other.runtimeType}');
+      }
     }
     throw UnimplementedError('plus on CPU(Dart/C) is not implemented yet!');
   }
 
-  Future<Tensor> operator +(FutureOr<Tensor> other) => plus(other);
+  Future<Tensor> operator +(/* FutureOr<Tensor> | num */ other) => plus(other);
 
-  Future<Tensor> minus(FutureOr<Tensor> other, {Tensor? out}) async {
+  Future<Tensor> minus(/* FutureOr<Tensor> | num */ other,
+      {Tensor? out}) async {
+    if (other is Future) other = await other;
     if (cuda.exists()) {
-      return cuda.op1d2i(0, this, await other, cuda.minus, out: out);
+      if(other is Tensor) {
+        return cuda.op1d2i(0, this, other, cuda.cuFFI.minus, out: out);
+      } else if (other is num) {
+        return cuda.op1d2iScalar(0, this, other, cuda.cuFFI.minus, out: out);
+      } else {
+        throw ArgumentError('Unsupported type: ${other.runtimeType}');
+      }
     }
     throw UnimplementedError('sub on CPU(Dart/C) is not implemented yet!');
   }
 
-  Future<Tensor> operator -(FutureOr<Tensor> other) => minus(other);
+  Future<Tensor> operator -(/* FutureOr<Tensor> | num */ other) => minus(other);
 
-  Future<Tensor> mul(FutureOr<Tensor> other, {Tensor? out}) async {
+  Future<Tensor> mul(/* FutureOr<Tensor> | num */ other, {Tensor? out}) async {
+    if (other is Future) other = await other;
     if (cuda.exists()) {
-      return cuda.op1d2i(0, this, await other, cuda.mul, out: out);
+      if(other is Tensor) {
+        return cuda.op1d2i(0, this, other, cuda.cuFFI.mul, out: out);
+      } else if (other is num) {
+        return cuda.op1d2iScalar(0, this, other, cuda.cuFFI.mul, out: out);
+      } else {
+        throw ArgumentError('Unsupported type: ${other.runtimeType}');
+      }
     }
     throw UnimplementedError('mul on CPU(Dart/C) is not implemented yet!');
   }
 
-  Future<Tensor> operator *(other) async {
-    if (other is Future) {
-      other = await other;
-    }
-    if (other is Tensor) {
-      return mul(other);
-    }
-    throw UnsupportedError('Unsupported type: ${other.runtimeType}');
-  }
+  Future<Tensor> operator *(/* FutureOr<Tensor> | num */ other) async =>
+      mul(other);
 
-  Future<Tensor> div(FutureOr<Tensor> other, {Tensor? out}) async {
+  Future<Tensor> div(/* FutureOr<Tensor> | num */ other, {Tensor? out}) async {
+    if (other is Future) other = await other;
     if (cuda.exists()) {
-      return cuda.divSplit(0, this, await other, out: out);
+      if(other is Tensor) {
+        return cuda.divSplit(0, this, other, out: out);
+      } else if (other is num) {
+        return cuda.op1d2iScalar(0, this, other, cuda.cuFFI.div, out: out);
+      } else {
+        throw ArgumentError('Unsupported type: ${other.runtimeType}');
+      }
     }
     throw UnimplementedError('div on CPU(Dart/C) is not implemented yet!');
   }
 
-  Future<Tensor> operator /(FutureOr<Tensor> other) => div(other);
+  Future<Tensor> operator /(/* FutureOr<Tensor> | num */ other) => div(other);
 
   // TODO int division
 

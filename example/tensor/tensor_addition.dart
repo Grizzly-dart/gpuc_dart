@@ -1,6 +1,6 @@
 import 'package:gpuc_dart/gpuc_dart.dart';
 
-Future<void> test(Dim size) async {
+Future<void> plus(Dim size) async {
   print('=====> Test a + b $size');
   final rnd = MTRandom();
   final t1 = F64Tensor.random(size, random: rnd);
@@ -11,7 +11,17 @@ Future<void> test(Dim size) async {
   out.as2d().assertEqual(t1.as2d().plus(t2.as2d()));
 }
 
-Future<void> test3(Dim size) async {
+Future<void> plusScalar(Dim size) async {
+  print('=====> Test a + s $size');
+  final rnd = MTRandom();
+  final t1 = F64Tensor.random(size, random: rnd);
+  print('running...');
+  final out = await(t1 + 143);
+  print('verifying...');
+  out.as2d().assertEqual(t1.as2d().plus(143));
+}
+
+Future<void> plus3(Dim size) async {
   print('Test a + b + c $size');
   final rnd = MTRandom();
   final t1 = F64Tensor.random(size, random: rnd);
@@ -25,9 +35,15 @@ Future<void> test3(Dim size) async {
 
 void main() async {
   initializeNativeTensorLibrary();
-  await test(Dim([3, 3]));
-  await test(Dim([512, 512]));
-  await test(Dim([4096, 4096]));
+
+  for(final sizes in [
+    Dim([3, 3]),
+    Dim([512, 512]),
+    Dim([4096, 4096]),
+  ]) {
+    await plus(sizes);
+    await plusScalar(sizes);
+  }
 
   print('Finished!');
 }

@@ -38,20 +38,20 @@ void initializeTensorCuda({String? libPath}) {
   }
 
   final dylib = ffi.DynamicLibrary.open(libraryPath);
-  CudaFFI.initialize(dylib);
+  CuFFI.initialize(dylib);
 }
 
 final Cuda cuda = Cuda(null);
 
 class Cuda {
-  final CudaFFI? _cuda;
+  final CuFFI? _cuFFI;
 
-  Cuda(this._cuda);
+  Cuda(this._cuFFI);
 
-  CudaFFI get cuda => _cuda ?? CudaFFI.instance!;
+  CuFFI get cuFFI => _cuFFI ?? CuFFI.instance!;
 
   bool exists() {
-    if (_cuda == null && CudaFFI.instance == null) {
+    if (_cuFFI == null && CuFFI.instance == null) {
       return false;
     }
     return true;
@@ -59,7 +59,7 @@ class Cuda {
 
   CudaDeviceProps getDeviceProps(int device) {
     final ret = CudaDeviceProps.allocate();
-    final err = cuda.getDeviceProps(ret.ptr, device);
+    final err = cuFFI.getDeviceProps(ret.ptr, device);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -68,7 +68,7 @@ class Cuda {
 
   CudaMemInfo getMemInfo(int device) {
     final ret = CudaMemInfo.allocate();
-    final err = cuda.getMemInfo(ret.ptr, device);
+    final err = cuFFI.getMemInfo(ret.ptr, device);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -78,7 +78,7 @@ class Cuda {
   ffi.Pointer<ffi.Void> allocate(CudaStream stream, int size) {
     final ptr = CPtr<ffi.Pointer<ffi.Void>>.allocate(
         ffi.sizeOf<ffi.Pointer<ffi.Void>>());
-    final err = cuda.allocate(stream.ptr, ptr.ptr.cast(), size);
+    final err = cuFFI.allocate(stream.ptr, ptr.ptr.cast(), size);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -87,78 +87,58 @@ class Cuda {
 
   void memcpy(CudaStream stream, ffi.Pointer<ffi.Void> dst,
       ffi.Pointer<ffi.Void> src, int size) {
-    final err = cuda.memcpy(stream.ptr, dst, src, size);
+    final err = cuFFI.memcpy(stream.ptr, dst, src, size);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
   }
 
   void memFree(CudaStream stream, ffi.Pointer<ffi.Void> ptr) {
-    final err = cuda.memFree(stream.ptr, ptr);
+    final err = cuFFI.memFree(stream.ptr, ptr);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
   }
 
   void neg(CudaStream stream, NumPtr out, NumPtr inp, int size) {
-    final err = cuda.neg(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
+    final err = cuFFI.neg(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
   }
 
-  void plus(CudaStream stream, NumPtr out, NumPtr inp1, NumPtr inp2, int size) {
-    final err = cuda.plus(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, ffi.nullptr,
-        size, 0, out.type.id, inp1.type.id, inp2.type.id);
+  void binaryArith(OpBinaryArith op, CudaStream stream, NumPtr out, NumPtr inp1,
+      NumPtr inp2, int size) {
+    final err = op(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, ffi.nullptr, size,
+        0, out.type.id, inp1.type.id, inp2.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
   }
 
-  void plusScalar(CudaStream stream, NumPtr out, NumPtr inp1, scalar, int size, {bool flipScalar = false}) {
+  void binaryArithScalar(OpBinaryArith op, CudaStream stream, NumPtr out,
+      NumPtr inp1, scalar, int size,
+      {bool flip = false}) {
     NumType inp2Type;
-    CPtr inp2Ptr = CPtr.allocate(8);
-    if(scalar is int) {
+    CPtr inp2 = CPtr.allocate(8);
+    if (scalar is int) {
       inp2Type = i64;
-    } else if(scalar is double) {
+      inp2.ptr.cast<ffi.Int64>().value = scalar;
+    } else if (scalar is double) {
       inp2Type = f64;
+      inp2.ptr.cast<ffi.Double>().value = scalar;
     } else {
       throw ArgumentError('Scalar must be an int or double');
     }
-    final err = cuda.plus(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, ffi.nullptr,
-        size, 0, out.type.id, inp1.type.id, inp2.type.id);
-    if (err != ffi.nullptr) {
-      throw CudaException(err.toDartString());
-    }
-  }
-
-  void minus(
-      CudaStream stream, NumPtr out, NumPtr inp1, NumPtr inp2, int size) {
-    final err = cuda.minus(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, ffi.nullptr,
-        size, 0, out.type.id, inp1.type.id, inp2.type.id);
-    if (err != ffi.nullptr) {
-      throw CudaException(err.toDartString());
-    }
-  }
-
-  void mul(CudaStream stream, NumPtr out, NumPtr inp1, NumPtr inp2, int size) {
-    final err = cuda.mul(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, ffi.nullptr,
-        size, 0, out.type.id, inp1.type.id, inp2.type.id);
-    if (err != ffi.nullptr) {
-      throw CudaException(err.toDartString());
-    }
-  }
-
-  void div(CudaStream stream, NumPtr out, NumPtr inp1, NumPtr inp2, int size) {
-    final err = cuda.div(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, ffi.nullptr,
-        size, 0, out.type.id, inp1.type.id, inp2.type.id);
+    final err = op(stream.ptr, out.ptr, inp1.ptr, ffi.nullptr, inp2.ptr, size,
+        flip ? 1 : 0, out.type.id, inp1.type.id, inp2Type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
   }
 
   void abs(CudaStream stream, NumPtr out, NumPtr inp, int size) {
-    final err = cuda.abs(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
+    final err = cuFFI.abs(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -166,7 +146,7 @@ class Cuda {
 
   void sqr(CudaStream stream, NumPtr out, NumPtr inp, int size) {
     final err =
-        cuda.sqr(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+        cuFFI.sqr(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -174,7 +154,7 @@ class Cuda {
 
   void sqrt(CudaStream stream, NumPtr out, NumPtr inp, int size) {
     final err =
-        cuda.sqrt(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+        cuFFI.sqrt(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -182,7 +162,7 @@ class Cuda {
 
   void log(CudaStream stream, NumPtr out, NumPtr inp, int size) {
     final err =
-        cuda.log(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+        cuFFI.log(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -190,7 +170,7 @@ class Cuda {
 
   void exp(CudaStream stream, NumPtr out, NumPtr inp, int size) {
     final err =
-        cuda.exp(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+        cuFFI.exp(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -198,7 +178,7 @@ class Cuda {
 
   void sin(CudaStream stream, NumPtr out, NumPtr inp, int size) {
     final err =
-        cuda.sin(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+        cuFFI.sin(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -206,7 +186,7 @@ class Cuda {
 
   void cos(CudaStream stream, NumPtr out, NumPtr inp, int size) {
     final err =
-        cuda.cos(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+        cuFFI.cos(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -214,7 +194,7 @@ class Cuda {
 
   void tan(CudaStream stream, NumPtr out, NumPtr inp, int size) {
     final err =
-        cuda.tan(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+        cuFFI.tan(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -222,7 +202,7 @@ class Cuda {
 
   void sinh(CudaStream stream, NumPtr out, NumPtr inp, int size) {
     final err =
-        cuda.sinh(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+        cuFFI.sinh(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -230,7 +210,7 @@ class Cuda {
 
   void cosh(CudaStream stream, NumPtr out, NumPtr inp, int size) {
     final err =
-        cuda.cosh(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+        cuFFI.cosh(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -238,7 +218,7 @@ class Cuda {
 
   void tanh(CudaStream stream, NumPtr out, NumPtr inp, int size) {
     final err =
-        cuda.tanh(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+        cuFFI.tanh(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -248,7 +228,7 @@ class Cuda {
     final ctx = Context();
     try {
       final sizePtr = CDim3.from(size);
-      final err = cuda.transpose2d(stream.ptr, out, inp, sizePtr.ptr.ref);
+      final err = cuFFI.transpose2d(stream.ptr, out, inp, sizePtr.ptr.ref);
       if (err != ffi.nullptr) {
         throw CudaException(err.toDartString());
       }
@@ -263,7 +243,7 @@ class Cuda {
     final iType = NumType.typeOf(indices); // TODO fix this
 
     final sizePtr = CDim2.from(size);
-    final err = cuda.pickRows(stream.ptr, out.cast(), inp.cast(),
+    final err = cuFFI.pickRows(stream.ptr, out.cast(), inp.cast(),
         indices.cast(), sizePtr.ptr.ref, type.id, iType.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
@@ -271,14 +251,14 @@ class Cuda {
   }
 
   void mean(CudaStream stream, NumPtr out, NumPtr inp, int size) {
-    final err = cuda.mean(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
+    final err = cuFFI.mean(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
   }
 
   void variance(CudaStream stream, NumPtr out, NumPtr inp, int size) {
-    final err = cuda.variance(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
+    final err = cuFFI.variance(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -288,7 +268,7 @@ class Cuda {
     final ctx = Context();
     try {
       final sizePtr = CDim2.from(inpS);
-      final err = cuda.sum2d(stream.ptr, out.ptr, inp.ptr, sizePtr.ptr.ref,
+      final err = cuFFI.sum2d(stream.ptr, out.ptr, inp.ptr, sizePtr.ptr.ref,
           out.type.id, inp.type.id);
       if (err != ffi.nullptr) {
         throw CudaException(err.toDartString());
@@ -302,7 +282,7 @@ class Cuda {
     final ctx = Context();
     try {
       final sizePtr = CDim2.from(inpS);
-      final err = cuda.mean2d(stream.ptr, out.ptr, inp.ptr, sizePtr.ptr.ref,
+      final err = cuFFI.mean2d(stream.ptr, out.ptr, inp.ptr, sizePtr.ptr.ref,
           out.type.id, inp.type.id);
       if (err != ffi.nullptr) {
         throw CudaException(err.toDartString());
@@ -317,7 +297,7 @@ class Cuda {
     final ctx = Context();
     try {
       final sizePtr = CDim2.from(inpS);
-      final err = cuda.variance2d(stream.ptr, out.ptr, inp.ptr, sizePtr.ptr.ref,
+      final err = cuFFI.variance2d(stream.ptr, out.ptr, inp.ptr, sizePtr.ptr.ref,
           correction, 0, out.type.id, inp.type.id);
       if (err != ffi.nullptr) {
         throw CudaException(err.toDartString());
@@ -332,7 +312,7 @@ class Cuda {
     final ctx = Context();
     try {
       final sizePtr = CDim2.from(inpS);
-      final err = cuda.variance2d(stream.ptr, out.ptr, inp.ptr, sizePtr.ptr.ref,
+      final err = cuFFI.variance2d(stream.ptr, out.ptr, inp.ptr, sizePtr.ptr.ref,
           correction, 0xFF, out.type.id, inp.type.id);
       if (err != ffi.nullptr) {
         throw CudaException(err.toDartString());
@@ -347,7 +327,7 @@ class Cuda {
     final ctx = Context();
     try {
       final sizePtr = CDim2.from(inpS);
-      final err = cuda.normalize2d(stream.ptr, out.ptr, inp.ptr,
+      final err = cuFFI.normalize2d(stream.ptr, out.ptr, inp.ptr,
           sizePtr.ptr.ref, epsilon, out.type.id, inp.type.id);
       if (err != ffi.nullptr) {
         throw CudaException(err.toDartString());
@@ -359,7 +339,7 @@ class Cuda {
 
   void matmul(CudaStream stream, F64Ptr out, F64Ptr inp1, F64Ptr inp2, int m,
       int n, int k, int batches) {
-    final err = cuda.matmul(stream.ptr, out, inp1, inp2, m, n, k, batches);
+    final err = cuFFI.matmul(stream.ptr, out, inp1, inp2, m, n, k, batches);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -367,7 +347,7 @@ class Cuda {
 
   void matmulT(CudaStream stream, F64Ptr out, F64Ptr inp1, F64Ptr inp2, int m,
       int n, int k, int batches) {
-    final err = cuda.matmulT(stream.ptr, out, inp1, inp2, m, n, k, batches);
+    final err = cuFFI.matmulT(stream.ptr, out, inp1, inp2, m, n, k, batches);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -376,7 +356,7 @@ class Cuda {
   void matmulCadd(CudaStream stream, F64Ptr out, F64Ptr inp1, F64Ptr inp2,
       F64Ptr add, int m, int n, int k, int batches) {
     final err =
-        cuda.matmulCadd(stream.ptr, out, inp1, inp2, add, m, n, k, batches);
+        cuFFI.matmulCadd(stream.ptr, out, inp1, inp2, add, m, n, k, batches);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -385,7 +365,7 @@ class Cuda {
   void matmulTCadd(CudaStream stream, F64Ptr out, F64Ptr inp1, F64Ptr inp2,
       F64Ptr add, int m, int n, int k, int batches) {
     final err =
-        cuda.matmulTCadd(stream.ptr, out, inp1, inp2, add, m, n, k, batches);
+        cuFFI.matmulTCadd(stream.ptr, out, inp1, inp2, add, m, n, k, batches);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -406,7 +386,7 @@ class Cuda {
     final dilationSPtr = CDim2.from(dilation);
     final paddingSPtr = CDim2.from(padding);
 
-    final err = cuda.maxPool2D(
+    final err = cuFFI.maxPool2D(
         stream.ptr,
         out.cast(),
         inp.cast(),
@@ -443,7 +423,7 @@ class Cuda {
     final paddingSC = CDim2.from(padding);
     final strideSC = CDim2.from(stride);
     final dilationSC = CDim2.from(dilation);
-    final err = cuda.conv2D(
+    final err = cuFFI.conv2D(
         stream.ptr,
         out,
         inp,
@@ -465,7 +445,7 @@ class Cuda {
 
   void eluActivation(
       CudaStream stream, NumPtr out, NumPtr inp, int size, double alpha) {
-    final err = cuda.eluActivation(
+    final err = cuFFI.eluActivation(
         stream.ptr, out.ptr, inp.ptr, size, alpha, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
@@ -477,7 +457,7 @@ class Cuda {
       throw ArgumentError('Input and output types must be the same');
     }
     final err =
-        cuda.sigmoidActivation(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
+        cuFFI.sigmoidActivation(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -488,7 +468,7 @@ class Cuda {
       throw ArgumentError('Input and output types must be the same');
     }
     final err =
-        cuda.siluActivation(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
+        cuFFI.siluActivation(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -499,7 +479,7 @@ class Cuda {
     if (inp.type != out.type) {
       throw ArgumentError('Input and output types must be the same');
     }
-    final err = cuda.softplusActivation(
+    final err = cuFFI.softplusActivation(
         stream.ptr, out.ptr, inp.ptr, size, beta, threshold, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
@@ -510,7 +490,7 @@ class Cuda {
     if (inp.type != out.type) {
       throw ArgumentError('Input and output types must be the same');
     }
-    final err = cuda.softsignActivation(
+    final err = cuFFI.softsignActivation(
         stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
@@ -522,7 +502,7 @@ class Cuda {
       throw ArgumentError('Input and output types must be the same');
     }
     final err =
-        cuda.mishActivation(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
+        cuFFI.mishActivation(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -535,7 +515,7 @@ class Cuda {
     }
     final thresholdPtr = inp.type.allocateForValue(threshold);
     final valuePtr = inp.type.allocateForValue(value);
-    final err = cuda.minThreshold(stream.ptr, out.ptr, inp.ptr,
+    final err = cuFFI.minThreshold(stream.ptr, out.ptr, inp.ptr,
         thresholdPtr.ptr, valuePtr.ptr, size, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
@@ -572,7 +552,7 @@ class CudaStream extends Resource {
 
     final nc = ffi.NativeCallable<ffi.Void Function(StrPtr)>.listener(callback);
     try {
-      final err = CudaFFI.instance!.syncStream(_stream, nc.nativeFunction);
+      final err = CuFFI.instance!.syncStream(_stream, nc.nativeFunction);
       if (err != ffi.nullptr) {
         completer.completeError(CudaException(err.toDartString()));
       }
@@ -586,7 +566,7 @@ class CudaStream extends Resource {
   void release() {
     if (_stream == ffi.nullptr) return;
 
-    final err = CudaFFI.instance!.destroyStream(_stream);
+    final err = CuFFI.instance!.destroyStream(_stream);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }

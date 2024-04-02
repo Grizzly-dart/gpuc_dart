@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
+import 'package:gpuc_dart/src/native/cuda/native_types.dart';
 
 // TODO pass in device selection
 
@@ -58,7 +59,7 @@ extension CudaSplitExtension on Cuda {
     }
   }
 
-  Future<Tensor> op1d2i(int deviceId, Tensor a, Tensor b, CuOp1d2i op,
+  Future<Tensor> op1d2i(int deviceId, Tensor a, Tensor b, OpBinaryArith op,
       {Tensor? out}) async {
     if (a.nel != b.nel) throw ArgumentError('Size mismatch');
     if (out != null && out.nel != a.nel) {
@@ -76,7 +77,6 @@ extension CudaSplitExtension on Cuda {
       final props = cuda.getMemInfo(deviceId);
       int batchSize =
           props.total ~/ (a.type.bytes + b.type.bytes + out.type.bytes);
-      print('Batch size: $batchSize');
       if (batchSize < 1) {
         throw StateError('Insufficient memory');
       } else if (batchSize > size.nel) {
@@ -93,10 +93,55 @@ extension CudaSplitExtension on Cuda {
         final bSplit =
             CuOnesor.copy(stream, b.as1d.view(batchStart, split), context: ctx);
         final outSplit = CuOnesor.sized(stream, outType, split);
-        op(stream, outSplit, aSplit, bSplit, split);
+        binaryArith(op, stream, outSplit, aSplit, bSplit, split);
         outSplit.copyTo(out.as1d.view(batchStart, split), stream: stream);
         aSplit.release(stream: stream);
         bSplit.release(stream: stream);
+        outSplit.release(stream: stream);
+        batchStart += split;
+      }
+      await Future.wait(streams.map((s) => s.sync()));
+      return out;
+    } catch (e) {
+      ctx.release(isError: true);
+      rethrow;
+    } finally {
+      ctx.release();
+    }
+  }
+
+  Future<Tensor> op1d2iScalar(int deviceId, Tensor a, num b, OpBinaryArith op,
+      {Tensor? out, bool flip = false}) async {
+    if (out != null && out.nel != a.nel) {
+      throw ArgumentError('Size mismatch');
+    }
+    NumType outType = out?.type ?? a.type;
+    final size = a.size;
+    final ctx = Context();
+    try {
+      if (out == null) {
+        out = Tensor.sized(size, outType, name: a.name);
+        ctx.releaseOnErr(out);
+      }
+      final props = cuda.getMemInfo(deviceId);
+      int batchSize = props.total ~/ (a.type.bytes + out.type.bytes);
+      if (batchSize < 1) {
+        throw StateError('Insufficient memory');
+      } else if (batchSize > size.nel) {
+        batchSize = size.nel;
+      }
+      final streams = <CudaStream>[];
+      int batchStart = 0;
+      while (batchStart < size.nel) {
+        int split = min(batchSize, size.nel - batchStart);
+        final stream = CudaStream(deviceId, context: ctx);
+        streams.add(stream);
+        final aSplit =
+            CuOnesor.copy(stream, a.as1d.view(batchStart, split), context: ctx);
+        final outSplit = CuOnesor.sized(stream, outType, split, context: ctx);
+        binaryArithScalar(op, stream, outSplit, aSplit, b, split, flip: flip);
+        outSplit.copyTo(out.as1d.view(batchStart, split), stream: stream);
+        aSplit.release(stream: stream);
         outSplit.release(stream: stream);
         batchStart += split;
       }
@@ -120,7 +165,20 @@ extension CudaSplitExtension on Cuda {
       // TODO release this
       out = Tensor.sized(a.size, f64, name: '${a.name} / ${b.name}');
     }
-    return op1d2i(deviceId, a, b, cuda.div, out: out);
+    return op1d2i(deviceId, a, b, cuFFI.div, out: out);
+  }
+
+  Future<Tensor> divSplitScalar(int deviceId, Tensor a, num b,
+      {Tensor? out}) async {
+    if (out != null) {
+      if (!out.type.isFloat) {
+        throw ArgumentError('Output type must be float');
+      }
+    } else {
+      // TODO release this
+      out = Tensor.sized(a.size, f64, name: '${a.name} / $b');
+    }
+    return op1d2iScalar(deviceId, a, b, cuFFI.div, out: out);
   }
 
   Future<double> op1dF64Red(int deviceId, Tensor a, CuOp1d1i op) async {
@@ -147,9 +205,9 @@ extension CudaSplitExtension on Cuda {
       final stream = CudaStream(deviceId, context: ctx);
       final inpCuda = CuOnesor.copy(stream, a.as1d, context: ctx);
       NumType outType;
-      if(a.type.isFloat) {
+      if (a.type.isFloat) {
         outType = f64;
-      } else if(a.type.isUInt) {
+      } else if (a.type.isUInt) {
         outType = u64;
       } else {
         outType = i64;
