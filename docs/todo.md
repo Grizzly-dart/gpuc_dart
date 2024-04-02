@@ -1,6 +1,7 @@
 + Link Resource to eachother cascading release (Resource is Context?)
 + Implement List methods on CuOnesor to not access single elements
 + Use mangled C++ functions instead of C functions
++ Finalize/release CuOnesor
 
 + pow, log, abs, asinh, acosh, atanh, erf, ceil, floor, round
 + mean, std, var, sum, prod, min, max, argmin, argmax
