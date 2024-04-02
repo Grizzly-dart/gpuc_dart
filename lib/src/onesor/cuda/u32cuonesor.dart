@@ -23,32 +23,11 @@ abstract mixin class U32CuOnesor implements CuOnesor<int>, U32Onesor {
       _U32CuOnesor.copy(other, stream: stream, context: context);
 
   @override
-  int operator [](int index) {
-    if (index < 0 || index >= length) {
-      throw RangeError('Index out of range');
-    }
-    return cuda.getU32(ptr, index, deviceId);
-  }
-
-  @override
-  void operator []=(int index, int value) {
-    if (index < 0 || index >= length) {
-      throw RangeError('Index out of range');
-    }
-    cuda.setU32(ptr, index, value, deviceId);
-  }
-
-  @override
   U32COnesor read({Context? context, CudaStream? stream}) {
+    stream = stream ?? CudaStream.noStream(deviceId);
     final ret = U32COnesor.sized(length, context: context);
-    final lContext = Context();
-    try {
-      stream = stream ?? CudaStream(deviceId, context: lContext);
-      cuda.memcpy(stream, ret.ptr.cast(), ptr.cast(), ret.lengthBytes);
-      return ret;
-    } finally {
-      lContext.release();
-    }
+    cuda.memcpy(stream, ret.ptr.cast(), ptr.cast(), ret.lengthBytes);
+    return ret;
   }
 
   @override
@@ -61,7 +40,7 @@ abstract mixin class U32CuOnesor implements CuOnesor<int>, U32Onesor {
     }
     final lContext = Context();
     try {
-      stream ??= CudaStream(deviceId, context: lContext);
+      stream ??= CudaStream.noStream(deviceId);
       final ret = U32CuOnesor.sized(stream, length, context: context);
       lContext.releaseOnErr(ret);
       cuda.memcpy(stream, ret.ptr.cast(), (ptr + bytesPerItem).cast(),
@@ -117,10 +96,14 @@ class _U32CuOnesor
       {CudaStream? stream, Context? context}) {
     final lContext = Context();
     try {
-      stream = stream ?? CudaStream(other.deviceId, context: lContext);
+      stream = stream ?? CudaStream.noStream(other.deviceId);
       final ret = _U32CuOnesor.sized(stream, other.length, context: context);
+      lContext.releaseOnErr(ret);
       ret.copyFrom(other, stream: stream);
       return ret;
+    } catch (e) {
+      lContext.release(isError: true);
+      rethrow;
     } finally {
       lContext.release();
     }
@@ -134,7 +117,7 @@ class _U32CuOnesor
     if (_ptr == ffi.nullptr) return;
     final ctx = Context();
     try {
-      stream ??= CudaStream(deviceId, context: ctx);
+      stream ??= CudaStream.noStream(deviceId);
       cuda.memFree(stream, _ptr.cast());
       _ptr = ffi.nullptr;
     } finally {

@@ -445,7 +445,7 @@ abstract mixin class Tensor<T extends num> implements Resource {
       if (cuda.exists()) {
         int deviceId = 0; // select device
         final outSize = Dim([...b.size.asList, size.cols]);
-        final stream = CudaStream(deviceId, context: ctx);
+        final stream = CudaStream(deviceId);
 
         final inpBuf = CuOnesor.copy(stream, as1d, context: ctx);
         final indicesBuf = CuOnesor.copy(stream, b.as1d, context: ctx);

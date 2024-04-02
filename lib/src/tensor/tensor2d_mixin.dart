@@ -25,7 +25,7 @@ mixin F64Tensor2dMixin implements F64Tensor {
         }
       }
       // TODO implement split processing if not all data fits into memory or to maximize parallelism
-      final stream = CudaStream(deviceId, context: ctx);
+      final stream = CudaStream(deviceId);
       final inp = F64CuOnesor.copy(stream, as1d, context: ctx);
       final outData = F64CuOnesor.sized(stream, outSize.nel, context: ctx);
       cuda.transpose2D(stream, outData.ptr.cast(), inp.ptr.cast(),

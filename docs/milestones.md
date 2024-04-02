@@ -1,35 +1,34 @@
-# Milestone 1
+# Milestone 1: Model
 
-+ sum, var, std
-
-# Milestone 2
-
-+ RELU
++ Linear layer
++ Model
 + Optimizer
 + LossFunction
-+ Initialize
-+ Embedding
 
-# Milestone 3
+# Milestone 2: Activations
+
++ RELU
++ Non-linear Activation function
++ Non-linear Activation function derivative
+
+# Milestone 3: Normalization
 
 + GroupNorm
 + BatchNorm
 + InstanceNorm
 + LayerNorm
 
-# Milestone 3
+# Milestone 3: Building blocks
 
++ Initialize
++ Embedding
 + Attention
++ ResNet
 + ResnetBlock2D
 
-# Milestone 4
 
-+ UNet
-
-# Milestone 5
+# Milestone 4: Pipelines
 
 + AutoencoderKL
-
-# Milestone 6
-
 + Diffusion pipeline
++ UNet

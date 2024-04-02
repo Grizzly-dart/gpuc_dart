@@ -8,47 +8,26 @@ abstract mixin class I64CuOnesor implements CuOnesor<int>, I64Onesor {
   ffi.Pointer<ffi.Int64> get ptr;
 
   factory I64CuOnesor(ffi.Pointer<ffi.Int64> ptr, int length, int deviceId,
-      {Context? context}) =>
+          {Context? context}) =>
       _I64CuOnesor(ptr, length, deviceId, context: context);
 
   static I64CuOnesor sized(CudaStream stream, int length, {Context? context}) =>
       _I64CuOnesor.sized(stream, length, context: context);
 
   static I64CuOnesor fromList(CudaStream stream, Int64List list,
-      {Context? context}) =>
+          {Context? context}) =>
       _I64CuOnesor.fromList(stream, list, context: context);
 
   static I64CuOnesor copy(CudaStream? stream, Onesor<int> other,
-      {Context? context}) =>
+          {Context? context}) =>
       _I64CuOnesor.copy(other, stream: stream, context: context);
-
-  @override
-  int operator [](int index) {
-    if (index < 0 || index >= length) {
-      throw RangeError('Index out of range');
-    }
-    return cuda.getI64(ptr, index, deviceId);
-  }
-
-  @override
-  void operator []=(int index, int value) {
-    if (index < 0 || index >= length) {
-      throw RangeError('Index out of range');
-    }
-    cuda.setI64(ptr, index, value, deviceId);
-  }
 
   @override
   I64COnesor read({Context? context, CudaStream? stream}) {
     final ret = I64COnesor.sized(length, context: context);
-    final lContext = Context();
-    try {
-      stream = stream ?? CudaStream(deviceId, context: lContext);
-      cuda.memcpy(stream, ret.ptr.cast(), ptr.cast(), ret.lengthBytes);
-      return ret;
-    } finally {
-      lContext.release();
-    }
+    stream = stream ?? CudaStream.noStream(deviceId);
+    cuda.memcpy(stream, ret.ptr.cast(), ptr.cast(), ret.lengthBytes);
+    return ret;
   }
 
   @override
@@ -61,7 +40,7 @@ abstract mixin class I64CuOnesor implements CuOnesor<int>, I64Onesor {
     }
     final lContext = Context();
     try {
-      stream ??= CudaStream(deviceId, context: lContext);
+      stream ??= CudaStream.noStream(deviceId);
       final ret = I64CuOnesor.sized(stream, length, context: context);
       lContext.releaseOnErr(ret);
       cuda.memcpy(stream, ret.ptr.cast(), (ptr + bytesPerItem).cast(),
@@ -87,12 +66,7 @@ abstract mixin class I64CuOnesor implements CuOnesor<int>, I64Onesor {
 }
 
 class _I64CuOnesor
-    with
-        Onesor<int>,
-        ListMixin<int>,
-        I64Onesor,
-        CuOnesor<int>,
-        I64CuOnesor
+    with Onesor<int>, ListMixin<int>, I64Onesor, CuOnesor<int>, I64CuOnesor
     implements I64CuOnesor {
   ffi.Pointer<ffi.Int64> _ptr;
 
@@ -120,15 +94,10 @@ class _I64CuOnesor
 
   static _I64CuOnesor copy(Onesor<int> other,
       {CudaStream? stream, Context? context}) {
-    final lContext = Context();
-    try {
-      stream = stream ?? CudaStream(other.deviceId, context: lContext);
-      final ret = _I64CuOnesor.sized(stream, other.length, context: context);
-      ret.copyFrom(other, stream: stream);
-      return ret;
-    } finally {
-      lContext.release();
-    }
+    stream = stream ?? CudaStream.noStream(other.deviceId);
+    final ret = _I64CuOnesor.sized(stream, other.length, context: context);
+    ret.copyFrom(other, stream: stream);
+    return ret;
   }
 
   @override
@@ -137,24 +106,14 @@ class _I64CuOnesor
   @override
   void release({CudaStream? stream}) {
     if (_ptr == ffi.nullptr) return;
-    final ctx = Context();
-    try {
-      stream ??= CudaStream(deviceId, context: ctx);
-      cuda.memFree(stream, _ptr.cast());
-      _ptr = ffi.nullptr;
-    } finally {
-      ctx.release();
-    }
+    stream ??= CudaStream.noStream(deviceId);
+    cuda.memFree(stream, _ptr.cast());
+    _ptr = ffi.nullptr;
   }
 }
 
 class I64CuOnesorView
-    with
-        Onesor<int>,
-        I64Onesor,
-        ListMixin<int>,
-        CuOnesor<int>,
-        I64CuOnesor
+    with Onesor<int>, I64Onesor, ListMixin<int>, CuOnesor<int>, I64CuOnesor
     implements I64CuOnesor, CuOnesorView<int>, I64OnesorView {
   final I64CuOnesor _list;
 
@@ -170,8 +129,7 @@ class I64CuOnesorView
   int get deviceId => _list.deviceId;
 
   @override
-  late final ffi.Pointer<ffi.Int64> ptr =
-      _list.ptr.cast<ffi.Int64>() + offset;
+  late final ffi.Pointer<ffi.Int64> ptr = _list.ptr.cast<ffi.Int64>() + offset;
 
   @override
   void release({CudaStream? stream}) {}

@@ -1,17 +1,18 @@
 import 'dart:ffi' as ffi;
 
 import 'package:gpuc_dart/gpuc_dart.dart';
+import 'dart:collection';
 
-export 'f64conesor.dart';
-export 'f32conesor.dart';
-export 'i64conesor.dart';
-export 'u64conesor.dart';
-export 'i32conesor.dart';
-export 'u32conesor.dart';
-export 'i16conesor.dart';
-export 'u16conesor.dart';
-export 'i8conesor.dart';
-export 'u8conesor.dart';
+part 'f64conesor.dart';
+part 'f32conesor.dart';
+part 'i64conesor.dart';
+part 'u64conesor.dart';
+part 'i32conesor.dart';
+part 'u32conesor.dart';
+part 'i16conesor.dart';
+part 'u16conesor.dart';
+part 'i8conesor.dart';
+part 'u8conesor.dart';
 
 abstract mixin class COnesor<T extends num> implements Onesor<T>, NumPtr {
   @override
@@ -63,3 +64,20 @@ abstract mixin class COnesor<T extends num> implements Onesor<T>, NumPtr {
 
 abstract class COnesorView<T extends num>
     implements COnesor<T>, OnesorView<T> {}
+
+mixin _COnesorMixin<T extends num> implements COnesor<T> {
+  CPtr<ffi.SizedNativeType> get _ptr;
+
+  set _length(int newLength);
+
+  @override
+  void release() {
+    _ptr.release();
+  }
+
+  @override
+  set length(int newLength) {
+    _ptr.realloc(bytesPerItem, count: newLength);
+    _length = newLength;
+  }
+}

@@ -23,32 +23,11 @@ abstract mixin class U8CuOnesor implements CuOnesor<int>, U8Onesor {
       _U8CuOnesor.copy(other, stream: stream, context: context);
 
   @override
-  int operator [](int index) {
-    if (index < 0 || index >= length) {
-      throw RangeError('Index out of range');
-    }
-    return cuda.getU8(ptr, index, deviceId);
-  }
-
-  @override
-  void operator []=(int index, int value) {
-    if (index < 0 || index >= length) {
-      throw RangeError('Index out of range');
-    }
-    cuda.setU8(ptr, index, value, deviceId);
-  }
-
-  @override
   U8COnesor read({Context? context, CudaStream? stream}) {
     final ret = U8COnesor.sized(length, context: context);
-    final lContext = Context();
-    try {
-      stream = stream ?? CudaStream(deviceId, context: lContext);
-      cuda.memcpy(stream, ret.ptr.cast(), ptr.cast(), ret.lengthBytes);
-      return ret;
-    } finally {
-      lContext.release();
-    }
+    stream = stream ?? CudaStream.noStream(deviceId);
+    cuda.memcpy(stream, ret.ptr.cast(), ptr.cast(), ret.lengthBytes);
+    return ret;
   }
 
   @override
@@ -61,7 +40,7 @@ abstract mixin class U8CuOnesor implements CuOnesor<int>, U8Onesor {
     }
     final lContext = Context();
     try {
-      stream ??= CudaStream(deviceId, context: lContext);
+      stream ??= CudaStream.noStream(deviceId);
       final ret = U8CuOnesor.sized(stream, length, context: context);
       lContext.releaseOnErr(ret);
       cuda.memcpy(stream, ret.ptr.cast(), (ptr + bytesPerItem).cast(),
@@ -115,15 +94,10 @@ class _U8CuOnesor
 
   static _U8CuOnesor copy(Onesor<int> other,
       {CudaStream? stream, Context? context}) {
-    final lContext = Context();
-    try {
-      stream = stream ?? CudaStream(other.deviceId, context: lContext);
-      final ret = _U8CuOnesor.sized(stream, other.length, context: context);
-      ret.copyFrom(other, stream: stream);
-      return ret;
-    } finally {
-      lContext.release();
-    }
+    stream = stream ?? CudaStream.noStream(other.deviceId);
+    final ret = _U8CuOnesor.sized(stream, other.length, context: context);
+    ret.copyFrom(other, stream: stream);
+    return ret;
   }
 
   @override
@@ -132,14 +106,9 @@ class _U8CuOnesor
   @override
   void release({CudaStream? stream}) {
     if (_ptr == ffi.nullptr) return;
-    final ctx = Context();
-    try {
-      stream ??= CudaStream(deviceId, context: ctx);
-      cuda.memFree(stream, _ptr.cast());
-      _ptr = ffi.nullptr;
-    } finally {
-      ctx.release();
-    }
+    stream ??= CudaStream.noStream(deviceId);
+    cuda.memFree(stream, _ptr.cast());
+    _ptr = ffi.nullptr;
   }
 }
 

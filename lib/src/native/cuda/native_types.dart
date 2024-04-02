@@ -3,6 +3,8 @@ import 'package:ffi/ffi.dart' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 class CuFFI {
+  final ffi.DynamicLibrary lib;
+
   final StrPtr Function(ffi.Pointer<CCudaDeviceProps>, int device)
       getDeviceProps;
   final StrPtr Function(ffi.Pointer<CCudaMemInfo>, int device) getMemInfo;
@@ -85,6 +87,7 @@ class CuFFI {
       Ptr threshold, Ptr value, int, int) minThreshold;
 
   CuFFI({
+    required this.lib,
     required this.getDeviceProps,
     required this.getMemInfo,
     required this.allocate,
@@ -275,6 +278,7 @@ class CuFFI {
             int)>('tcuMinThreshold');
 
     return CuFFI(
+      lib: dylib,
       getDeviceProps: getDeviceProps,
       getMemInfo: getMemInfo,
       allocate: allocate,
@@ -490,9 +494,9 @@ final class CCudaDeviceProps extends ffi.Struct {
 }
 
 final class CCudaStream extends ffi.Struct {
-  external final ffi.Pointer<ffi.Void> stream;
+  external ffi.Pointer<ffi.Void> stream;
   @ffi.Int32()
-  external final int deviceId;
+  external int deviceId;
 
   Map<String, dynamic> toJson() => {
         'stream': stream,
@@ -509,7 +513,6 @@ final class CCudaStream extends ffi.Struct {
       if (err != ffi.nullptr) {
         throw CudaException(err.toDartString());
       }
-      // TODO setup finalizer
       return stream;
     } catch (e) {
       ffi.calloc.free(stream);

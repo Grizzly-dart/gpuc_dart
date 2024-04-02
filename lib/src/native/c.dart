@@ -138,22 +138,36 @@ final class CDim3 extends ffi.Struct {
 class CPtr<T extends ffi.NativeType> implements Resource, ffi.Finalizable {
   ffi.Pointer<T> _mem;
 
-  CPtr(this._mem, {Context? context}) {
-    cffi!.finalizer.attach(this, _mem.cast());
+  int bytes;
+
+  CPtr(this._mem, this.bytes, {Context? context}) {
+    assert(_mem != ffi.nullptr);
+    cffi!.finalizer
+        .attach(this, _mem.cast(), detach: this, externalSize: bytes);
     context?.add(this);
   }
 
   factory CPtr.allocate(int byteSizePerItem,
           {int count = 1, Context? context}) =>
-      CPtr(ffi.malloc.allocate(byteSizePerItem * count), context: context);
+      CPtr(
+          ffi.malloc.allocate(byteSizePerItem * count), byteSizePerItem * count,
+          context: context);
 
   ffi.Pointer<T> get ptr => _mem;
 
+  void realloc(int byteSizePerItem, {int count = 1}) {
+    final newPtr = cffi!.realloc(_mem.cast(), byteSizePerItem * count);
+    if (newPtr == ffi.nullptr) {
+      throw Exception('Failed to allocate memory');
+    }
+    _mem = newPtr.cast();
+    bytes = byteSizePerItem * count;
+  }
+
   @override
   void release() {
-    if (_mem == ffi.nullptr) {
-      return;
-    }
+    if (_mem == ffi.nullptr) return;
+    cffi!.finalizer.detach(this);
     ffi.malloc.free(_mem);
     _mem = ffi.nullptr;
   }
@@ -260,17 +274,43 @@ class NumType<T extends num> {
     return ptr;
   }
 
+  T get(ffi.Pointer ptr, {int index = 0}) {
+    if (ffiType == ffi.Double) {
+      return ptr.pointerAddition(index, bytes).cast<ffi.Double>().value as T;
+    } else if (ffiType == ffi.Float) {
+      return ptr.pointerAddition(index, bytes).cast<ffi.Float>().value as T;
+    } else if (ffiType == ffi.Int8) {
+      return ptr.pointerAddition(index, bytes).cast<ffi.Int8>().value as T;
+    } else if (ffiType == ffi.Int16) {
+      return ptr.pointerAddition(index, bytes).cast<ffi.Int16>().value as T;
+    } else if (ffiType == ffi.Int32) {
+      return ptr.pointerAddition(index, bytes).cast<ffi.Int32>().value as T;
+    } else if (ffiType == ffi.Int64) {
+      return ptr.pointerAddition(index, bytes).cast<ffi.Int64>().value as T;
+    } else if (ffiType == ffi.Uint8) {
+      return ptr.pointerAddition(index, bytes).cast<ffi.Uint8>().value as T;
+    } else if (ffiType == ffi.Uint16) {
+      return ptr.pointerAddition(index, bytes).cast<ffi.Uint16>().value as T;
+    } else if (ffiType == ffi.Uint32) {
+      return ptr.pointerAddition(index, bytes).cast<ffi.Uint32>().value as T;
+    } else if (ffiType == ffi.Uint64) {
+      return ptr.pointerAddition(index, bytes).cast<ffi.Uint64>().value as T;
+    } else {
+      throw Exception('Unknown type $ffiType');
+    }
+  }
+
   bool get isSInt =>
       ffiType is ffi.Int8 ||
-          ffiType is ffi.Int16 ||
-          ffiType is ffi.Int32 ||
-          ffiType is ffi.Int64;
+      ffiType is ffi.Int16 ||
+      ffiType is ffi.Int32 ||
+      ffiType is ffi.Int64;
 
   bool get isUInt =>
       ffiType is ffi.Uint8 ||
-          ffiType is ffi.Uint16 ||
-          ffiType is ffi.Uint32 ||
-          ffiType is ffi.Uint64;
+      ffiType is ffi.Uint16 ||
+      ffiType is ffi.Uint32 ||
+      ffiType is ffi.Uint64;
 
   bool get isXInt => isSInt || isUInt;
 
@@ -318,21 +358,26 @@ class NumType<T extends num> {
 
 const NumType<int> i8 = NumType._('int8', 1, 'i8', ffi.Int8, 0, -128, 127, 1);
 const NumType<int> i16 =
-NumType._('int16', 2, 'i16', ffi.Int16, 0, -32768, 32767, 2);
+    NumType._('int16', 2, 'i16', ffi.Int16, 0, -32768, 32767, 2);
 const NumType<int> i32 =
-NumType._('int32', 4, 'i32', ffi.Int32, 0, -2147483648, 2147483647, 4);
+    NumType._('int32', 4, 'i32', ffi.Int32, 0, -2147483648, 2147483647, 4);
 const NumType<int> i64 = NumType._('int64', 8, 'i64', ffi.Int64, 0,
     -9223372036854775808, 9223372036854775807, 8);
 
 const NumType<int> u8 = NumType._('uint8', 17, 'u8', ffi.Uint8, 0, 0, 255, 1);
 const NumType<int> u16 =
-NumType._('uint16', 18, 'u16', ffi.Uint16, 0, 0, 65535, 2);
+    NumType._('uint16', 18, 'u16', ffi.Uint16, 0, 0, 65535, 2);
 const NumType<int> u32 =
-NumType._('uint32', 20, 'u32', ffi.Uint32, 0, 0, 4294967295, 4);
+    NumType._('uint32', 20, 'u32', ffi.Uint32, 0, 0, 4294967295, 4);
 const NumType<int> u64 =
-NumType._('uint64', 24, 'u64', ffi.Uint64, 0, 0, 9223372036854775807, 8);
+    NumType._('uint64', 24, 'u64', ffi.Uint64, 0, 0, 9223372036854775807, 8);
 
 const NumType<double> f32 = NumType._('float32', 36, 'f32', ffi.Float, 0.0,
     double.negativeInfinity, double.infinity, 4);
 const NumType<double> f64 = NumType._('float64', 40, 'f64', ffi.Double, 0.0,
     double.negativeInfinity, double.infinity, 8);
+
+extension PointerExt<T extends ffi.NativeType> on ffi.Pointer<T> {
+  ffi.Pointer<T> pointerAddition(int offset, int bytesPerItem) =>
+      ffi.Pointer.fromAddress(address + offset * bytesPerItem);
+}

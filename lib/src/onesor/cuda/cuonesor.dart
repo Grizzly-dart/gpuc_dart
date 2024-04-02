@@ -86,6 +86,22 @@ abstract mixin class CuOnesor<T extends num> implements Onesor<T>, NumPtr {
   @override
   COnesor<T> read({Context? context, CudaStream? stream});
 
+  @override
+  T operator [](int index) {
+    if (index < 0 || index >= length) {
+      throw RangeError('Index out of range');
+    }
+    return cuda.getOne(CudaStream.noStream(deviceId), ptr, type, index: index);
+  }
+
+  @override
+  void operator []=(int index, T value) {
+    if (index < 0 || index >= length) {
+      throw RangeError('Index out of range');
+    }
+    cuda.setOne(CudaStream.noStream(deviceId), ptr, value, type, index: index);
+  }
+
   /*
   @override
   CuOnesor<T> slice(int start, int length,
@@ -100,9 +116,10 @@ abstract mixin class CuOnesor<T extends num> implements Onesor<T>, NumPtr {
     if (lengthBytes != src.lengthBytes) {
       throw ArgumentError('Length mismatch');
     }
+    // TODO use resource linking
     final context = Context();
     try {
-      stream = stream ?? CudaStream(deviceId, context: context);
+      stream = stream ?? CudaStream.noStream(deviceId);
       src = src is COnesor<T> ? src : src.read(context: context);
       cuda.memcpy(stream, ptr.cast(), src.ptr.cast(), lengthBytes);
     } finally {
@@ -116,7 +133,7 @@ abstract mixin class CuOnesor<T extends num> implements Onesor<T>, NumPtr {
       throw ArgumentError('Length mismatch');
     }
     final context = Context();
-    stream = stream ?? CudaStream(deviceId, context: context);
+    stream = stream ?? CudaStream.noStream(deviceId);
     try {
       if (dst is COnesor<T>) {
         cuda.memcpy(stream, dst.ptr.cast(), ptr.cast(), dst.lengthBytes);

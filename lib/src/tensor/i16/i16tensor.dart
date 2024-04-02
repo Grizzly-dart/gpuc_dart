@@ -103,7 +103,6 @@ class _I16Tensor with Tensor<int>, I16Tensor implements I16Tensor, Tensor<int> {
 
   _I16Tensor(this.as1d, this._size, {this.name = 'unnamed', Context? context}) {
     context?.add(as1d);
-    _finalizer.attach(this, as1d);
     if (as1d.length != _size.nel) {
       throw ArgumentError('Size mismatch');
     }
@@ -124,8 +123,4 @@ class _I16Tensor with Tensor<int>, I16Tensor implements I16Tensor, Tensor<int> {
   void release() {
     as1d.release();
   }
-
-  static final _finalizer = Finalizer<Onesor>((Onesor l) {
-    l.release();
-  });
 }

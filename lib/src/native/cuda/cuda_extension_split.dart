@@ -23,10 +23,7 @@ extension CudaSplitExtension on Cuda {
     final size = a.size;
     final ctx = Context();
     try {
-      if (out == null) {
-        out = Tensor.sized(size, oType, name: 'op(${a.name})');
-        ctx.releaseOnErr(out);
-      }
+      out ??= Tensor.sized(size, oType, name: 'op(${a.name})');
       final props = cuda.getMemInfo(deviceId);
       int batchSize = props.total ~/ (a.lengthBytes + out.lengthBytes);
       if (batchSize < 1) {
@@ -38,7 +35,7 @@ extension CudaSplitExtension on Cuda {
       int batchStart = 0;
       while (batchStart < size.nel) {
         int split = min(batchSize, size.nel - batchStart);
-        final stream = CudaStream(deviceId, context: ctx);
+        final stream = CudaStream(deviceId);
         streams.add(stream);
         final aSplit =
             CuOnesor.copy(stream, a.as1d.view(batchStart, split), context: ctx);
@@ -86,7 +83,7 @@ extension CudaSplitExtension on Cuda {
       int batchStart = 0;
       while (batchStart < size.nel) {
         int split = min(batchSize, size.nel - batchStart);
-        final stream = CudaStream(deviceId, context: ctx);
+        final stream = CudaStream(deviceId);
         streams.add(stream);
         final aSplit =
             CuOnesor.copy(stream, a.as1d.view(batchStart, split), context: ctx);
@@ -134,7 +131,7 @@ extension CudaSplitExtension on Cuda {
       int batchStart = 0;
       while (batchStart < size.nel) {
         int split = min(batchSize, size.nel - batchStart);
-        final stream = CudaStream(deviceId, context: ctx);
+        final stream = CudaStream(deviceId);
         streams.add(stream);
         final aSplit =
             CuOnesor.copy(stream, a.as1d.view(batchStart, split), context: ctx);
@@ -184,7 +181,7 @@ extension CudaSplitExtension on Cuda {
   Future<double> op1dF64Red(int deviceId, Tensor a, CuOp1d1i op) async {
     final ctx = Context();
     try {
-      final stream = CudaStream(deviceId, context: ctx);
+      final stream = CudaStream(deviceId);
       final inpCuda = CuOnesor.copy(stream, a.as1d, context: ctx);
       final out = F64CuOnesor.sized(stream, 1, context: ctx);
       op(stream, out, inpCuda, a.nel);
@@ -202,7 +199,7 @@ extension CudaSplitExtension on Cuda {
   Future<T> op1d2tRed<T>(int deviceId, Tensor a, CuOp1d1i op) async {
     final ctx = Context();
     try {
-      final stream = CudaStream(deviceId, context: ctx);
+      final stream = CudaStream(deviceId);
       final inpCuda = CuOnesor.copy(stream, a.as1d, context: ctx);
       NumType outType;
       if (a.type.isFloat) {
@@ -254,7 +251,7 @@ extension CudaSplitExtension on Cuda {
       int batchStart = 0;
       while (batchStart < inpSize.rows) {
         int split = min(batchSize, inpSize.rows - batchStart);
-        final stream = CudaStream(deviceId, context: ctx);
+        final stream = CudaStream(deviceId);
         streams.add(stream);
         final aSplit = CuOnesor.copy(
             stream, a.as1d.view(batchStart * a.size.cols, split * a.size.cols),
@@ -302,10 +299,7 @@ extension CudaMatrixExtension on Cuda {
 
     final ctx = Context();
     try {
-      if (out == null) {
-        out = F64Tensor.sized(outSize, name: '${a.name} * ${b.name}');
-        ctx.releaseOnErr(out);
-      }
+      out ??= F64Tensor.sized(outSize, name: '${a.name} * ${b.name}');
       final props = cuda.getMemInfo(deviceId);
       int batchSize = props.total ~/
           ((inp1Size2D.nel + inp2Size2D.nel + outSize2D.nel) * 8);
@@ -318,7 +312,7 @@ extension CudaMatrixExtension on Cuda {
       int batchStart = 0;
       while (batchStart < numMats) {
         int split = min(batchSize, numMats - batchStart);
-        final stream = CudaStream(deviceId, context: ctx);
+        final stream = CudaStream(deviceId);
         streams.add(stream);
         final inp1 = F64CuOnesor.copy(
             stream,
@@ -368,16 +362,13 @@ extension CudaMatrixExtension on Cuda {
 
     final outSize2D = Dim2(inp1Size2D.rows, inp2Size2D.cols);
     final outSize = a.size.withMatrix(outSize2D.rows, outSize2D.cols);
+    if (out != null && out.size != outSize) {
+      throw ArgumentError('Size mismatch');
+    }
+
     final ctx = Context();
     try {
-      if (out == null) {
-        out = F64Tensor.sized(outSize, name: '${a.name} * ${b.name}');
-        ctx.releaseOnErr(out);
-      } else {
-        if (out.size != outSize) {
-          throw ArgumentError('Size mismatch');
-        }
-      }
+      out ??= F64Tensor.sized(outSize, name: '${a.name} * ${b.name}');
       final props = cuda.getMemInfo(deviceId);
       int batchSize = props.total ~/
           ((inp1Size2D.nel + inp2Size2D.nel + outSize2D.nel) * 8);
@@ -390,7 +381,7 @@ extension CudaMatrixExtension on Cuda {
       int batchStart = 0;
       while (batchStart < numMats) {
         int split = min(batchSize, numMats - batchStart);
-        final stream = CudaStream(deviceId, context: ctx);
+        final stream = CudaStream(deviceId);
         streams.add(stream);
         final inp1 = F64CuOnesor.copy(
             stream,
@@ -448,7 +439,7 @@ extension CudaMatrixExtension on Cuda {
 
     final ctx = Context();
     try {
-      final stream = CudaStream(deviceId, context: ctx);
+      final stream = CudaStream(deviceId);
       final addCuda = F64CuOnesor.copy(stream, add.as1d, context: ctx);
       if (out == null) {
         out = F64Tensor.sized(outSize, name: '${a.name} * ${b.name}');
@@ -470,7 +461,7 @@ extension CudaMatrixExtension on Cuda {
       int batchStart = 0;
       while (batchStart < numMats) {
         int split = min(batchSize, numMats - batchStart);
-        final stream = CudaStream(deviceId, context: ctx);
+        final stream = CudaStream(deviceId);
         streams.add(stream);
         final inp1 = F64CuOnesor.copy(
             stream,
@@ -527,7 +518,7 @@ extension CudaMatrixExtension on Cuda {
 
     final ctx = Context();
     try {
-      final stream = CudaStream(deviceId, context: ctx);
+      final stream = CudaStream(deviceId);
       final addCuda = F64CuOnesor.copy(stream, add.as1d, context: ctx);
       if (out == null) {
         out = F64Tensor.sized(outSize, name: '${a.name} * ${b.name}');
@@ -549,7 +540,7 @@ extension CudaMatrixExtension on Cuda {
       int batchStart = 0;
       while (batchStart < numMats) {
         int split = min(batchSize, numMats - batchStart);
-        final stream = CudaStream(deviceId, context: ctx);
+        final stream = CudaStream(deviceId);
         streams.add(stream);
         final inp1 = F64CuOnesor.copy(
             stream,

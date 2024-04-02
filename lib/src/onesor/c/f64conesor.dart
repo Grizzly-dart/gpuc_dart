@@ -1,16 +1,8 @@
-import 'dart:collection';
-import 'dart:ffi' as ffi;
-import 'dart:typed_data';
-import 'package:ffi/ffi.dart' as ffi;
-import 'package:gpuc_dart/gpuc_dart.dart';
+part of 'conesor.dart';
 
 abstract mixin class F64COnesor implements COnesor<double>, F64Onesor {
   @override
   ffi.Pointer<ffi.Double> get ptr;
-
-  factory F64COnesor(ffi.Pointer<ffi.Double> ptr, int length,
-          {Context? context}) =>
-      _F64COnesor(ptr, length, context: context);
 
   static F64COnesor copy(Onesor<double> other, {Context? context}) =>
       _F64COnesor.copy(other, context: context);
@@ -57,7 +49,7 @@ abstract mixin class F64COnesor implements COnesor<double>, F64Onesor {
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    return F64COnesorView(this, start, length);
+    return F64COnesorView(this, length, start);
   }
 }
 
@@ -66,15 +58,16 @@ class _F64COnesor
         Onesor<double>,
         F64Onesor,
         ListMixin<double>,
+        _COnesorMixin<double>,
         COnesor<double>,
         F64COnesor
     implements F64COnesor {
-  ffi.Pointer<ffi.Double> _ptr;
+  @override
+  final CPtr<ffi.Double> _ptr;
 
   int _length;
 
   _F64COnesor(this._ptr, this._length, {Context? context}) {
-    assert(_ptr != ffi.nullptr);
     context?.add(this);
   }
 
@@ -90,33 +83,15 @@ class _F64COnesor
     return ret;
   }
 
-  static _F64COnesor sized(int length, {Context? context}) {
-    final ptr = ffi.calloc<ffi.Double>(length * Float64List.bytesPerElement);
-    return _F64COnesor(ptr, length, context: context);
-  }
+  static _F64COnesor sized(int length, {Context? context}) =>
+      _F64COnesor(CPtr.allocate(f64.bytes, count: length), length,
+          context: context);
 
   @override
-  ffi.Pointer<ffi.Double> get ptr => _ptr;
+  ffi.Pointer<ffi.Double> get ptr => _ptr.ptr;
 
   @override
   int get length => _length;
-
-  @override
-  void release() {
-    if (_ptr == ffi.nullptr) return;
-    ffi.malloc.free(_ptr);
-    _ptr = ffi.nullptr;
-  }
-
-  @override
-  set length(int newLength) {
-    final newPtr = cffi!.realloc(_ptr.cast(), newLength * bytesPerItem);
-    if (newPtr == ffi.nullptr) {
-      throw Exception('Failed to allocate memory');
-    }
-    _ptr = newPtr.cast();
-    _length = newLength;
-  }
 }
 
 class F64COnesorView
@@ -127,7 +102,7 @@ class F64COnesorView
         COnesor<double>,
         F64COnesor
     implements F64COnesor, COnesorView<double>, F64OnesorView {
-  final COnesor<double> _list;
+  final F64COnesor _list;
 
   @override
   final int offset;
@@ -135,11 +110,10 @@ class F64COnesorView
   @override
   final int length;
 
-  F64COnesorView(this._list, this.offset, this.length);
+  F64COnesorView(this._list, this.length, this.offset);
 
   @override
-  late final ffi.Pointer<ffi.Double> ptr =
-      _list.ptr.cast<ffi.Double>() + offset;
+  late final ffi.Pointer<ffi.Double> ptr = _list.ptr + offset;
 
   @override
   void release() {}
@@ -156,6 +130,6 @@ class F64COnesorView
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    return F64COnesorView(_list, start + offset, length);
+    return F64COnesorView(_list, length, offset + start);
   }
 }

@@ -8,7 +8,7 @@ abstract mixin class U8Tensor implements Tensor<int> {
   U8Onesor get as1d;
 
   factory U8Tensor(U8Onesor as1d, Dim size,
-      {String name = '', Context? context}) =>
+          {String name = '', Context? context}) =>
       _U8Tensor(as1d, size, name: name, context: context);
 
   factory U8Tensor.fromList(List<int> list,
@@ -103,7 +103,6 @@ class _U8Tensor with Tensor<int>, U8Tensor implements U8Tensor, Tensor<int> {
 
   _U8Tensor(this.as1d, this._size, {this.name = 'unnamed', Context? context}) {
     context?.add(as1d);
-    _finalizer.attach(this, as1d);
     if (as1d.length != _size.nel) {
       throw ArgumentError('Size mismatch');
     }
@@ -124,8 +123,4 @@ class _U8Tensor with Tensor<int>, U8Tensor implements U8Tensor, Tensor<int> {
   void release() {
     as1d.release();
   }
-
-  static final _finalizer = Finalizer<Onesor>((Onesor l) {
-    l.release();
-  });
 }

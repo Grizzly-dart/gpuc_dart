@@ -103,7 +103,7 @@ class Conv2D extends Layer2D<double> {
     // TODO if multiple devices are available try to parallelize across devices
     // TODO split batches if cannot fit in memory
     try {
-      final stream = CudaStream(0, context: ctx);
+      final stream = CudaStream(0);
       final outBuf = F64CuOnesor.sized(stream, outS.nel, context: ctx);
       final inpBuf = F64CuOnesor.copy(stream, inp.as1d, context: ctx);
       final kernBuf = F64CuOnesor.copy(stream, kernel.as1d, context: ctx);

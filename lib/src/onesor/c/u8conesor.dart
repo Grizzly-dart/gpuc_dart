@@ -1,16 +1,8 @@
-import 'dart:collection';
-import 'dart:ffi' as ffi;
-import 'dart:typed_data';
-import 'package:ffi/ffi.dart' as ffi;
-import 'package:gpuc_dart/gpuc_dart.dart';
+part of 'conesor.dart';
 
 abstract mixin class U8COnesor implements COnesor<int>, U8Onesor {
   @override
   ffi.Pointer<ffi.Uint8> get ptr;
-
-  factory U8COnesor(ffi.Pointer<ffi.Uint8> ptr, int length,
-          {Context? context}) =>
-      _U8COnesor(ptr, length, context: context);
 
   static U8COnesor copy(Onesor<int> other, {Context? context}) =>
       _U8COnesor.copy(other, context: context);
@@ -57,19 +49,25 @@ abstract mixin class U8COnesor implements COnesor<int>, U8Onesor {
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    return U8COnesorView(this, start, length);
+    return U8COnesorView(this, length, start);
   }
 }
 
 class _U8COnesor
-    with Onesor<int>, U8Onesor, ListMixin<int>, COnesor<int>, U8COnesor
+    with
+        Onesor<int>,
+        U8Onesor,
+        ListMixin<int>,
+        _COnesorMixin<int>,
+        COnesor<int>,
+        U8COnesor
     implements U8COnesor {
-  ffi.Pointer<ffi.Uint8> _ptr;
+  @override
+  final CPtr<ffi.Uint8> _ptr;
 
   int _length;
 
   _U8COnesor(this._ptr, this._length, {Context? context}) {
-    assert(_ptr != ffi.nullptr);
     context?.add(this);
   }
 
@@ -85,33 +83,15 @@ class _U8COnesor
     return ret;
   }
 
-  static _U8COnesor sized(int length, {Context? context}) {
-    final ptr = ffi.calloc<ffi.Uint8>(length * Uint8List.bytesPerElement);
-    return _U8COnesor(ptr, length, context: context);
-  }
+  static _U8COnesor sized(int length, {Context? context}) =>
+      _U8COnesor(CPtr.allocate(u8.bytes, count: length), length,
+          context: context);
 
   @override
-  ffi.Pointer<ffi.Uint8> get ptr => _ptr;
+  ffi.Pointer<ffi.Uint8> get ptr => _ptr.ptr;
 
   @override
   int get length => _length;
-
-  @override
-  void release() {
-    if (_ptr == ffi.nullptr) return;
-    ffi.malloc.free(_ptr);
-    _ptr = ffi.nullptr;
-  }
-
-  @override
-  set length(int newLength) {
-    final newPtr = cffi!.realloc(_ptr.cast(), newLength * bytesPerItem);
-    if (newPtr == ffi.nullptr) {
-      throw Exception('Failed to allocate memory');
-    }
-    _ptr = newPtr.cast();
-    _length = newLength;
-  }
 }
 
 class U8COnesorView
@@ -125,7 +105,7 @@ class U8COnesorView
   @override
   final int length;
 
-  U8COnesorView(this._list, this.offset, this.length);
+  U8COnesorView(this._list, this.length, this.offset);
 
   @override
   late final ffi.Pointer<ffi.Uint8> ptr = _list.ptr + offset;
@@ -145,6 +125,6 @@ class U8COnesorView
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    return U8COnesorView(_list, start + offset, length);
+    return U8COnesorView(_list, length, start + offset);
   }
 }

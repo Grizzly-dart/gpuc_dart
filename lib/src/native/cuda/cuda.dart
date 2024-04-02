@@ -153,8 +153,8 @@ class Cuda {
   }
 
   void sqrt(CudaStream stream, NumPtr out, NumPtr inp, int size) {
-    final err =
-        cuFFI.sqrt(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+    final err = cuFFI.sqrt(
+        stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -201,24 +201,24 @@ class Cuda {
   }
 
   void sinh(CudaStream stream, NumPtr out, NumPtr inp, int size) {
-    final err =
-        cuFFI.sinh(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+    final err = cuFFI.sinh(
+        stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
   }
 
   void cosh(CudaStream stream, NumPtr out, NumPtr inp, int size) {
-    final err =
-        cuFFI.cosh(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+    final err = cuFFI.cosh(
+        stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
   }
 
   void tanh(CudaStream stream, NumPtr out, NumPtr inp, int size) {
-    final err =
-        cuFFI.tanh(stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
+    final err = cuFFI.tanh(
+        stream.ptr, out.ptr, inp.ptr, size, out.type.id, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -297,8 +297,8 @@ class Cuda {
     final ctx = Context();
     try {
       final sizePtr = CDim2.from(inpS);
-      final err = cuFFI.variance2d(stream.ptr, out.ptr, inp.ptr, sizePtr.ptr.ref,
-          correction, 0, out.type.id, inp.type.id);
+      final err = cuFFI.variance2d(stream.ptr, out.ptr, inp.ptr,
+          sizePtr.ptr.ref, correction, 0, out.type.id, inp.type.id);
       if (err != ffi.nullptr) {
         throw CudaException(err.toDartString());
       }
@@ -312,8 +312,8 @@ class Cuda {
     final ctx = Context();
     try {
       final sizePtr = CDim2.from(inpS);
-      final err = cuFFI.variance2d(stream.ptr, out.ptr, inp.ptr, sizePtr.ptr.ref,
-          correction, 0xFF, out.type.id, inp.type.id);
+      final err = cuFFI.variance2d(stream.ptr, out.ptr, inp.ptr,
+          sizePtr.ptr.ref, correction, 0xFF, out.type.id, inp.type.id);
       if (err != ffi.nullptr) {
         throw CudaException(err.toDartString());
       }
@@ -456,8 +456,8 @@ class Cuda {
     if (inp.type != out.type) {
       throw ArgumentError('Input and output types must be the same');
     }
-    final err =
-        cuFFI.sigmoidActivation(stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
+    final err = cuFFI.sigmoidActivation(
+        stream.ptr, out.ptr, inp.ptr, size, inp.type.id);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
@@ -523,24 +523,37 @@ class Cuda {
   }
 }
 
-class CudaStream extends Resource {
-  ffi.Pointer<CCudaStream> _stream;
+class CudaStream implements Resource, ffi.Finalizable {
+  ffi.Pointer<CCudaStream> cstream;
 
-  CudaStream._(this._stream, {Context? context}) {
+  CudaStream._(this.cstream, {Context? context}) {
     context?.add(this);
   }
 
   factory CudaStream(int device, {Context? context}) {
     final stream = CCudaStream.create(device);
     final s = CudaStream._(stream, context: context);
+    finalizer.attach(s, stream.cast(), detach: s);
     return s;
   }
 
-  ffi.Pointer<CCudaStream> get ptr => _stream;
+  factory CudaStream.noStream(int device, {Context? context}) {
+    final stream = ffi.calloc.allocate<CCudaStream>(ffi.sizeOf<CCudaStream>());
+    stream.ref.stream = ffi.nullptr;
+    stream.ref.deviceId = device;
+    final s = CudaStream._(stream, context: context);
+    finalizer.attach(s, stream.cast(), detach: s);
+    return s;
+  }
 
-  int get deviceId => _stream.ref.deviceId;
+  ffi.Pointer<CCudaStream> get ptr => cstream;
+
+  int get deviceId => cstream.ref.deviceId;
 
   Future<void> sync() async {
+    if (cstream == ffi.nullptr) return;
+    if (cstream.ref.stream == ffi.nullptr) return;
+
     final completer = Completer<void>();
     void callback(StrPtr err) {
       if (err != ffi.nullptr) {
@@ -552,7 +565,7 @@ class CudaStream extends Resource {
 
     final nc = ffi.NativeCallable<ffi.Void Function(StrPtr)>.listener(callback);
     try {
-      final err = CuFFI.instance!.syncStream(_stream, nc.nativeFunction);
+      final err = CuFFI.instance!.syncStream(cstream, nc.nativeFunction);
       if (err != ffi.nullptr) {
         completer.completeError(CudaException(err.toDartString()));
       }
@@ -564,15 +577,20 @@ class CudaStream extends Resource {
 
   @override
   void release() {
-    if (_stream == ffi.nullptr) return;
+    if (cstream == ffi.nullptr) return;
 
-    final err = CuFFI.instance!.destroyStream(_stream);
+    final err = CuFFI.instance!.destroyStream(cstream);
     if (err != ffi.nullptr) {
       throw CudaException(err.toDartString());
     }
-    ffi.malloc.free(_stream);
-    _stream = ffi.nullptr;
+    cstream = ffi.nullptr;
+    finalizer.detach(this);
   }
+
+  static final Finalizer<ffi.Pointer<CCudaStream>> finalizer =
+      Finalizer((ffi.Pointer<CCudaStream> ptr) {
+    CuFFI.instance!.destroyStream(ptr);
+  });
 }
 
 class CudaException implements Exception {
@@ -684,284 +702,20 @@ class CudaDeviceProps implements ffi.Finalizable {
 }
 
 extension CudaSetGet on Cuda {
-  double getF64(ffi.Pointer<ffi.Double> src, int index, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final dst = CPtr.allocate(ffi.sizeOf<ffi.Double>());
-      stream = stream ?? CudaStream(deviceId, context: context);
-      memcpy(stream, dst.ptr.cast(), (src + index).cast(),
-          ffi.sizeOf<ffi.Double>());
-      return dst.ptr.cast<ffi.Double>().value;
-    } finally {
-      context.release();
-    }
+  T getOne<T extends num>(
+      CudaStream stream, ffi.Pointer<ffi.SizedNativeType> src, NumType<T> type,
+      {int index = 0}) {
+    final dst = CPtr.allocate(type.bytes);
+    memcpy(stream, dst.ptr.cast(),
+        src.pointerAddition(index, type.bytes).cast(), type.bytes);
+    return type.get(dst.ptr);
   }
 
-  void setF64(
-      ffi.Pointer<ffi.Double> dst, int index, double value, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final src = CPtr.allocate(ffi.sizeOf<ffi.Double>());
-      src.ptr.cast<ffi.Double>().value = value;
-      stream = stream ?? CudaStream(deviceId, context: context);
-      cuda.memcpy(stream, (dst + index).cast(), src.ptr.cast(),
-          ffi.sizeOf<ffi.Double>());
-    } finally {
-      context.release();
-    }
-  }
-
-  double getF32(ffi.Pointer<ffi.Float> src, int index, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final dst = CPtr.allocate(ffi.sizeOf<ffi.Float>());
-      stream = stream ?? CudaStream(deviceId, context: context);
-      memcpy(stream, dst.ptr.cast(), (src + index).cast(),
-          ffi.sizeOf<ffi.Float>());
-      return dst.ptr.cast<ffi.Float>().value;
-    } finally {
-      context.release();
-    }
-  }
-
-  void setF32(ffi.Pointer<ffi.Float> dst, int index, double value, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final src = CPtr.allocate(ffi.sizeOf<ffi.Float>());
-      src.ptr.cast<ffi.Float>().value = value;
-      stream = stream ?? CudaStream(deviceId, context: context);
-      cuda.memcpy(stream, (dst + index).cast(), src.ptr.cast(),
-          ffi.sizeOf<ffi.Float>());
-    } finally {
-      context.release();
-    }
-  }
-
-  int getU64(ffi.Pointer<ffi.Uint64> src, int index, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final dst = CPtr.allocate(ffi.sizeOf<ffi.Uint64>());
-      stream = stream ?? CudaStream(deviceId, context: context);
-      memcpy(stream, dst.ptr.cast(), (src + index).cast(),
-          ffi.sizeOf<ffi.Uint64>());
-      return dst.ptr.cast<ffi.Uint64>().value;
-    } finally {
-      context.release();
-    }
-  }
-
-  void setU64(ffi.Pointer<ffi.Uint64> dst, int index, int value, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final src = CPtr.allocate(ffi.sizeOf<ffi.Uint64>());
-      src.ptr.cast<ffi.Uint64>().value = value;
-      stream = stream ?? CudaStream(deviceId, context: context);
-      cuda.memcpy(stream, (dst + index).cast(), src.ptr.cast(),
-          ffi.sizeOf<ffi.Uint64>());
-    } finally {
-      context.release();
-    }
-  }
-
-  int getU32(ffi.Pointer<ffi.Uint32> src, int index, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final dst = CPtr.allocate(ffi.sizeOf<ffi.Uint32>());
-      stream = stream ?? CudaStream(deviceId, context: context);
-      memcpy(stream, dst.ptr.cast(), (src + index).cast(),
-          ffi.sizeOf<ffi.Uint32>());
-      return dst.ptr.cast<ffi.Uint32>().value;
-    } finally {
-      context.release();
-    }
-  }
-
-  void setU32(ffi.Pointer<ffi.Uint32> dst, int index, int value, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final src = CPtr.allocate(ffi.sizeOf<ffi.Uint32>());
-      src.ptr.cast<ffi.Uint32>().value = value;
-      stream = stream ?? CudaStream(deviceId, context: context);
-      cuda.memcpy(stream, (dst + index).cast(), src.ptr.cast(),
-          ffi.sizeOf<ffi.Uint32>());
-    } finally {
-      context.release();
-    }
-  }
-
-  int getU16(ffi.Pointer<ffi.Uint16> src, int index, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final dst = CPtr.allocate(ffi.sizeOf<ffi.Uint16>());
-      stream = stream ?? CudaStream(deviceId, context: context);
-      memcpy(stream, dst.ptr.cast(), (src + index).cast(),
-          ffi.sizeOf<ffi.Uint16>());
-      return dst.ptr.cast<ffi.Uint16>().value;
-    } finally {
-      context.release();
-    }
-  }
-
-  void setU16(ffi.Pointer<ffi.Uint16> dst, int index, int value, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final src = CPtr.allocate(ffi.sizeOf<ffi.Uint16>());
-      src.ptr.cast<ffi.Uint16>().value = value;
-      stream = stream ?? CudaStream(deviceId, context: context);
-      cuda.memcpy(stream, (dst + index).cast(), src.ptr.cast(),
-          ffi.sizeOf<ffi.Uint16>());
-    } finally {
-      context.release();
-    }
-  }
-
-  int getU8(ffi.Pointer<ffi.Uint8> src, int index, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final dst = CPtr.allocate(ffi.sizeOf<ffi.Uint8>());
-      stream = stream ?? CudaStream(deviceId, context: context);
-      memcpy(stream, dst.ptr.cast(), (src + index).cast(),
-          ffi.sizeOf<ffi.Uint8>());
-      return dst.ptr.cast<ffi.Uint8>().value;
-    } finally {
-      context.release();
-    }
-  }
-
-  void setU8(ffi.Pointer<ffi.Uint8> dst, int index, int value, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final src = CPtr.allocate(ffi.sizeOf<ffi.Uint8>());
-      src.ptr.cast<ffi.Uint8>().value = value;
-      stream = stream ?? CudaStream(deviceId, context: context);
-      cuda.memcpy(stream, (dst + index).cast(), src.ptr.cast(),
-          ffi.sizeOf<ffi.Uint8>());
-    } finally {
-      context.release();
-    }
-  }
-
-  int getI64(ffi.Pointer<ffi.Int64> src, int index, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final dst = CPtr.allocate(ffi.sizeOf<ffi.Int64>());
-      stream = stream ?? CudaStream(deviceId, context: context);
-      memcpy(stream, dst.ptr.cast(), (src + index).cast(),
-          ffi.sizeOf<ffi.Int64>());
-      return dst.ptr.cast<ffi.Int64>().value;
-    } finally {
-      context.release();
-    }
-  }
-
-  void setI64(ffi.Pointer<ffi.Int64> dst, int index, int value, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final src = CPtr.allocate(ffi.sizeOf<ffi.Int64>());
-      src.ptr.cast<ffi.Int64>().value = value;
-      stream = stream ?? CudaStream(deviceId, context: context);
-      cuda.memcpy(stream, (dst + index).cast(), src.ptr.cast(),
-          ffi.sizeOf<ffi.Int64>());
-    } finally {
-      context.release();
-    }
-  }
-
-  int getI32(ffi.Pointer<ffi.Int32> src, int index, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final dst = CPtr.allocate(ffi.sizeOf<ffi.Int32>());
-      stream = stream ?? CudaStream(deviceId, context: context);
-      memcpy(stream, dst.ptr.cast(), (src + index).cast(),
-          ffi.sizeOf<ffi.Int32>());
-      return dst.ptr.cast<ffi.Int32>().value;
-    } finally {
-      context.release();
-    }
-  }
-
-  void setI32(ffi.Pointer<ffi.Int32> dst, int index, int value, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final src = CPtr.allocate(ffi.sizeOf<ffi.Int32>());
-      src.ptr.cast<ffi.Int32>().value = value;
-      stream = stream ?? CudaStream(deviceId, context: context);
-      cuda.memcpy(stream, (dst + index).cast(), src.ptr.cast(),
-          ffi.sizeOf<ffi.Int32>());
-    } finally {
-      context.release();
-    }
-  }
-
-  int getI16(ffi.Pointer<ffi.Int16> src, int index, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final dst = CPtr.allocate(ffi.sizeOf<ffi.Int16>());
-      stream = stream ?? CudaStream(deviceId, context: context);
-      memcpy(stream, dst.ptr.cast(), (src + index).cast(),
-          ffi.sizeOf<ffi.Int16>());
-      return dst.ptr.cast<ffi.Int16>().value;
-    } finally {
-      context.release();
-    }
-  }
-
-  void setI16(ffi.Pointer<ffi.Int16> dst, int index, int value, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final src = CPtr.allocate(ffi.sizeOf<ffi.Int16>());
-      src.ptr.cast<ffi.Int16>().value = value;
-      stream = stream ?? CudaStream(deviceId, context: context);
-      cuda.memcpy(stream, (dst + index).cast(), src.ptr.cast(),
-          ffi.sizeOf<ffi.Int16>());
-    } finally {
-      context.release();
-    }
-  }
-
-  int getI8(ffi.Pointer<ffi.Int8> src, int index, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final dst = CPtr.allocate(ffi.sizeOf<ffi.Int8>());
-      stream = stream ?? CudaStream(deviceId, context: context);
-      memcpy(
-          stream, dst.ptr.cast(), (src + index).cast(), ffi.sizeOf<ffi.Int8>());
-      return dst.ptr.cast<ffi.Int8>().value;
-    } finally {
-      context.release();
-    }
-  }
-
-  void setI8(ffi.Pointer<ffi.Int8> dst, int index, int value, int deviceId,
-      {CudaStream? stream}) {
-    final context = Context();
-    try {
-      final src = CPtr.allocate(ffi.sizeOf<ffi.Int8>());
-      src.ptr.cast<ffi.Int8>().value = value;
-      stream = stream ?? CudaStream(deviceId, context: context);
-      cuda.memcpy(
-          stream, (dst + index).cast(), src.ptr.cast(), ffi.sizeOf<ffi.Int8>());
-    } finally {
-      context.release();
-    }
+  void setOne<T extends num>(CudaStream stream,
+      ffi.Pointer<ffi.SizedNativeType> dst, num value, NumType<T> type,
+      {int index = 0}) {
+    final src = type.allocateForValue(value);
+    memcpy(stream, dst.pointerAddition(index, type.bytes).cast(),
+        src.ptr.cast(), type.bytes);
   }
 }

@@ -37,7 +37,7 @@ class MaxPool2D<T extends num> extends Layer2D<T> {
     final ctx = Context();
     // TODO if multiple devices are available try to parallelize across devices
     try {
-      final stream = CudaStream(0, context: ctx);
+      final stream = CudaStream(0);
       final inpCuda = CuOnesor<T>.copy(stream, inp.as1d, context: ctx);
       final outCuda =
           CuOnesor<T>.sized(stream, inp.type, outS2d.nel, context: ctx);

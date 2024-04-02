@@ -141,7 +141,6 @@ class _F32Tensor
 
   _F32Tensor(this.as1d, this._size, {this.name = 'unnamed', Context? context}) {
     context?.add(as1d);
-    _finalizer.attach(this, as1d);
     if (as1d.length != _size.nel) {
       throw ArgumentError('Size mismatch');
     }
@@ -162,8 +161,4 @@ class _F32Tensor
   void release() {
     as1d.release();
   }
-
-  static final _finalizer = Finalizer<Onesor>((Onesor l) {
-    l.release();
-  });
 }

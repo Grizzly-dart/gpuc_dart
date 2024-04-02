@@ -23,32 +23,11 @@ abstract mixin class F32CuOnesor implements CuOnesor<double>, F32Onesor {
       _F32CuOnesor.copy(other, stream: stream, context: context);
 
   @override
-  double operator [](int index) {
-    if (index < 0 || index >= length) {
-      throw RangeError('Index out of range');
-    }
-    return cuda.getF32(ptr, index, deviceId);
-  }
-
-  @override
-  void operator []=(int index, double value) {
-    if (index < 0 || index >= length) {
-      throw RangeError('Index out of range');
-    }
-    cuda.setF32(ptr, index, value, deviceId);
-  }
-
-  @override
   COnesor<double> read({Context? context, CudaStream? stream}) {
     final ret = F32COnesor.sized(length, context: context);
-    final lContext = Context();
-    try {
-      stream = stream ?? CudaStream(deviceId, context: lContext);
-      cuda.memcpy(stream, ret.ptr.cast(), ptr.cast(), ret.lengthBytes);
-      return ret;
-    } finally {
-      lContext.release();
-    }
+    stream = stream ?? CudaStream.noStream(deviceId);
+    cuda.memcpy(stream, ret.ptr.cast(), ptr.cast(), ret.lengthBytes);
+    return ret;
   }
 
   @override
@@ -61,7 +40,7 @@ abstract mixin class F32CuOnesor implements CuOnesor<double>, F32Onesor {
     }
     final lContext = Context();
     try {
-      stream ??= CudaStream(deviceId, context: lContext);
+      stream ??= CudaStream.noStream(deviceId);
       final ret = F32CuOnesor.sized(stream, length, context: context);
       lContext.releaseOnErr(ret);
       cuda.memcpy(stream, ret.ptr.cast(), (ptr + bytesPerItem).cast(),
@@ -120,15 +99,10 @@ class _F32CuOnesor
 
   static _F32CuOnesor copy(Onesor<double> other,
       {CudaStream? stream, Context? context}) {
-    final lContext = Context();
-    try {
-      stream = stream ?? CudaStream(other.deviceId, context: lContext);
-      final ret = _F32CuOnesor.sized(stream, other.length, context: context);
-      ret.copyFrom(other, stream: stream);
-      return ret;
-    } finally {
-      lContext.release();
-    }
+    stream = stream ?? CudaStream.noStream(other.deviceId);
+    final ret = _F32CuOnesor.sized(stream, other.length, context: context);
+    ret.copyFrom(other, stream: stream);
+    return ret;
   }
 
   @override
@@ -137,14 +111,9 @@ class _F32CuOnesor
   @override
   void release({CudaStream? stream}) {
     if (_ptr == ffi.nullptr) return;
-    final ctx = Context();
-    try {
-      stream ??= CudaStream(deviceId, context: ctx);
-      cuda.memFree(stream, _ptr.cast());
-      _ptr = ffi.nullptr;
-    } finally {
-      ctx.release();
-    }
+    stream ??= CudaStream.noStream(deviceId);
+    cuda.memFree(stream, _ptr.cast());
+    _ptr = ffi.nullptr;
   }
 }
 
@@ -170,8 +139,7 @@ class F32CuOnesorView
   int get deviceId => _list.deviceId;
 
   @override
-  late final ffi.Pointer<ffi.Float> ptr =
-      _list.ptr.cast<ffi.Float>() + offset;
+  late final ffi.Pointer<ffi.Float> ptr = _list.ptr.cast<ffi.Float>() + offset;
 
   @override
   void release({CudaStream? stream}) {}

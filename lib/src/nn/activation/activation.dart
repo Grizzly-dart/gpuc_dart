@@ -16,7 +16,7 @@ class ELUActivation extends Layer {
     final inp = await input;
 
     try {
-      final stream = CudaStream(0, context: ctx);
+      final stream = CudaStream(0);
       final inpCuda = CuOnesor.copy(stream, inp.as1d, context: ctx);
       final outCuda = F64CuOnesor.sized(stream, inpCuda.length, context: ctx);
       cuda.eluActivation(stream, outCuda, inpCuda, inpCuda.length, alpha);
@@ -59,7 +59,7 @@ class RELUActivation extends Layer {
     final inp = await input;
 
     try {
-      final stream = CudaStream(0, context: ctx);
+      final stream = CudaStream(0);
       final inpCuda = CuOnesor.copy(stream, inp.as1d, context: ctx);
       final outCuda = F64CuOnesor.sized(stream, inpCuda.length, context: ctx);
       cuda.minThreshold(stream, outCuda, inpCuda, 0, 0, inpCuda.length);
@@ -122,7 +122,7 @@ class ThresholdActivation extends Layer {
     final inp = await input;
 
     try {
-      final stream = CudaStream(0, context: ctx);
+      final stream = CudaStream(0);
       final inpCuda = CuOnesor.copy(stream, inp.as1d, context: ctx);
       final outCuda = F64CuOnesor.sized(stream, inpCuda.length, context: ctx);
       cuda.minThreshold(
@@ -166,7 +166,7 @@ class SigmoidActivation extends Layer {
     final inp = await input;
 
     try {
-      final stream = CudaStream(0, context: ctx);
+      final stream = CudaStream(0);
       final inpCuda = CuOnesor.copy(stream, inp.as1d, context: ctx);
       final outCuda = F64CuOnesor.sized(stream, inpCuda.length, context: ctx);
       cuda.sigmoidActivation(stream, outCuda, inpCuda, inpCuda.length);
@@ -213,7 +213,7 @@ class SiLUActivation extends Layer {
     final ctx = Context();
 
     try {
-      final stream = CudaStream(0, context: ctx);
+      final stream = CudaStream(0);
       final inpCuda = CuOnesor.copy(stream, inp.as1d, context: ctx);
       final outCuda = F64CuOnesor.sized(stream, inpCuda.length, context: ctx);
       cuda.siluActivation(stream, outCuda, inpCuda, inpCuda.length);
@@ -255,7 +255,7 @@ class SoftplusActivation extends Layer {
     final inp = await input;
 
     try {
-      final stream = CudaStream(0, context: ctx);
+      final stream = CudaStream(0);
       final inpCuda = CuOnesor.copy(stream, inp.as1d, context: ctx);
       final outCuda = F64CuOnesor.sized(stream, inpCuda.length, context: ctx);
       cuda.softplusActivation(
@@ -299,7 +299,7 @@ class SoftsignActivation extends Layer {
     final inp = await input;
 
     try {
-      final stream = CudaStream(0, context: ctx);
+      final stream = CudaStream(0);
       final inpCuda = CuOnesor.copy(stream, inp.as1d, context: ctx);
       final outCuda = F64CuOnesor.sized(stream, inpCuda.length, context: ctx);
       cuda.softsignActivation(stream, outCuda, inpCuda, inpCuda.length);
@@ -346,7 +346,7 @@ class MishActivation extends Layer {
     final ctx = Context();
 
     try {
-      final stream = CudaStream(0, context: ctx);
+      final stream = CudaStream(0);
       final inpCuda = CuOnesor.copy(stream, inp.as1d, context: ctx);
       final outCuda = F64CuOnesor.sized(stream, inpCuda.length, context: ctx);
       cuda.mishActivation(stream, outCuda, inpCuda, inpCuda.length);

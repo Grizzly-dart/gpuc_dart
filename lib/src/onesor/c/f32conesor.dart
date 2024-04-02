@@ -1,16 +1,8 @@
-import 'dart:collection';
-import 'dart:ffi' as ffi;
-import 'dart:typed_data';
-import 'package:ffi/ffi.dart' as ffi;
-import 'package:gpuc_dart/gpuc_dart.dart';
+part of 'conesor.dart';
 
 abstract mixin class F32COnesor implements COnesor<double>, F32Onesor {
   @override
   ffi.Pointer<ffi.Float> get ptr;
-
-  factory F32COnesor(ffi.Pointer<ffi.Float> ptr, int length,
-          {Context? context}) =>
-      _F32COnesor(ptr, length, context: context);
 
   static F32COnesor copy(Onesor<double> other, {Context? context}) =>
       _F32COnesor.copy(other, context: context);
@@ -57,7 +49,7 @@ abstract mixin class F32COnesor implements COnesor<double>, F32Onesor {
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    return F32COnesorView(this, start, length);
+    return F32COnesorView(this, length, start);
   }
 }
 
@@ -66,15 +58,16 @@ class _F32COnesor
         Onesor<double>,
         F32Onesor,
         ListMixin<double>,
+        _COnesorMixin<double>,
         COnesor<double>,
         F32COnesor
     implements F32COnesor {
-  ffi.Pointer<ffi.Float> _ptr;
+  @override
+  final CPtr<ffi.Float> _ptr;
 
   int _length;
 
   _F32COnesor(this._ptr, this._length, {Context? context}) {
-    assert(_ptr != ffi.nullptr);
     context?.add(this);
   }
 
@@ -90,33 +83,15 @@ class _F32COnesor
     return ret;
   }
 
-  static _F32COnesor sized(int length, {Context? context}) {
-    final ptr = ffi.calloc<ffi.Float>(length * Float64List.bytesPerElement);
-    return _F32COnesor(ptr, length, context: context);
-  }
+  static _F32COnesor sized(int length, {Context? context}) =>
+      _F32COnesor(CPtr.allocate(f32.bytes, count: length), length,
+          context: context);
 
   @override
-  ffi.Pointer<ffi.Float> get ptr => _ptr;
+  ffi.Pointer<ffi.Float> get ptr => _ptr.ptr;
 
   @override
   int get length => _length;
-
-  @override
-  void release() {
-    if (_ptr == ffi.nullptr) return;
-    ffi.malloc.free(_ptr);
-    _ptr = ffi.nullptr;
-  }
-
-  @override
-  set length(int newLength) {
-    final newPtr = cffi!.realloc(_ptr.cast(), newLength * bytesPerItem);
-    if (newPtr == ffi.nullptr) {
-      throw Exception('Failed to allocate memory');
-    }
-    _ptr = newPtr.cast();
-    _length = newLength;
-  }
 }
 
 class F32COnesorView
@@ -127,7 +102,7 @@ class F32COnesorView
         COnesor<double>,
         F32COnesor
     implements F32COnesor, COnesorView<double>, F32OnesorView {
-  final COnesor<double> _list;
+  final F32COnesor _list;
 
   @override
   final int offset;
@@ -135,11 +110,10 @@ class F32COnesorView
   @override
   final int length;
 
-  F32COnesorView(this._list, this.offset, this.length);
+  F32COnesorView(this._list, this.length, this.offset);
 
   @override
-  late final ffi.Pointer<ffi.Float> ptr =
-      _list.ptr.cast<ffi.Float>() + offset;
+  late final ffi.Pointer<ffi.Float> ptr = _list.ptr + offset;
 
   @override
   void release() {}
@@ -156,6 +130,6 @@ class F32COnesorView
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    return F32COnesorView(_list, start + offset, length);
+    return F32COnesorView(_list, length, offset + start);
   }
 }
