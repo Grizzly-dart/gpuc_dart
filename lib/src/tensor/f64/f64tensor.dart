@@ -96,6 +96,7 @@ abstract mixin class F64Tensor implements Tensor<double> {
   }
 
   // TODO return NListView
+  @override
   Onesor<double> row(int index, {int colDims = 1});
 
   @override
@@ -135,7 +136,7 @@ abstract mixin class F64Tensor implements Tensor<double> {
 }
 
 class _F64Tensor
-    with Tensor<double>, F64Tensor, F64Tensor2dMixin
+    with Tensor<double>, TensorMixin<double>, F64Tensor, F64Tensor2dMixin
     implements F64Tensor {
   @override
   String name;
@@ -161,10 +162,5 @@ class _F64Tensor
       throw ArgumentError('Size mismatch');
     }
     _size = size;
-  }
-
-  @override
-  void release() {
-    as1d.release();
   }
 }

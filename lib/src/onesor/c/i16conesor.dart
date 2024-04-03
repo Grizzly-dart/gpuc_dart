@@ -95,8 +95,16 @@ class _I16COnesor
 }
 
 class I16COnesorView
-    with Onesor<int>, I16Onesor, ListMixin<int>, COnesor<int>, I16COnesor
+    with
+        Onesor<int>,
+        OnesorView<int>,
+        I16Onesor,
+        ListMixin<int>,
+        COnesor<int>,
+        _COnesorViewMixin<int>,
+        I16COnesor
     implements I16COnesor, COnesorView<int>, I16OnesorView {
+  @override
   final I16COnesor _list;
 
   @override

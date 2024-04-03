@@ -1,5 +1,9 @@
 abstract class Resource {
   void release();
+
+  void coRelease(Resource other);
+
+  void detachCoRelease(Resource other);
 }
 
 class Context {

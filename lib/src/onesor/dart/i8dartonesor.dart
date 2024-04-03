@@ -45,7 +45,13 @@ abstract mixin class I8DartOnesor implements DartOnesor<int>, I8Onesor {
 }
 
 class _I8DartOnesor
-    with Onesor<int>, I8Onesor, ListMixin<int>, DartOnesor<int>, I8DartOnesor
+    with
+        Onesor<int>,
+        I8Onesor,
+        ListMixin<int>,
+        DartOnesor<int>,
+        DartOnesorMixin<int>,
+        I8DartOnesor
     implements I8DartOnesor {
   @override
   final Int8List list;
@@ -59,19 +65,26 @@ class _I8DartOnesor
 }
 
 class I8DartOnesorView
-    with ListMixin<int>, Onesor<int>, I8Onesor, DartOnesor<int>, I8DartOnesor
+    with
+        ListMixin<int>,
+        Onesor<int>,
+        I8Onesor,
+        DartOnesor<int>,
+        DartOnesorViewMixin<int>,
+        I8DartOnesor
     implements I8DartOnesor, DartOnesorView<int>, I8OnesorView {
-  final I8DartOnesor _inner;
+  @override
+  final I8DartOnesor inner;
   @override
   final int offset;
   @override
   final int length;
 
-  I8DartOnesorView(this._inner, this.offset, this.length);
+  I8DartOnesorView(this.inner, this.offset, this.length);
 
   @override
   late final Int8List list =
-      Int8List.sublistView(_inner.list, offset, offset + length);
+      Int8List.sublistView(inner.list, offset, offset + length);
 
   @override
   I8DartOnesorView view(int start, int length) {
@@ -80,6 +93,6 @@ class I8DartOnesorView
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    return I8DartOnesorView(_inner, start + offset, length);
+    return I8DartOnesorView(inner, start + offset, length);
   }
 }

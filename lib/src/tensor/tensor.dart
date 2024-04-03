@@ -559,3 +559,21 @@ abstract mixin class Tensor<T extends num> implements Resource {
   }
    */
 }
+
+mixin TensorMixin<T extends num> implements Tensor<T> {
+  @override
+  Onesor<T> get as1d;
+
+  @override
+  void release() => as1d.release();
+
+  @override
+  void coRelease(Resource other) {
+    as1d.coRelease(other);
+  }
+
+  @override
+  void detachCoRelease(Resource other) {
+    as1d.detachCoRelease(other);
+  }
+}

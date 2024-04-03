@@ -1,15 +1,8 @@
-import 'dart:collection';
-import 'dart:ffi' as ffi;
-import 'dart:typed_data';
-import 'package:gpuc_dart/gpuc_dart.dart';
+part of 'cuonesor.dart';
 
 abstract mixin class U32CuOnesor implements CuOnesor<int>, U32Onesor {
   @override
   ffi.Pointer<ffi.Uint32> get ptr;
-
-  factory U32CuOnesor(ffi.Pointer<ffi.Uint32> ptr, int length, int deviceId,
-          {Context? context}) =>
-      _U32CuOnesor(ptr, length, deviceId, context: context);
 
   static U32CuOnesor sized(CudaStream stream, int length, {Context? context}) =>
       _U32CuOnesor.sized(stream, length, context: context);
@@ -66,9 +59,16 @@ abstract mixin class U32CuOnesor implements CuOnesor<int>, U32Onesor {
 }
 
 class _U32CuOnesor
-    with Onesor<int>, ListMixin<int>, U32Onesor, CuOnesor<int>, U32CuOnesor
+    with
+        Onesor<int>,
+        ListMixin<int>,
+        U32Onesor,
+        CuOnesor<int>,
+        _CuOnesorMixin<int>,
+        U32CuOnesor
     implements U32CuOnesor {
-  ffi.Pointer<ffi.Uint32> _ptr;
+  @override
+  final CuPtr<ffi.Uint32> _ptr;
 
   @override
   final int length;
@@ -81,8 +81,8 @@ class _U32CuOnesor
   }
 
   static _U32CuOnesor sized(CudaStream stream, int length, {Context? context}) {
-    final ptr = cuda.allocate(stream, length * Uint32List.bytesPerElement);
-    return _U32CuOnesor(ptr.cast(), length, stream.deviceId, context: context);
+    final ptr = CuPtr<ffi.Uint32>.allocate(stream, length * Uint32List.bytesPerElement);
+    return _U32CuOnesor(ptr, length, stream.deviceId, context: context);
   }
 
   static _U32CuOnesor fromList(CudaStream stream, Uint32List list,
@@ -95,6 +95,7 @@ class _U32CuOnesor
   static _U32CuOnesor copy(Onesor<int> other,
       {CudaStream? stream, Context? context}) {
     final lContext = Context();
+    // TODO simplify with link resource
     try {
       stream = stream ?? CudaStream.noStream(other.deviceId);
       final ret = _U32CuOnesor.sized(stream, other.length, context: context);
@@ -110,26 +111,21 @@ class _U32CuOnesor
   }
 
   @override
-  ffi.Pointer<ffi.Uint32> get ptr => _ptr;
-
-  @override
-  void release({CudaStream? stream}) {
-    if (_ptr == ffi.nullptr) return;
-    final ctx = Context();
-    try {
-      stream ??= CudaStream.noStream(deviceId);
-      cuda.memFree(stream, _ptr.cast());
-      _ptr = ffi.nullptr;
-    } finally {
-      ctx.release();
-    }
-  }
+  ffi.Pointer<ffi.Uint32> get ptr => _ptr.ptr;
 }
 
 class U32CuOnesorView
-    with Onesor<int>, U32Onesor, ListMixin<int>, CuOnesor<int>, U32CuOnesor
+    with
+        Onesor<int>,
+        OnesorView<int>,
+        U32Onesor,
+        ListMixin<int>,
+        CuOnesor<int>,
+        _CuOnesorViewMixin<int>,
+        U32CuOnesor
     implements U32CuOnesor, CuOnesorView<int>, U32OnesorView {
-  final U32CuOnesor _list;
+  @override
+  final U32CuOnesor _inner;
 
   @override
   final int offset;
@@ -137,13 +133,13 @@ class U32CuOnesorView
   @override
   final int length;
 
-  U32CuOnesorView(this._list, this.offset, this.length);
+  U32CuOnesorView(this._inner, this.offset, this.length);
 
   @override
-  int get deviceId => _list.deviceId;
+  int get deviceId => _inner.deviceId;
 
   @override
-  late final ffi.Pointer<ffi.Uint32> ptr = _list.ptr + offset;
+  late final ffi.Pointer<ffi.Uint32> ptr = _inner.ptr + offset;
 
   @override
   void release({CudaStream? stream}) {}
@@ -155,6 +151,6 @@ class U32CuOnesorView
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    return U32CuOnesorView(_list, start + offset, length);
+    return U32CuOnesorView(_inner, start + offset, length);
   }
 }

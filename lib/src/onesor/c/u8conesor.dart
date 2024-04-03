@@ -95,8 +95,16 @@ class _U8COnesor
 }
 
 class U8COnesorView
-    with Onesor<int>, U8Onesor, ListMixin<int>, COnesor<int>, U8COnesor
+    with
+        Onesor<int>,
+        OnesorView<int>,
+        U8Onesor,
+        ListMixin<int>,
+        COnesor<int>,
+        _COnesorViewMixin<int>,
+        U8COnesor
     implements U8COnesor, COnesorView<int>, U8OnesorView {
+  @override
   final U8COnesor _list;
 
   @override

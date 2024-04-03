@@ -51,6 +51,7 @@ class _F32DartOnesor
         F32Onesor,
         ListMixin<double>,
         DartOnesor<double>,
+        DartOnesorMixin<double>,
         F32DartOnesor
     implements F32DartOnesor {
   @override
@@ -70,19 +71,21 @@ class F32DartOnesorView
         Onesor<double>,
         F32Onesor,
         DartOnesor<double>,
+        DartOnesorViewMixin<double>,
         F32DartOnesor
     implements F32DartOnesor, DartOnesorView<double>, F32OnesorView {
-  final F32DartOnesor _inner;
+  @override
+  final F32DartOnesor inner;
   @override
   final int offset;
   @override
   final int length;
 
-  F32DartOnesorView(this._inner, this.offset, this.length);
+  F32DartOnesorView(this.inner, this.offset, this.length);
 
   @override
   late final Float32List list =
-      Float32List.sublistView(_inner.list, offset, offset + length);
+      Float32List.sublistView(inner.list, offset, offset + length);
 
   @override
   F32DartOnesorView view(int start, int length) {
@@ -91,6 +94,6 @@ class F32DartOnesorView
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    return F32DartOnesorView(_inner, start + offset, length);
+    return F32DartOnesorView(inner, start + offset, length);
   }
 }

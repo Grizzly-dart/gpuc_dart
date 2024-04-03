@@ -97,11 +97,14 @@ class _F32COnesor
 class F32COnesorView
     with
         Onesor<double>,
+        OnesorView<double>,
         F32Onesor,
         ListMixin<double>,
         COnesor<double>,
+        _COnesorViewMixin<double>,
         F32COnesor
     implements F32COnesor, COnesorView<double>, F32OnesorView {
+  @override
   final F32COnesor _list;
 
   @override
@@ -114,14 +117,6 @@ class F32COnesorView
 
   @override
   late final ffi.Pointer<ffi.Float> ptr = _list.ptr + offset;
-
-  @override
-  void release() {}
-
-  @override
-  set length(int newLength) {
-    throw UnsupportedError('Cannot change length of view');
-  }
 
   @override
   F32COnesorView view(int start, int length) {

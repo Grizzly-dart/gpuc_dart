@@ -51,6 +51,7 @@ class _I16DartOnesor
         I16Onesor,
         ListMixin<int>,
         DartOnesor<int>,
+        DartOnesorMixin<int>,
         I16DartOnesor
     implements I16DartOnesor {
   @override
@@ -70,19 +71,21 @@ class I16DartOnesorView
         Onesor<int>,
         I16Onesor,
         DartOnesor<int>,
+        DartOnesorViewMixin<int>,
         I16DartOnesor
     implements I16DartOnesor, DartOnesorView<int>, I16OnesorView {
-  final I16DartOnesor _inner;
+  @override
+  final I16DartOnesor inner;
   @override
   final int offset;
   @override
   final int length;
 
-  I16DartOnesorView(this._inner, this.offset, this.length);
+  I16DartOnesorView(this.inner, this.offset, this.length);
 
   @override
   late final Int16List list =
-  Int16List.sublistView(_inner.list, offset, offset + length);
+  Int16List.sublistView(inner.list, offset, offset + length);
 
   @override
   I16DartOnesorView view(int start, int length) {
@@ -91,6 +94,6 @@ class I16DartOnesorView
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    return I16DartOnesorView(_inner, start + offset, length);
+    return I16DartOnesorView(inner, start + offset, length);
   }
 }

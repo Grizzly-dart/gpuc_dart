@@ -1,15 +1,8 @@
-import 'dart:collection';
-import 'dart:ffi' as ffi;
-import 'dart:typed_data';
-import 'package:gpuc_dart/gpuc_dart.dart';
+part of 'cuonesor.dart';
 
 abstract mixin class F32CuOnesor implements CuOnesor<double>, F32Onesor {
   @override
   ffi.Pointer<ffi.Float> get ptr;
-
-  factory F32CuOnesor(ffi.Pointer<ffi.Float> ptr, int length, int deviceId,
-          {Context? context}) =>
-      _F32CuOnesor(ptr, length, deviceId, context: context);
 
   static F32CuOnesor sized(CudaStream stream, int length, {Context? context}) =>
       _F32CuOnesor.sized(stream, length, context: context);
@@ -71,9 +64,11 @@ class _F32CuOnesor
         ListMixin<double>,
         F32Onesor,
         CuOnesor<double>,
+        _CuOnesorMixin<double>,
         F32CuOnesor
     implements F32CuOnesor {
-  ffi.Pointer<ffi.Float> _ptr;
+  @override
+  final CuPtr<ffi.Float> _ptr;
 
   @override
   final int length;
@@ -86,8 +81,9 @@ class _F32CuOnesor
   }
 
   static _F32CuOnesor sized(CudaStream stream, int length, {Context? context}) {
-    final ptr = cuda.allocate(stream, length * Float32List.bytesPerElement);
-    return _F32CuOnesor(ptr.cast(), length, stream.deviceId, context: context);
+    final ptr =
+        CuPtr<ffi.Float>.allocate(stream, length * Float32List.bytesPerElement);
+    return _F32CuOnesor(ptr, length, stream.deviceId, context: context);
   }
 
   static _F32CuOnesor fromList(CudaStream stream, Float32List list,
@@ -106,26 +102,21 @@ class _F32CuOnesor
   }
 
   @override
-  ffi.Pointer<ffi.Float> get ptr => _ptr;
-
-  @override
-  void release({CudaStream? stream}) {
-    if (_ptr == ffi.nullptr) return;
-    stream ??= CudaStream.noStream(deviceId);
-    cuda.memFree(stream, _ptr.cast());
-    _ptr = ffi.nullptr;
-  }
+  ffi.Pointer<ffi.Float> get ptr => _ptr.ptr;
 }
 
 class F32CuOnesorView
     with
         Onesor<double>,
+        OnesorView<double>,
         F32Onesor,
         ListMixin<double>,
         CuOnesor<double>,
+        _CuOnesorViewMixin<double>,
         F32CuOnesor
     implements F32CuOnesor, CuOnesorView<double>, F32OnesorView {
-  final CuOnesor<double> _list;
+  @override
+  final CuOnesor<double> _inner;
 
   @override
   final int offset;
@@ -133,13 +124,13 @@ class F32CuOnesorView
   @override
   final int length;
 
-  F32CuOnesorView(this._list, this.offset, this.length);
+  F32CuOnesorView(this._inner, this.offset, this.length);
 
   @override
-  int get deviceId => _list.deviceId;
+  int get deviceId => _inner.deviceId;
 
   @override
-  late final ffi.Pointer<ffi.Float> ptr = _list.ptr.cast<ffi.Float>() + offset;
+  late final ffi.Pointer<ffi.Float> ptr = _inner.ptr.cast<ffi.Float>() + offset;
 
   @override
   void release({CudaStream? stream}) {}
@@ -151,6 +142,6 @@ class F32CuOnesorView
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    return F32CuOnesorView(_list, start + offset, length);
+    return F32CuOnesorView(_inner, start + offset, length);
   }
 }

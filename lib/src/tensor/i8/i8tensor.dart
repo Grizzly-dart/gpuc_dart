@@ -92,7 +92,7 @@ abstract mixin class I8Tensor implements Tensor<int> {
   }
 }
 
-class _I8Tensor with Tensor<int>, I8Tensor implements I8Tensor, Tensor<int> {
+class _I8Tensor with Tensor<int>, TensorMixin<int>, I8Tensor implements I8Tensor, Tensor<int> {
   @override
   String name;
 
@@ -117,10 +117,5 @@ class _I8Tensor with Tensor<int>, I8Tensor implements I8Tensor, Tensor<int> {
       throw ArgumentError('Size mismatch');
     }
     _size = size;
-  }
-
-  @override
-  void release() {
-    as1d.release();
   }
 }

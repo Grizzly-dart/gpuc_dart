@@ -79,7 +79,13 @@ class CFFI {
     cffi = CFFI.lookup(dylib);
   }
 
-  late final finalizer = ffi.NativeFinalizer(freeNative);
+  late final finalizer = Finalizer((other) {
+    if (other is ffi.Pointer) {
+      free(other.cast());
+    } else {
+      stdout.writeln('Unknown type ${other.runtimeType}');
+    }
+  });
 }
 
 typedef Ptr = ffi.Pointer;
@@ -142,8 +148,7 @@ class CPtr<T extends ffi.NativeType> implements Resource, ffi.Finalizable {
 
   CPtr(this._mem, this.bytes, {Context? context}) {
     assert(_mem != ffi.nullptr);
-    cffi!.finalizer
-        .attach(this, _mem.cast(), detach: this, externalSize: bytes);
+    cffi!.finalizer.attach(this, _mem.cast(), detach: this);
     context?.add(this);
   }
 
@@ -162,14 +167,26 @@ class CPtr<T extends ffi.NativeType> implements Resource, ffi.Finalizable {
     }
     _mem = newPtr.cast();
     bytes = byteSizePerItem * count;
+    cffi!.finalizer.detach(this);
+    cffi!.finalizer.attach(this, _mem.cast(), detach: this);
   }
 
   @override
   void release() {
     if (_mem == ffi.nullptr) return;
-    cffi!.finalizer.detach(this);
+    cffi!.finalizer.detach(_mem);
     ffi.malloc.free(_mem);
     _mem = ffi.nullptr;
+  }
+
+  @override
+  void coRelease(Resource other) {
+    cffi!.finalizer.attach(this, other, detach: other);
+  }
+
+  @override
+  void detachCoRelease(Resource other) {
+    cffi!.finalizer.detach(other);
   }
 }
 

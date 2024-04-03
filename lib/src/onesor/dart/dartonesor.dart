@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 export 'f64dartonesor.dart';
@@ -76,28 +78,41 @@ abstract mixin class DartOnesor<T extends num> implements Onesor<T> {
   set length(int newLength) {
     throw UnsupportedError('Cannot change length');
   }
+
+  final Finalizer finalizer = Finalizer((other) {
+    if (other is Resource) {
+      other.release();
+    } else {
+      stdout.writeln('Cannot release $other');
+    }
+  });
+}
+
+mixin DartOnesorMixin<T extends num> implements DartOnesor<T> {
+  @override
+  void coRelease(Resource other) {
+    finalizer.attach(list, other, detach: other);
+  }
+
+  @override
+  void detachCoRelease(Resource other) {
+    finalizer.detach(other);
+  }
 }
 
 abstract class DartOnesorView<T extends num>
     implements DartOnesor<T>, OnesorView<T> {}
 
-/*
-abstract class DartOnesor<T extends num> implements Onesor<T> {
-  factory DartOnesor(List<T> list) => _DartOnesor(list);
-
-  factory DartOnesor.sized(int length, {bool growable = false}) =>
-      _DartOnesor.sized(length, growable: growable);
-
-  factory DartOnesor.copy(Onesor<T> other) => _DartOnesor.copy<T>(other);
+mixin DartOnesorViewMixin<T extends num> implements DartOnesorView<T> {
+  DartOnesor<T> get inner;
 
   @override
-  DartOnesor<T> slice(int start, int length, {Context? context});
+  void coRelease(Resource other) {
+    inner.coRelease(other);
+  }
 
   @override
-  DartOnesorView<T> view(int start, int length);
+  void detachCoRelease(Resource other) {
+    inner.detachCoRelease(other);
+  }
 }
-
-
-
-
-}*/

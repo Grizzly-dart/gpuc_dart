@@ -51,6 +51,7 @@ class _F64DartOnesor
         F64Onesor,
         ListMixin<double>,
         DartOnesor<double>,
+        DartOnesorMixin<double>,
         F64DartOnesor
     implements F64DartOnesor {
   @override
@@ -70,19 +71,21 @@ class F64DartOnesorView
         Onesor<double>,
         F64Onesor,
         DartOnesor<double>,
+        DartOnesorViewMixin<double>,
         F64DartOnesor
     implements F64DartOnesor, DartOnesorView<double>, F64OnesorView {
-  final F64DartOnesor _inner;
+  @override
+  final F64DartOnesor inner;
   @override
   final int offset;
   @override
   final int length;
 
-  F64DartOnesorView(this._inner, this.offset, this.length);
+  F64DartOnesorView(this.inner, this.offset, this.length);
 
   @override
   late final Float64List list =
-      Float64List.sublistView(_inner.list, offset, offset + length);
+      Float64List.sublistView(inner.list, offset, offset + length);
 
   @override
   F64DartOnesorView view(int start, int length) {
@@ -91,6 +94,6 @@ class F64DartOnesorView
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    return F64DartOnesorView(_inner, start + offset, length);
+    return F64DartOnesorView(inner, start + offset, length);
   }
 }

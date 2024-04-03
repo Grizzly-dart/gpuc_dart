@@ -92,7 +92,7 @@ abstract mixin class I32Tensor implements Tensor<int> {
   }
 }
 
-class _I32Tensor with Tensor<int>, I32Tensor implements I32Tensor, Tensor<int> {
+class _I32Tensor with Tensor<int>, TensorMixin<int>, I32Tensor implements I32Tensor, Tensor<int> {
   @override
   String name;
 
@@ -117,10 +117,5 @@ class _I32Tensor with Tensor<int>, I32Tensor implements I32Tensor, Tensor<int> {
       throw ArgumentError('Size mismatch');
     }
     _size = size;
-  }
-
-  @override
-  void release() {
-    as1d.release();
   }
 }

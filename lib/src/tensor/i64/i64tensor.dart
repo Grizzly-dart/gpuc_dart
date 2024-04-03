@@ -92,7 +92,7 @@ abstract mixin class I64Tensor implements Tensor<int> {
   }
 }
 
-class _I64Tensor with Tensor<int>, I64Tensor implements I64Tensor, Tensor<int> {
+class _I64Tensor with Tensor<int>, TensorMixin<int>, I64Tensor implements I64Tensor, Tensor<int> {
   @override
   String name;
 
@@ -117,10 +117,5 @@ class _I64Tensor with Tensor<int>, I64Tensor implements I64Tensor, Tensor<int> {
       throw ArgumentError('Size mismatch');
     }
     _size = size;
-  }
-
-  @override
-  void release() {
-    as1d.release();
   }
 }

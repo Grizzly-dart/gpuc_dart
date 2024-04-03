@@ -8,7 +8,7 @@ abstract mixin class U64Tensor implements Tensor<int> {
   U64Onesor get as1d;
 
   factory U64Tensor(U64Onesor as1d, Dim size,
-      {String name = '', Context? context}) =>
+          {String name = '', Context? context}) =>
       _U64Tensor(as1d, size, name: name, context: context);
 
   factory U64Tensor.fromList(List<int> list,
@@ -92,7 +92,9 @@ abstract mixin class U64Tensor implements Tensor<int> {
   }
 }
 
-class _U64Tensor with Tensor<int>, U64Tensor implements U64Tensor, Tensor<int> {
+class _U64Tensor
+    with Tensor<int>, TensorMixin<int>, U64Tensor
+    implements U64Tensor, Tensor<int> {
   @override
   String name;
 
@@ -117,10 +119,5 @@ class _U64Tensor with Tensor<int>, U64Tensor implements U64Tensor, Tensor<int> {
       throw ArgumentError('Size mismatch');
     }
     _size = size;
-  }
-
-  @override
-  void release() {
-    as1d.release();
   }
 }

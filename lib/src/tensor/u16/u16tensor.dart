@@ -67,7 +67,7 @@ abstract mixin class U16Tensor implements Tensor<int> {
   @override
   U16TensorView operator [](dynamic /* Dim | int | Iterable<int> */ index) {
     if (index is Extent) {
-      if(index is! Extent<Dim>) index = Dim.extentFrom(index);
+      if (index is! Extent<Dim>) index = Dim.extentFrom(index);
       if (index.lower.dims != index.upper.dims) {
         throw ArgumentError('Extents dimension mismatch');
       }
@@ -127,7 +127,9 @@ abstract mixin class U16Tensor implements Tensor<int> {
   }
 }
 
-class _U16Tensor with Tensor<int>, U16Tensor implements U16Tensor, Tensor<int> {
+class _U16Tensor
+    with Tensor<int>, TensorMixin<int>, U16Tensor
+    implements U16Tensor, Tensor<int> {
   @override
   String name;
 
@@ -152,10 +154,5 @@ class _U16Tensor with Tensor<int>, U16Tensor implements U16Tensor, Tensor<int> {
       throw ArgumentError('Size mismatch');
     }
     _size = size;
-  }
-
-  @override
-  void release() {
-    as1d.release();
   }
 }

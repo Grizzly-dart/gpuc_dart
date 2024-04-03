@@ -80,4 +80,28 @@ mixin _COnesorMixin<T extends num> implements COnesor<T> {
     _ptr.realloc(bytesPerItem, count: newLength);
     _length = newLength;
   }
+
+  @override
+  void coRelease(Resource other) {
+    _ptr.coRelease(other);
+  }
+
+  @override
+  void detachCoRelease(Resource other) {
+    _ptr.detachCoRelease(other);
+  }
+}
+
+mixin _COnesorViewMixin<T extends num> implements COnesorView<T> {
+  COnesor<T> get _list;
+
+  @override
+  void coRelease(Resource other) {
+    _list.coRelease(other);
+  }
+
+  @override
+  void detachCoRelease(Resource other) {
+    _list.detachCoRelease(other);
+  }
 }

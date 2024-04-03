@@ -1,15 +1,8 @@
-import 'dart:collection';
-import 'dart:ffi' as ffi;
-import 'dart:typed_data';
-import 'package:gpuc_dart/gpuc_dart.dart';
+part of 'cuonesor.dart';
 
 abstract mixin class F64CuOnesor implements CuOnesor<double>, F64Onesor {
   @override
   ffi.Pointer<ffi.Double> get ptr;
-
-  factory F64CuOnesor(ffi.Pointer<ffi.Double> ptr, int length, int deviceId,
-          {Context? context}) =>
-      _F64CuOnesor(ptr, length, deviceId, context: context);
 
   static F64CuOnesor sized(CudaStream stream, int length, {Context? context}) =>
       _F64CuOnesor.sized(stream, length, context: context);
@@ -41,9 +34,9 @@ abstract mixin class F64CuOnesor implements CuOnesor<double>, F64Onesor {
   @override
   COnesor<double> read({Context? context, CudaStream? stream}) {
     final ret = F64COnesor.sized(length, context: context);
-      stream = stream ?? CudaStream.noStream(deviceId);
-      cuda.memcpy(stream, ret.ptr.cast(), ptr.cast(), ret.lengthBytes);
-      return ret;
+    stream = stream ?? CudaStream.noStream(deviceId);
+    cuda.memcpy(stream, ret.ptr.cast(), ptr.cast(), ret.lengthBytes);
+    return ret;
   }
 
   @override
@@ -87,9 +80,11 @@ class _F64CuOnesor
         ListMixin<double>,
         F64Onesor,
         CuOnesor<double>,
+        _CuOnesorMixin<double>,
         F64CuOnesor
     implements F64CuOnesor {
-  ffi.Pointer<ffi.Double> _ptr;
+  @override
+  final CuPtr<ffi.Double> _ptr;
 
   @override
   final int length;
@@ -102,8 +97,9 @@ class _F64CuOnesor
   }
 
   static _F64CuOnesor sized(CudaStream stream, int length, {Context? context}) {
-    final ptr = cuda.allocate(stream, length * Float64List.bytesPerElement);
-    return _F64CuOnesor(ptr.cast(), length, stream.deviceId, context: context);
+    final ptr = CuPtr<ffi.Double>.allocate(
+        stream, length * Float64List.bytesPerElement);
+    return _F64CuOnesor(ptr, length, stream.deviceId, context: context);
   }
 
   static _F64CuOnesor fromList(CudaStream stream, Float64List list,
@@ -122,26 +118,21 @@ class _F64CuOnesor
   }
 
   @override
-  ffi.Pointer<ffi.Double> get ptr => _ptr;
-
-  @override
-  void release({CudaStream? stream}) {
-    if (_ptr == ffi.nullptr) return;
-    stream ??= CudaStream.noStream(deviceId);
-    cuda.memFree(stream, _ptr.cast());
-    _ptr = ffi.nullptr;
-  }
+  ffi.Pointer<ffi.Double> get ptr => _ptr.ptr;
 }
 
 class F64CuOnesorView
     with
         Onesor<double>,
+        OnesorView<double>,
         F64Onesor,
         ListMixin<double>,
         CuOnesor<double>,
+        _CuOnesorViewMixin<double>,
         F64CuOnesor
     implements F64CuOnesor, CuOnesorView<double>, F64OnesorView {
-  final CuOnesor<double> _list;
+  @override
+  final CuOnesor<double> _inner;
 
   @override
   final int offset;
@@ -149,14 +140,14 @@ class F64CuOnesorView
   @override
   final int length;
 
-  F64CuOnesorView(this._list, this.offset, this.length);
+  F64CuOnesorView(this._inner, this.offset, this.length);
 
   @override
-  int get deviceId => _list.deviceId;
+  int get deviceId => _inner.deviceId;
 
   @override
   late final ffi.Pointer<ffi.Double> ptr =
-      _list.ptr.cast<ffi.Double>() + offset;
+      _inner.ptr.cast<ffi.Double>() + offset;
 
   @override
   void release({CudaStream? stream}) {}
@@ -168,6 +159,6 @@ class F64CuOnesorView
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    return F64CuOnesorView(_list, start + offset, length);
+    return F64CuOnesorView(_inner, start + offset, length);
   }
 }

@@ -1,15 +1,8 @@
-import 'dart:collection';
-import 'dart:ffi' as ffi;
-import 'dart:typed_data';
-import 'package:gpuc_dart/gpuc_dart.dart';
+part of 'cuonesor.dart';
 
 abstract mixin class I16CuOnesor implements CuOnesor<int>, I16Onesor {
   @override
   ffi.Pointer<ffi.Int16> get ptr;
-
-  factory I16CuOnesor(ffi.Pointer<ffi.Int16> ptr, int length, int deviceId,
-          {Context? context}) =>
-      _I16CuOnesor(ptr, length, deviceId, context: context);
 
   static I16CuOnesor sized(CudaStream stream, int length, {Context? context}) =>
       _I16CuOnesor.sized(stream, length, context: context);
@@ -66,9 +59,16 @@ abstract mixin class I16CuOnesor implements CuOnesor<int>, I16Onesor {
 }
 
 class _I16CuOnesor
-    with Onesor<int>, ListMixin<int>, I16Onesor, CuOnesor<int>, I16CuOnesor
+    with
+        Onesor<int>,
+        ListMixin<int>,
+        I16Onesor,
+        CuOnesor<int>,
+        _CuOnesorMixin<int>,
+        I16CuOnesor
     implements I16CuOnesor {
-  ffi.Pointer<ffi.Int16> _ptr;
+  @override
+  final CuPtr<ffi.Int16> _ptr;
 
   @override
   final int length;
@@ -81,8 +81,9 @@ class _I16CuOnesor
   }
 
   static _I16CuOnesor sized(CudaStream stream, int length, {Context? context}) {
-    final ptr = cuda.allocate(stream, length * Int16List.bytesPerElement);
-    return _I16CuOnesor(ptr.cast(), length, stream.deviceId, context: context);
+    final ptr =
+        CuPtr<ffi.Int16>.allocate(stream, length * Int16List.bytesPerElement);
+    return _I16CuOnesor(ptr, length, stream.deviceId, context: context);
   }
 
   static _I16CuOnesor fromList(CudaStream stream, Int16List list,
@@ -101,21 +102,21 @@ class _I16CuOnesor
   }
 
   @override
-  ffi.Pointer<ffi.Int16> get ptr => _ptr;
-
-  @override
-  void release({CudaStream? stream}) {
-    if (_ptr == ffi.nullptr) return;
-    stream ??= CudaStream.noStream(deviceId);
-    cuda.memFree(stream, _ptr.cast());
-    _ptr = ffi.nullptr;
-  }
+  ffi.Pointer<ffi.Int16> get ptr => _ptr.ptr;
 }
 
 class I16CuOnesorView
-    with Onesor<int>, I16Onesor, ListMixin<int>, CuOnesor<int>, I16CuOnesor
+    with
+        Onesor<int>,
+        OnesorView<int>,
+        I16Onesor,
+        ListMixin<int>,
+        CuOnesor<int>,
+        _CuOnesorViewMixin<int>,
+        I16CuOnesor
     implements I16CuOnesor, CuOnesorView<int>, I16OnesorView {
-  final I16CuOnesor _list;
+  @override
+  final I16CuOnesor _inner;
 
   @override
   final int offset;
@@ -123,13 +124,13 @@ class I16CuOnesorView
   @override
   final int length;
 
-  I16CuOnesorView(this._list, this.offset, this.length);
+  I16CuOnesorView(this._inner, this.offset, this.length);
 
   @override
-  int get deviceId => _list.deviceId;
+  int get deviceId => _inner.deviceId;
 
   @override
-  late final ffi.Pointer<ffi.Int16> ptr = _list.ptr.cast<ffi.Int16>() + offset;
+  late final ffi.Pointer<ffi.Int16> ptr = _inner.ptr.cast<ffi.Int16>() + offset;
 
   @override
   void release({CudaStream? stream}) {}
@@ -141,6 +142,6 @@ class I16CuOnesorView
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    return I16CuOnesorView(_list, start + offset, length);
+    return I16CuOnesorView(_inner, start + offset, length);
   }
 }

@@ -1,15 +1,8 @@
-import 'dart:collection';
-import 'dart:ffi' as ffi;
-import 'dart:typed_data';
-import 'package:gpuc_dart/gpuc_dart.dart';
+part of 'cuonesor.dart';
 
 abstract mixin class I8CuOnesor implements CuOnesor<int>, I8Onesor {
   @override
   ffi.Pointer<ffi.Int8> get ptr;
-
-  factory I8CuOnesor(ffi.Pointer<ffi.Int8> ptr, int length, int deviceId,
-          {Context? context}) =>
-      _I8CuOnesor(ptr, length, deviceId, context: context);
 
   static I8CuOnesor sized(CudaStream stream, int length, {Context? context}) =>
       _I8CuOnesor.sized(stream, length, context: context);
@@ -66,9 +59,16 @@ abstract mixin class I8CuOnesor implements CuOnesor<int>, I8Onesor {
 }
 
 class _I8CuOnesor
-    with Onesor<int>, ListMixin<int>, I8Onesor, CuOnesor<int>, I8CuOnesor
+    with
+        Onesor<int>,
+        ListMixin<int>,
+        I8Onesor,
+        CuOnesor<int>,
+        _CuOnesorMixin<int>,
+        I8CuOnesor
     implements I8CuOnesor {
-  ffi.Pointer<ffi.Int8> _ptr;
+  @override
+  final CuPtr<ffi.Int8> _ptr;
 
   @override
   final int length;
@@ -81,8 +81,9 @@ class _I8CuOnesor
   }
 
   static _I8CuOnesor sized(CudaStream stream, int length, {Context? context}) {
-    final ptr = cuda.allocate(stream, length * Int8List.bytesPerElement);
-    return _I8CuOnesor(ptr.cast(), length, stream.deviceId, context: context);
+    final ptr =
+        CuPtr<ffi.Int8>.allocate(stream, length * Int8List.bytesPerElement);
+    return _I8CuOnesor(ptr, length, stream.deviceId, context: context);
   }
 
   static _I8CuOnesor fromList(CudaStream stream, Int8List list,
@@ -101,21 +102,21 @@ class _I8CuOnesor
   }
 
   @override
-  ffi.Pointer<ffi.Int8> get ptr => _ptr;
-
-  @override
-  void release({CudaStream? stream}) {
-    if (_ptr == ffi.nullptr) return;
-    stream ??= CudaStream.noStream(deviceId);
-    cuda.memFree(stream, _ptr.cast());
-    _ptr = ffi.nullptr;
-  }
+  ffi.Pointer<ffi.Int8> get ptr => _ptr.ptr;
 }
 
 class I8CuOnesorView
-    with Onesor<int>, I8Onesor, ListMixin<int>, CuOnesor<int>, I8CuOnesor
+    with
+        Onesor<int>,
+        OnesorView<int>,
+        I8Onesor,
+        ListMixin<int>,
+        CuOnesor<int>,
+        _CuOnesorViewMixin<int>,
+        I8CuOnesor
     implements I8CuOnesor, CuOnesorView<int>, I8OnesorView {
-  final I8CuOnesor _list;
+  @override
+  final I8CuOnesor _inner;
 
   @override
   final int offset;
@@ -123,13 +124,13 @@ class I8CuOnesorView
   @override
   final int length;
 
-  I8CuOnesorView(this._list, this.offset, this.length);
+  I8CuOnesorView(this._inner, this.offset, this.length);
 
   @override
-  int get deviceId => _list.deviceId;
+  int get deviceId => _inner.deviceId;
 
   @override
-  late final ffi.Pointer<ffi.Int8> ptr = _list.ptr.cast<ffi.Int8>() + offset;
+  late final ffi.Pointer<ffi.Int8> ptr = _inner.ptr.cast<ffi.Int8>() + offset;
 
   @override
   void release({CudaStream? stream}) {}
@@ -141,6 +142,6 @@ class I8CuOnesorView
     } else if (start + length > this.length) {
       throw ArgumentError('Length out of range');
     }
-    return I8CuOnesorView(_list, start + offset, length);
+    return I8CuOnesorView(_inner, start + offset, length);
   }
 }

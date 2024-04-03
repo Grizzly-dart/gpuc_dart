@@ -1,4 +1,3 @@
-import 'dart:ffi' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
 
 export 'releaseable.dart';
@@ -48,8 +47,16 @@ abstract mixin class Onesor<T extends num>
   void release();
 }
 
-abstract class OnesorView<T extends num> extends Onesor<T> {
+abstract mixin class OnesorView<T extends num> implements Onesor<T> {
   int get offset;
+
+  @override
+  void release() {}
+
+  @override
+  set length(int newLength) {
+    throw UnsupportedError('Cannot change length of view');
+  }
 }
 
 extension OnesorExtension<T extends num> on Onesor<T> {

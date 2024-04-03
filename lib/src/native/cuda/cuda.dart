@@ -587,9 +587,28 @@ class CudaStream implements Resource, ffi.Finalizable {
     finalizer.detach(this);
   }
 
-  static final Finalizer<ffi.Pointer<CCudaStream>> finalizer =
-      Finalizer((ffi.Pointer<CCudaStream> ptr) {
-    CuFFI.instance!.destroyStream(ptr);
+  @override
+  void coRelease(Resource other) {
+    finalizer.attach(this, other, detach: other);
+  }
+
+  @override
+  void detachCoRelease(Resource other) {
+    finalizer.detach(other);
+  }
+
+  static final Finalizer finalizer = Finalizer((other) {
+    if (other is ffi.Pointer<CCudaStream>) {
+      final err = CuFFI.instance!.destroyStream(other);
+      if (err != ffi.nullptr) {
+        stdout.writeln(
+            'Error destroying stream! CudaException: ${err.toDartString()}');
+      }
+    } else if (other is Resource) {
+      other.release();
+    } else {
+      stdout.writeln('Invalid type to release: ${other.runtimeType}');
+    }
   });
 }
 
@@ -718,4 +737,61 @@ extension CudaSetGet on Cuda {
     memcpy(stream, dst.pointerAddition(index, type.bytes).cast(),
         src.ptr.cast(), type.bytes);
   }
+}
+
+class _CuPtr<T extends ffi.NativeType> {
+  final ffi.Pointer<T> _ptr;
+
+  final int deviceId;
+
+  _CuPtr(this._ptr, this.deviceId);
+}
+
+class CuPtr<T extends ffi.NativeType> implements Resource, ffi.Finalizable {
+  final _CuPtr<T> _inner;
+
+  CuPtr._(this._inner, {Context? context}) {
+    context?.add(this);
+    finalizer.attach(this, _inner, detach: this);
+  }
+
+  factory CuPtr(ffi.Pointer<T> ptr, int deviceId, {Context? context}) {
+    final ret = CuPtr._(_CuPtr(ptr, deviceId), context: context);
+    return ret;
+  }
+
+  factory CuPtr.allocate(CudaStream stream, int size, {Context? context}) {
+    final ptr = cuda.allocate(stream, size);
+    return CuPtr<T>(ptr.cast(), stream.deviceId, context: context);
+  }
+
+  ffi.Pointer<T> get ptr => _inner._ptr;
+
+  int get deviceId => _inner.deviceId;
+
+  @override
+  void release({CudaStream? stream}) {
+    // TODO detect if already released
+    cuda.memFree(stream ?? CudaStream.noStream(deviceId), _inner._ptr.cast());
+    finalizer.detach(this);
+  }
+
+  @override
+  void coRelease(Resource other) {
+    finalizer.attach(this, other, detach: other);
+  }
+
+  @override
+  void detachCoRelease(Resource other) {
+    finalizer.detach(other);
+  }
+
+  static Finalizer finalizer = Finalizer((other) {
+    try {
+      cuda.memFree(CudaStream.noStream(other.deviceId), other._mem.cast());
+    } catch (e) {
+      stdout.writeln('Error releasing CuPtr: $e');
+    }
+    other._mem = ffi.nullptr;
+  });
 }

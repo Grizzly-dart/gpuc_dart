@@ -129,7 +129,7 @@ abstract mixin class F32Tensor implements Tensor<double> {
 }
 
 class _F32Tensor
-    with Tensor<double>, F32Tensor
+    with Tensor<double>, TensorMixin<double>, F32Tensor
     implements F32Tensor, Tensor<double> {
   @override
   String name;
@@ -155,10 +155,5 @@ class _F32Tensor
       throw ArgumentError('Size mismatch');
     }
     _size = size;
-  }
-
-  @override
-  void release() {
-    as1d.release();
   }
 }

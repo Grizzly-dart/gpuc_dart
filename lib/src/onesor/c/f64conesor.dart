@@ -97,11 +97,14 @@ class _F64COnesor
 class F64COnesorView
     with
         Onesor<double>,
+        OnesorView<double>,
         F64Onesor,
         ListMixin<double>,
         COnesor<double>,
+        _COnesorViewMixin<double>,
         F64COnesor
     implements F64COnesor, COnesorView<double>, F64OnesorView {
+  @override
   final F64COnesor _list;
 
   @override

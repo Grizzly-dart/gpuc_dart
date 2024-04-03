@@ -95,8 +95,16 @@ class _I64COnesor
 }
 
 class I64COnesorView
-    with Onesor<int>, I64Onesor, ListMixin<int>, COnesor<int>, I64COnesor
+    with
+        Onesor<int>,
+        OnesorView<int>,
+        I64Onesor,
+        ListMixin<int>,
+        COnesor<int>,
+        _COnesorViewMixin<int>,
+        I64COnesor
     implements I64COnesor, COnesorView<int>, I64OnesorView {
+  @override
   final I64COnesor _list;
 
   @override

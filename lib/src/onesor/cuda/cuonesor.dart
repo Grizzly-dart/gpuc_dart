@@ -1,17 +1,19 @@
 import 'dart:ffi' as ffi;
 
 import 'package:gpuc_dart/gpuc_dart.dart';
+import 'dart:collection';
+import 'dart:typed_data';
 
-export 'f64cuonesor.dart';
-export 'f32cuonesor.dart';
-export 'u64cuonesor.dart';
-export 'u32cuonesor.dart';
-export 'u16cuonesor.dart';
-export 'u8cuonesor.dart';
-export 'i64cuonesor.dart';
-export 'i32cuonesor.dart';
-export 'i16cuonesor.dart';
-export 'i8cuonesor.dart';
+part 'f64cuonesor.dart';
+part 'f32cuonesor.dart';
+part 'u64cuonesor.dart';
+part 'u32cuonesor.dart';
+part 'u16cuonesor.dart';
+part 'u8cuonesor.dart';
+part 'i64cuonesor.dart';
+part 'i32cuonesor.dart';
+part 'i16cuonesor.dart';
+part 'i8cuonesor.dart';
 
 abstract mixin class CuOnesor<T extends num> implements Onesor<T>, NumPtr {
   factory CuOnesor.copy(CudaStream stream, Onesor<T> other,
@@ -116,15 +118,10 @@ abstract mixin class CuOnesor<T extends num> implements Onesor<T>, NumPtr {
     if (lengthBytes != src.lengthBytes) {
       throw ArgumentError('Length mismatch');
     }
-    // TODO use resource linking
-    final context = Context();
-    try {
-      stream = stream ?? CudaStream.noStream(deviceId);
-      src = src is COnesor<T> ? src : src.read(context: context);
-      cuda.memcpy(stream, ptr.cast(), src.ptr.cast(), lengthBytes);
-    } finally {
-      context.release();
-    }
+
+    stream = stream ?? CudaStream.noStream(deviceId);
+    src = src is COnesor<T> ? src : src.read(); // TODO release with corelease
+    cuda.memcpy(stream, ptr.cast(), src.ptr.cast(), lengthBytes);
   }
 
   @override
@@ -152,5 +149,38 @@ abstract mixin class CuOnesor<T extends num> implements Onesor<T>, NumPtr {
   }
 }
 
+mixin _CuOnesorMixin<T extends num> implements CuOnesor<T> {
+  CuPtr<ffi.SizedNativeType> get _ptr;
+
+  @override
+  void release({CudaStream? stream}) {
+    _ptr.release(stream: stream);
+  }
+
+  @override
+  void coRelease(Resource other) {
+    _ptr.coRelease(other);
+  }
+
+  @override
+  void detachCoRelease(Resource other) {
+    _ptr.detachCoRelease(other);
+  }
+}
+
 abstract class CuOnesorView<T extends num>
     implements CuOnesor<T>, OnesorView<T> {}
+
+mixin _CuOnesorViewMixin<T extends num> implements CuOnesorView<T> {
+  CuOnesor<T> get _inner;
+
+  @override
+  void coRelease(Resource other) {
+    _inner.coRelease(other);
+  }
+
+  @override
+  void detachCoRelease(Resource other) {
+    _inner.detachCoRelease(other);
+  }
+}
