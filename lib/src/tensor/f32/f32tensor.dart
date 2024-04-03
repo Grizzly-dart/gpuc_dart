@@ -23,7 +23,7 @@ abstract mixin class F32Tensor implements Tensor<double> {
       size = Dim([list.length]);
     }
     F32Onesor data;
-    if (cffi != null) {
+    if (tc.exists()) {
       data = F32COnesor.fromList(list, context: context);
     } else {
       data = F32DartOnesor.fromList(list);
@@ -35,7 +35,7 @@ abstract mixin class F32Tensor implements Tensor<double> {
       {String name = '', Context? context}) {
     size = Dim.from(size);
     F32Onesor data;
-    if (cffi != null) {
+    if (tc.exists()) {
       data = F32COnesor.sized(size.nel, context: context);
     } else {
       data = F32DartOnesor.sized(size.nel);

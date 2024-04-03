@@ -21,7 +21,7 @@ abstract mixin class U8Tensor implements Tensor<int> {
       size = Dim([list.length]);
     }
     U8Onesor data;
-    if (cffi != null) {
+    if (tc.exists()) {
       data = U8COnesor.fromList(list, context: context);
     } else {
       data = U8DartOnesor.fromList(list);
@@ -33,7 +33,7 @@ abstract mixin class U8Tensor implements Tensor<int> {
       {String name = '', Context? context}) {
     size = Dim.from(size);
     U8Onesor data;
-    if (cffi != null) {
+    if (tc.exists()) {
       data = U8COnesor.sized(size.nel, context: context);
     } else {
       data = U8DartOnesor.sized(size.nel);

@@ -1,4 +1,4 @@
-export 'c.dart';
+export 'c/c.dart';
 export 'cuda/cuda.dart';
 export 'tenson/tenson.dart';
 

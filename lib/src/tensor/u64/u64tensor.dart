@@ -21,7 +21,7 @@ abstract mixin class U64Tensor implements Tensor<int> {
       size = Dim([list.length]);
     }
     U64Onesor data;
-    if (cffi != null) {
+    if (tc.exists()) {
       data = U64COnesor.fromList(list, context: context);
     } else {
       data = U64DartOnesor.fromList(list);
@@ -33,7 +33,7 @@ abstract mixin class U64Tensor implements Tensor<int> {
       {String name = '', Context? context}) {
     size = Dim.from(size);
     U64Onesor data;
-    if (cffi != null) {
+    if (tc.exists()) {
       data = U64COnesor.sized(size.nel, context: context);
     } else {
       data = U64DartOnesor.sized(size.nel);

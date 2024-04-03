@@ -30,7 +30,7 @@ abstract mixin class U8COnesor implements COnesor<int>, U8Onesor {
       throw ArgumentError('Length out of range');
     }
     final ret = U8COnesor.sized(length, context: context);
-    cffi!.memcpy(ret.ptr.cast(), (ptr + start * ret.bytesPerItem).cast(),
+    tc.memcpy(ret.ptr.cast(), (ptr + start * ret.bytesPerItem).cast(),
         length * ret.bytesPerItem);
     return ret;
   }
@@ -38,7 +38,7 @@ abstract mixin class U8COnesor implements COnesor<int>, U8Onesor {
   @override
   U8COnesor read({Context? context}) {
     final ret = U8COnesor.sized(length, context: context);
-    cffi!.memcpy(ret.ptr.cast(), ptr.cast(), lengthBytes);
+    tc.memcpy(ret.ptr.cast(), ptr.cast(), lengthBytes);
     return ret;
   }
 

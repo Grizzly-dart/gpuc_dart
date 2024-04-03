@@ -3,11 +3,15 @@ import 'dart:ffi' as ffi;
 import 'dart:io';
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
-import 'package:gpuc_dart/src/native/cuda/native_types.dart';
+import 'package:gpuc_dart/src/native/c/c_types.dart';
+import 'package:gpuc_dart/src/native/cuda/cu_types.dart';
 import 'package:gpuc_dart/src/util/string.dart';
 import 'package:path/path.dart' as path;
 
+export 'ffi.dart';
+
 void initializeTensorCuda({String? libPath}) {
+  // TODO support processor architecture
   String os;
   if (Platform.isLinux) {
     os = 'linux';
@@ -16,7 +20,6 @@ void initializeTensorCuda({String? libPath}) {
     return; // CUDA not supported for MacOSX
   } else if (Platform.isWindows) {
     os = 'windows';
-    return; // TODO windows not supported yet
   } else {
     return;
   }
@@ -30,9 +33,9 @@ void initializeTensorCuda({String? libPath}) {
   if (Platform.isLinux) {
     libraryPath = path.join(libraryPath, 'libtensorcuda.so');
   } else if (Platform.isMacOS) {
-    libraryPath = path.join(libraryPath, 'libtensorcuda.dylib');
+    libraryPath = path.join(libraryPath, 'libtensorcuda.so');
   } else if (Platform.isWindows) {
-    libraryPath = path.join(libraryPath, 'libtensorcuda.dll');
+    libraryPath = path.join(libraryPath, 'libtensorcuda.so');
   } else {
     throw Exception('Unsupported platform');
   }
@@ -107,7 +110,7 @@ class Cuda {
     }
   }
 
-  void binaryArith(OpBinaryArith op, CudaStream stream, NumPtr out, NumPtr inp1,
+  void binaryArith(CuOpBinary op, CudaStream stream, NumPtr out, NumPtr inp1,
       NumPtr inp2, int size) {
     final err = op(stream.ptr, out.ptr, inp1.ptr, inp2.ptr, ffi.nullptr, size,
         0, out.type.id, inp1.type.id, inp2.type.id);
@@ -116,7 +119,7 @@ class Cuda {
     }
   }
 
-  void binaryArithScalar(OpBinaryArith op, CudaStream stream, NumPtr out,
+  void binaryArithScalar(CuOpBinary op, CudaStream stream, NumPtr out,
       NumPtr inp1, scalar, int size,
       {bool flip = false}) {
     NumType inp2Type;
@@ -629,7 +632,7 @@ class CudaMemInfo implements ffi.Finalizable {
   static CudaMemInfo allocate() {
     final ptr = ffi.calloc.allocate<CCudaMemInfo>(ffi.sizeOf<CCudaMemInfo>());
     final ret = CudaMemInfo(ptr);
-    cffi!.finalizer.attach(ret, ptr.cast());
+    TensorCFFI.finalizer.attach(ret, ptr.cast());
     return ret;
   }
 
@@ -659,7 +662,7 @@ class CudaDeviceProps implements ffi.Finalizable {
   static CudaDeviceProps allocate() {
     final ret = CudaDeviceProps(
         ffi.calloc.allocate<CCudaDeviceProps>(ffi.sizeOf<CCudaDeviceProps>()));
-    cffi!.finalizer.attach(ret, ret.ptr.cast());
+    TensorCFFI.finalizer.attach(ret, ret.ptr.cast());
     return ret;
   }
 

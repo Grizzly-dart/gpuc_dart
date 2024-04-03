@@ -30,7 +30,7 @@ abstract mixin class F64COnesor implements COnesor<double>, F64Onesor {
       throw ArgumentError('Length out of range');
     }
     final ret = F64COnesor.sized(length, context: context);
-    cffi!.memcpy(ret.ptr.cast(), (ptr + start * ret.bytesPerItem).cast(),
+    tc.memcpy(ret.ptr.cast(), (ptr + start * ret.bytesPerItem).cast(),
         length * ret.bytesPerItem);
     return ret;
   }
@@ -38,7 +38,7 @@ abstract mixin class F64COnesor implements COnesor<double>, F64Onesor {
   @override
   F64COnesor read({Context? context}) {
     final ret = F64COnesor.sized(length, context: context);
-    cffi!.memcpy(ret.ptr.cast(), ptr.cast(), lengthBytes);
+    tc.memcpy(ret.ptr.cast(), ptr.cast(), lengthBytes);
     return ret;
   }
 

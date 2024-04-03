@@ -30,7 +30,7 @@ abstract mixin class I64COnesor implements COnesor<int>, I64Onesor {
       throw ArgumentError('Length out of range');
     }
     final ret = I64COnesor.sized(length, context: context);
-    cffi!.memcpy(ret.ptr.cast(), (ptr + start * ret.bytesPerItem).cast(),
+    tc.memcpy(ret.ptr.cast(), (ptr + start * ret.bytesPerItem).cast(),
         length * ret.bytesPerItem);
     return ret;
   }
@@ -38,7 +38,7 @@ abstract mixin class I64COnesor implements COnesor<int>, I64Onesor {
   @override
   I64COnesor read({Context? context}) {
     final ret = I64COnesor.sized(length, context: context);
-    cffi!.memcpy(ret.ptr.cast(), ptr.cast(), lengthBytes);
+    tc.memcpy(ret.ptr.cast(), ptr.cast(), lengthBytes);
     return ret;
   }
 

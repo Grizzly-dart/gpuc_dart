@@ -22,7 +22,7 @@ abstract mixin class F64Tensor implements Tensor<double> {
       size = Dim([list.length]);
     }
     F64Onesor data;
-    if (cffi != null) {
+    if (tc.exists()) {
       data = F64COnesor.fromList(list, context: context);
     } else {
       data = F64DartOnesor.fromList(list);
@@ -34,7 +34,7 @@ abstract mixin class F64Tensor implements Tensor<double> {
       {String name = '', Context? context}) {
     size = Dim.from(size);
     F64Onesor data;
-    if (cffi != null) {
+    if (tc.exists()) {
       data = F64COnesor.sized(size.nel, context: context);
     } else {
       data = F64DartOnesor.sized(size.nel);

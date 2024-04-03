@@ -1,144 +1,12 @@
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:gpuc_dart/gpuc_dart.dart';
-import 'dart:io';
-import 'package:path/path.dart' as path;
-
-void initializeTensorC({String? libPath}) {
-  String os;
-  if (Platform.isLinux) {
-    os = 'linux';
-  } else if (Platform.isMacOS) {
-    os = 'darwin';
-  } else if (Platform.isWindows) {
-    os = 'windows';
-    return; // TODO windows not supported yet
-  } else {
-    return;
-  }
-
-  String libraryPath;
-  if (libPath != null) {
-    libraryPath = libPath;
-  } else {
-    libraryPath = path.join(Directory.current.path, 'lib', 'asset', os);
-  }
-  if (Platform.isLinux) {
-    libraryPath = path.join(libraryPath, 'libtensorc.so');
-  } else if (Platform.isMacOS) {
-    libraryPath = path.join(libraryPath, 'libtensorc.so');
-  } else if (Platform.isWindows) {
-    libraryPath = path.join(libraryPath, 'libtensorc.dll');
-  } else {
-    throw Exception('Unsupported platform');
-  }
-
-  final dylib = ffi.DynamicLibrary.open(libraryPath);
-  CFFI.initialize(dylib);
-}
-
-CFFI? cffi;
-
-class CFFI {
-  final ffi
-      .Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>
-      freeNative;
-  final void Function(ffi.Pointer<ffi.Void>) free;
-  final ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void> oldPtr, int size)
-      realloc;
-  final void Function(
-      ffi.Pointer<ffi.Void> dst, ffi.Pointer<ffi.Void> src, int size) memcpy;
-
-  CFFI(
-      {required this.freeNative,
-      required this.free,
-      required this.realloc,
-      required this.memcpy});
-
-  factory CFFI.lookup(ffi.DynamicLibrary dylib) {
-    final freeNative = dylib
-        .lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
-            'libtcFree');
-    final free = dylib.lookupFunction<ffi.Void Function(ffi.Pointer<ffi.Void>),
-        void Function(ffi.Pointer<ffi.Void>)>('libtcFree');
-    final realloc = dylib.lookupFunction<
-        ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void>, ffi.Uint64),
-        ffi.Pointer<ffi.Void> Function(
-            ffi.Pointer<ffi.Void>, int)>('libtcRealloc');
-    final memcpy = dylib.lookupFunction<
-        ffi.Void Function(
-            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, ffi.Uint64),
-        void Function(
-            ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, int)>('libtcMemcpy');
-
-    return CFFI(
-        freeNative: freeNative, free: free, realloc: realloc, memcpy: memcpy);
-  }
-
-  static void initialize(ffi.DynamicLibrary dylib) {
-    cffi = CFFI.lookup(dylib);
-  }
-
-  late final finalizer = Finalizer((other) {
-    if (other is ffi.Pointer) {
-      free(other.cast());
-    } else {
-      stdout.writeln('Unknown type ${other.runtimeType}');
-    }
-  });
-}
-
-typedef Ptr = ffi.Pointer;
-typedef NativePtr = ffi.Pointer<ffi.SizedNativeType>;
-typedef VoidPtr = ffi.Pointer<ffi.Void>;
-typedef StrPtr = ffi.Pointer<ffi.Utf8>;
-typedef F64Ptr = ffi.Pointer<ffi.Double>;
 
 class NumPtr {
   final Ptr ptr;
   final NumType type;
 
   NumPtr(this.ptr, this.type);
-}
-
-final class CDim2 extends ffi.Struct {
-  @ffi.Uint32()
-  external int r;
-
-  @ffi.Uint32()
-  external int c;
-
-  static CPtr<CDim2> allocate() => CPtr<CDim2>.allocate(ffi.sizeOf<CDim2>());
-
-  static CPtr<CDim2> from(Dim2 size) {
-    final cptr = CDim2.allocate();
-    final cSize = cptr.ptr.ref;
-    cSize.r = size.rows;
-    cSize.c = size.cols;
-    return cptr;
-  }
-}
-
-final class CDim3 extends ffi.Struct {
-  @ffi.Uint32()
-  external int ch;
-
-  @ffi.Uint32()
-  external int r;
-
-  @ffi.Uint32()
-  external int c;
-
-  static CPtr<CDim3> allocate() => CPtr<CDim3>.allocate(ffi.sizeOf<CDim2>());
-
-  static CPtr<CDim3> from(Dim3 size) {
-    final cptr = CDim3.allocate();
-    final cSize = cptr.ptr.ref;
-    cSize.ch = size.channels;
-    cSize.r = size.rows;
-    cSize.c = size.cols;
-    return cptr;
-  }
 }
 
 class CPtr<T extends ffi.NativeType> implements Resource, ffi.Finalizable {
@@ -148,7 +16,7 @@ class CPtr<T extends ffi.NativeType> implements Resource, ffi.Finalizable {
 
   CPtr(this._mem, this.bytes, {Context? context}) {
     assert(_mem != ffi.nullptr);
-    cffi!.finalizer.attach(this, _mem.cast(), detach: this);
+    TensorCFFI.finalizer.attach(this, _mem.cast(), detach: this);
     context?.add(this);
   }
 
@@ -161,37 +29,34 @@ class CPtr<T extends ffi.NativeType> implements Resource, ffi.Finalizable {
   ffi.Pointer<T> get ptr => _mem;
 
   void realloc(int byteSizePerItem, {int count = 1}) {
-    final newPtr = cffi!.realloc(_mem.cast(), byteSizePerItem * count);
-    if (newPtr == ffi.nullptr) {
-      throw Exception('Failed to allocate memory');
-    }
-    _mem = newPtr.cast();
+    _mem = tc.realloc(_mem.cast(), byteSizePerItem * count);
     bytes = byteSizePerItem * count;
-    cffi!.finalizer.detach(this);
-    cffi!.finalizer.attach(this, _mem.cast(), detach: this);
+    TensorCFFI.finalizer.detach(this);
+    TensorCFFI.finalizer.attach(this, _mem.cast(), detach: this);
   }
 
   @override
   void release() {
     if (_mem == ffi.nullptr) return;
-    cffi!.finalizer.detach(_mem);
+    TensorCFFI.finalizer.detach(_mem);
     ffi.malloc.free(_mem);
     _mem = ffi.nullptr;
   }
 
   @override
   void coRelease(Resource other) {
-    cffi!.finalizer.attach(this, other, detach: other);
+    TensorCFFI.finalizer.attach(this, other, detach: other);
   }
 
   @override
   void detachCoRelease(Resource other) {
-    cffi!.finalizer.detach(other);
+    TensorCFFI.finalizer.detach(other);
   }
 }
 
 class NumType<T extends num> {
   final int id;
+  final int index;
   final String name;
   final String short;
   final Type ffiType;
@@ -200,8 +65,8 @@ class NumType<T extends num> {
   final T maxVal;
   final int bytes;
 
-  const NumType._(this.name, this.id, this.short, this.ffiType, this.defaultVal,
-      this.minVal, this.maxVal, this.bytes);
+  const NumType._(this.name, this.id, this.index, this.short, this.ffiType,
+      this.defaultVal, this.minVal, this.maxVal, this.bytes);
 
   CPtr allocate(int length) => CPtr.allocate(bytes, count: length);
 
@@ -373,26 +238,34 @@ class NumType<T extends num> {
   }
 }
 
-const NumType<int> i8 = NumType._('int8', 1, 'i8', ffi.Int8, 0, -128, 127, 1);
+const NumType<int> i8 =
+    NumType._('int8', 1, 0, 'i8', ffi.Int8, 0, -128, 127, 1);
 const NumType<int> i16 =
-    NumType._('int16', 2, 'i16', ffi.Int16, 0, -32768, 32767, 2);
+    NumType._('int16', 2, 1, 'i16', ffi.Int16, 0, -32768, 32767, 2);
 const NumType<int> i32 =
-    NumType._('int32', 4, 'i32', ffi.Int32, 0, -2147483648, 2147483647, 4);
-const NumType<int> i64 = NumType._('int64', 8, 'i64', ffi.Int64, 0,
+    NumType._('int32', 4, 2, 'i32', ffi.Int32, 0, -2147483648, 2147483647, 4);
+const NumType<int> i64 = NumType._('int64', 8, 3, 'i64', ffi.Int64, 0,
     -9223372036854775808, 9223372036854775807, 8);
 
-const NumType<int> u8 = NumType._('uint8', 17, 'u8', ffi.Uint8, 0, 0, 255, 1);
+const NumType<int> u8 =
+    NumType._('uint8', 17, 4, 'u8', ffi.Uint8, 0, 0, 255, 1);
 const NumType<int> u16 =
-    NumType._('uint16', 18, 'u16', ffi.Uint16, 0, 0, 65535, 2);
+    NumType._('uint16', 18, 5, 'u16', ffi.Uint16, 0, 0, 65535, 2);
 const NumType<int> u32 =
-    NumType._('uint32', 20, 'u32', ffi.Uint32, 0, 0, 4294967295, 4);
+    NumType._('uint32', 20, 6, 'u32', ffi.Uint32, 0, 0, 4294967295, 4);
 const NumType<int> u64 =
-    NumType._('uint64', 24, 'u64', ffi.Uint64, 0, 0, 9223372036854775807, 8);
+    NumType._('uint64', 24, 7, 'u64', ffi.Uint64, 0, 0, 9223372036854775807, 8);
 
-const NumType<double> f32 = NumType._('float32', 36, 'f32', ffi.Float, 0.0,
+const NumType<double> f32 = NumType._('float32', 36, 8, 'f32', ffi.Float, 0.0,
     double.negativeInfinity, double.infinity, 4);
-const NumType<double> f64 = NumType._('float64', 40, 'f64', ffi.Double, 0.0,
+const NumType<double> f64 = NumType._('float64', 40, 9, 'f64', ffi.Double, 0.0,
     double.negativeInfinity, double.infinity, 8);
+
+typedef Ptr = ffi.Pointer;
+typedef NativePtr = ffi.Pointer<ffi.SizedNativeType>;
+typedef VoidPtr = ffi.Pointer<ffi.Void>;
+typedef StrPtr = ffi.Pointer<ffi.Utf8>;
+typedef F64Ptr = ffi.Pointer<ffi.Double>;
 
 extension PointerExt<T extends ffi.NativeType> on ffi.Pointer<T> {
   ffi.Pointer<T> pointerAddition(int offset, int bytesPerItem) =>

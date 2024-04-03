@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:gpuc_dart/gpuc_dart.dart';
-import 'package:gpuc_dart/src/native/cuda/native_types.dart';
+import 'package:gpuc_dart/src/native/cuda/cu_types.dart';
 
 // TODO pass in device selection
 
@@ -56,7 +56,7 @@ extension CudaSplitExtension on Cuda {
     }
   }
 
-  Future<Tensor> op1d2i(int deviceId, Tensor a, Tensor b, OpBinaryArith op,
+  Future<Tensor> op1d2i(int deviceId, Tensor a, Tensor b, CuOpBinary op,
       {Tensor? out}) async {
     if (a.nel != b.nel) throw ArgumentError('Size mismatch');
     if (out != null && out.nel != a.nel) {
@@ -67,10 +67,7 @@ extension CudaSplitExtension on Cuda {
     final size = a.size;
     final ctx = Context();
     try {
-      if (out == null) {
-        out = Tensor.sized(size, outType, name: '${a.name} + ${b.name}');
-        ctx.releaseOnErr(out);
-      }
+      out ??= Tensor.sized(size, outType, name: '${a.name} + ${b.name}');
       final props = cuda.getMemInfo(deviceId);
       int batchSize =
           props.total ~/ (a.type.bytes + b.type.bytes + out.type.bytes);
@@ -107,7 +104,7 @@ extension CudaSplitExtension on Cuda {
     }
   }
 
-  Future<Tensor> op1d2iScalar(int deviceId, Tensor a, num b, OpBinaryArith op,
+  Future<Tensor> op1d2iScalar(int deviceId, Tensor a, num b, CuOpBinary op,
       {Tensor? out, bool flip = false}) async {
     if (out != null && out.nel != a.nel) {
       throw ArgumentError('Size mismatch');

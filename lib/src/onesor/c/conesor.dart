@@ -39,7 +39,7 @@ abstract mixin class COnesor<T extends num> implements Onesor<T>, NumPtr {
       throw ArgumentError('Length mismatch');
     }
     if (src is COnesor<T>) {
-      cffi!.memcpy(ptr.cast(), src.ptr.cast(), lengthBytes);
+      tc.memcpy(ptr.cast(), src.ptr.cast(), lengthBytes);
     } else if (src is DartOnesor<T>) {
       asTypedList(length).setAll(0, src);
     }
@@ -52,7 +52,7 @@ abstract mixin class COnesor<T extends num> implements Onesor<T>, NumPtr {
       throw ArgumentError('Length mismatch');
     }
     if (dst is COnesor<T>) {
-      cffi!.memcpy(dst.ptr.cast(), ptr.cast(), lengthBytes);
+      tc.memcpy(dst.ptr.cast(), ptr.cast(), lengthBytes);
       return;
     } else if (dst is DartOnesor<T>) {
       dst.setAll(0, asTypedList(length));

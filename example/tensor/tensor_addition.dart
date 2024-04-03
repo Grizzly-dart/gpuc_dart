@@ -12,7 +12,7 @@ Future<void> plus(Dim size) async {
 }
 
 Future<void> plusScalar(Dim size) async {
-  print('=====> Test a + s $size');
+  print('=====> Test scalar a + s $size');
   final rnd = MTRandom();
   final t1 = F64Tensor.random(size, random: rnd);
   print('running...');
@@ -42,7 +42,7 @@ void main() async {
     Dim([4096, 4096]),
   ]) {
     await plus(sizes);
-    await plusScalar(sizes);
+    // TODO await plusScalar(sizes);
   }
 
   print('Finished!');

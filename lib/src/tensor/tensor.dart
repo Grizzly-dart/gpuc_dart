@@ -185,6 +185,12 @@ abstract mixin class Tensor<T extends num> implements Resource {
         throw ArgumentError('Unsupported type: ${other.runtimeType}');
       }
     }
+    if(tc.exists()) {
+      if(other is Tensor) {
+        return tc.binaryArithTensor(tc.native.pluses, this, other, out: out);
+      }
+      // TODO implement
+    }
     throw UnimplementedError('plus on CPU(Dart/C) is not implemented yet!');
   }
 
