@@ -71,7 +71,7 @@ class CuFFI {
   final StrPtr Function(ffi.Pointer<CCudaStream>, F64Ptr, F64Ptr, F64Ptr,
       F64Ptr, int m, int n, int k, int batches) matmulTCadd;
 
-  final MaxPool2D maxPool2D;
+  final CuMaxPool2D maxPool2D;
   final CuConv2D conv2D;
 
   final StrPtr Function(
@@ -253,7 +253,7 @@ class CuFFI {
             F64Ptr, int, int, int, int)>('tcuMatMulTCadd');
 
     final maxPool2D =
-        dylib.lookupFunction<MaxPool2DNative, MaxPool2D>('tcuMaxPool2d');
+        dylib.lookupFunction<CunMaxPool2D, CuMaxPool2D>('tcuMaxPool2d');
     final conv2D = dylib.lookupFunction<CunConv2D, CuConv2D>('tcuConv2d');
 
     final eluActivation = dylib.lookupFunction<
