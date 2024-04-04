@@ -30,6 +30,8 @@ class GroupNorm extends Layer<double> {
     assert(inp.size.dims > 2);
     assert(inp.size[1] == numChannels);
 
+
+
     throw UnimplementedError();
   }
 
