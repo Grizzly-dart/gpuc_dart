@@ -2,6 +2,7 @@
 + Implement List methods on CuOnesor to not access single elements
 + Use mangled C++ functions instead of C functions
 + Finalize/release CuOnesor
++ Semi-broadcasting
 
 + pow, log, abs, asinh, acosh, atanh, erf, ceil, floor, round
 + mean, std, var, sum, prod, min, max, argmin, argmax
