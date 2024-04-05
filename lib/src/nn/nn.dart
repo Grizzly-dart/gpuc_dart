@@ -6,6 +6,9 @@ export 'activation/activation.dart';
 export 'loss_function/loss_function.dart';
 export 'optimizer/optimizer.dart';
 export 'model/model.dart';
+export 'normalization/normalization.dart';
+
+export 'nn2d/nn2d.dart';
 
 abstract class Layer<I extends num> {
   Future<Tensor> compute(FutureOr<Tensor<I>> input,
