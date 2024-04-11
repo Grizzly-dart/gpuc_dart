@@ -53,15 +53,12 @@ class CuFFI {
 
   late final Map<String, CuOpBinary> plus = () {
     final ret = <String, CuOpBinary>{};
-    for(final type in NumType.values) {
-      // TODO
-    }
     // TODO
     throw UnimplementedError();
   }();
-  final CuOpBinary minus;
-  final CuOpBinary mul;
-  final CuOpBinary div;
+  late final CuOpBinary minus;
+  late final CuOpBinary mul;
+  late final CuOpBinary div;
 
   // TODO sum
   late final CuOp1d1i1t mean =
@@ -169,10 +166,6 @@ class CuFFI {
     required this.createStream,
     required this.destroyStream,
     required this.syncStream,
-    required this.plus,
-    required this.minus,
-    required this.mul,
-    required this.div,
   });
 
   void preload() {
@@ -275,10 +268,6 @@ class CuFFI {
       createStream: createStream,
       destroyStream: destroyStream,
       syncStream: syncStream,
-      plus: plus,
-      minus: minus,
-      mul: mul,
-      div: div,
     );
   }
 }

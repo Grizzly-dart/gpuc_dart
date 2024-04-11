@@ -211,6 +211,14 @@ class NumType<T extends num> {
     f64,
   ];
 
+  static const List<NumType<double>> floats = [f32, f64];
+
+  static const List<NumType<int>> allInts = [i8, i16, i32, i64, u8, u16, u32, u64];
+
+  static const List<NumType<int>> ints = [i8, i16, i32, i64];
+
+  static const List<NumType<int>> uints = [u8, u16, u32, u64];
+
   static NumType typeOf(ffi.Pointer ptr) {
     if (ptr is ffi.Float) {
       return f32;
