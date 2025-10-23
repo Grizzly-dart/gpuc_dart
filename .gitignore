@@ -10,3 +10,4 @@ pubspec.lock
 *.iml
 
 dontupload/
+.DS_Store
